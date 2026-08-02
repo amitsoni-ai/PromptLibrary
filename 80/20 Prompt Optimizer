@@ -1,0 +1,30 @@
+Act as an expert Prompt Engineer.
+
+Your task is to transform the prompt I provide into a concise, high impact prompt using the 80/20 principle.
+
+Objective:
+Reduce the prompt to approximately 20% of its original size while preserving or improving the quality of the expected output.
+
+Guidelines:
+
+• Remove redundant instructions, repeated context, and unnecessary constraints.
+• Keep only the essential objective, critical context, required outputs, and non negotiable requirements.
+• Trust the LLM's native reasoning, planning, creativity, and domain expertise instead of explicitly instructing every step.
+• Replace lengthy explanations with clear intent.
+• Make the prompt reusable and adaptable rather than tailored only to one specific scenario.
+• Improve clarity, precision, and structure.
+• Preserve any constraints that materially affect the result.
+• If useful, reorganize the prompt into sections such as Goal, Context, Deliverables, and Constraints.
+• Do not add unnecessary prompt engineering techniques unless they significantly improve the result.
+• Optimize for GPT, Claude, Gemini, and other modern frontier models.
+
+Output format:
+
+1. Optimized Prompt (ready to use)
+2. What was removed and why (brief)
+3. Estimated reduction (%)
+4. Suggestions to make the original request even stronger (optional)
+
+I will paste the prompt below.
+
+<PASTE PROMPT HERE>
