@@ -1,0 +1,489 @@
+# Deep Research Prompt for AI Knowledge Base
+
+## Objective
+
+Create a comprehensive, enterprise-grade AI knowledge base by performing deep research on every question contained in the provided Markdown (`.md`) FAQ file.
+
+Treat the Markdown file as the single source of truth. Do not modify, remove, merge, or reorder the questions.
+
+Your goal is to produce a publication-ready knowledge base that can be directly used for:
+
+* Enterprise training programs
+* eLearning content
+* AI literacy programs
+* AI governance training
+* Responsible AI certification
+* Instructor-led workshops
+* AI playbooks
+* Executive awareness programs
+* Internal knowledge portals
+* AI policy documentation
+
+---
+
+# Your Role
+
+Act as a multidisciplinary team consisting of:
+
+* AI Research Scientist
+* AI Architect
+* AI Governance Leader
+* Responsible AI Expert
+* Enterprise AI Security Architect
+* Cybersecurity Specialist
+* Privacy and Data Protection Expert
+* AI Risk Management Consultant
+* AI Compliance and Regulatory Expert
+* Enterprise Solution Architect
+* AI Legal Advisor
+* Learning Experience Designer
+* Technical Writer
+
+Write with the accuracy of a subject matter expert and the clarity of an enterprise educator.
+
+---
+
+# Research Methodology
+
+Perform deep research using authoritative and trusted sources.
+
+Prioritize primary sources over secondary commentary.
+
+Cross-validate important claims using multiple independent references.
+
+When multiple viewpoints exist:
+
+* Explain each perspective.
+* Identify areas of agreement.
+* Highlight differences.
+* Avoid taking unsupported positions.
+
+Never invent facts.
+
+Clearly distinguish between:
+
+* Fact
+* Industry best practice
+* Vendor recommendation
+* Legal requirement
+* Regulatory guidance
+* Expert opinion
+
+Whenever applicable, include the latest information available.
+
+---
+
+# Scope
+
+Research every topic represented in the supplied Markdown FAQ, including but not limited to:
+
+* Artificial Intelligence
+* Generative AI
+* Large Language Models (LLMs)
+* Foundation Models
+* AI Agents
+* Agentic AI
+* Model Context Protocol (MCP)
+* Retrieval-Augmented Generation (RAG)
+* Prompt Engineering
+* AI Governance
+* Responsible AI
+* AI Ethics
+* AI Safety
+* AI Security
+* AI Privacy
+* Data Protection
+* Enterprise AI
+* Public AI Platforms
+* Enterprise AI Platforms
+* AI Architecture
+* AI Operations (LLMOps)
+* AI Risk Management
+* AI Compliance
+* AI Regulations
+* Intellectual Property
+* Copyright
+* AI Procurement
+* Vendor Risk
+* Cybersecurity
+* AI Threats
+* Shadow AI
+* AI Incident Response
+* AI Lifecycle Management
+* Human Oversight
+* Decision Governance
+* AI Adoption
+* AI Change Management
+* AI Literacy
+
+Expand related concepts whenever necessary to provide complete understanding.
+
+---
+
+# Output Format
+
+Generate the answer for every FAQ using the following structure.
+
+---
+
+# Question
+
+Use the original question exactly as provided.
+
+---
+
+# Executive Summary
+
+Provide a concise answer suitable for busy executives.
+
+Maximum 150 words.
+
+---
+
+# Detailed Answer
+
+Provide a complete explanation.
+
+Use simple business language.
+
+Avoid unnecessary jargon.
+
+Explain technical concepts clearly.
+
+---
+
+# Why This Matters
+
+Explain:
+
+* Business impact
+* Employee impact
+* Leadership impact
+* Security impact
+* Governance impact
+* Risk impact
+
+---
+
+# AI Concepts Explained
+
+Identify and explain every AI concept introduced in the answer.
+
+Examples include:
+
+* LLM
+* Token
+* Context Window
+* Embedding
+* Fine-tuning
+* Inference
+* Transformer
+* RAG
+* Vector Database
+* Prompt Injection
+* Hallucination
+* AI Agent
+* MCP
+* Model Drift
+* Grounding
+* Synthetic Data
+
+Only explain concepts that are relevant to the current answer.
+
+---
+
+# How It Works
+
+Whenever applicable, explain the underlying process step by step.
+
+For example:
+
+* How enterprise AI processes prompts
+* How model inference works
+* How RAG retrieves information
+* How AI agents execute tasks
+* How enterprise security protects data
+
+Use simple language.
+
+---
+
+# Enterprise Perspective
+
+Whenever applicable compare:
+
+| Public AI | Enterprise AI |
+| --------- | ------------- |
+
+Include:
+
+* Security
+* Privacy
+* Governance
+* Compliance
+* Identity
+* Access Control
+* Encryption
+* Auditability
+* Data Usage
+* Administration
+
+Remain vendor neutral.
+
+---
+
+# Governance Perspective
+
+Explain the governance implications.
+
+Include:
+
+* Accountability
+* Ownership
+* Risk
+* Compliance
+* Human Oversight
+* Policy
+* Audit
+* Monitoring
+
+---
+
+# Responsible AI Perspective
+
+Explain:
+
+* Fairness
+* Transparency
+* Explainability
+* Human Oversight
+* Accountability
+* Safety
+* Privacy
+* Security
+
+---
+
+# Security Perspective
+
+Whenever applicable explain:
+
+* Threats
+* Attack vectors
+* Data leakage
+* Prompt injection
+* Insider risks
+* Supply chain risks
+* Identity controls
+* Encryption
+* Data Loss Prevention (DLP)
+* Zero Trust
+* Tenant isolation
+
+---
+
+# Best Practices
+
+Provide practical recommendations.
+
+Organize into:
+
+## Recommended
+
+## Avoid
+
+---
+
+# Common Mistakes
+
+List mistakes organizations and employees commonly make.
+
+Explain why they are risky.
+
+---
+
+# Common Myths
+
+Identify misconceptions.
+
+Explain why they are incorrect.
+
+---
+
+# Real-World Example
+
+Provide one realistic business scenario.
+
+Use different industries where appropriate.
+
+Examples:
+
+* HR
+* Finance
+* Sales
+* Marketing
+* Manufacturing
+* Healthcare
+* Retail
+* Banking
+* Government
+* Engineering
+
+---
+
+# Key Takeaways
+
+Summarize into concise bullet points.
+
+---
+
+# Related Concepts
+
+Recommend additional AI concepts the learner should study.
+
+Build logical learning paths.
+
+---
+
+# Further Reading
+
+Recommend:
+
+* Standards
+* Frameworks
+* Whitepapers
+* Official documentation
+* Research reports
+
+---
+
+# References
+
+Every answer must include references.
+
+For each source include:
+
+* Title
+* Organization
+* Publication Year
+* Direct URL
+* Section or chapter where applicable
+
+---
+
+# Research Quality Requirements
+
+Every answer must:
+
+* Be technically accurate.
+* Be fact-checked.
+* Be vendor neutral.
+* Reflect current enterprise practices.
+* Be suitable for corporate learning.
+* Explain the "why," not just the "what."
+* Connect business, governance, security, legal, and AI concepts naturally.
+* Be understandable by non-technical readers.
+
+---
+
+# Source Priority
+
+Always prioritize sources in the following order.
+
+## Tier 1 — International Standards & Regulators
+
+* NIST
+* ISO / IEC
+* OECD
+* UNESCO
+* European Commission
+* EU AI Act
+* ENISA
+* CISA
+* OWASP
+* MITRE
+* UK NCSC
+* Singapore IMDA AI Verify
+
+---
+
+## Tier 2 — Official Vendor Documentation
+
+* Microsoft Learn
+* Microsoft Trust Center
+* OpenAI Documentation
+* OpenAI Trust & Security
+* Anthropic Documentation
+* Anthropic Trust Center
+* Google AI Documentation
+* Google Workspace Documentation
+* Google Cloud Documentation
+* AWS Documentation
+* IBM Documentation
+* NVIDIA Documentation
+* Cisco Documentation
+* Palo Alto Networks Documentation
+* CrowdStrike Documentation
+
+---
+
+## Tier 3 — Industry Research
+
+* Gartner
+* Forrester
+* IDC
+* McKinsey
+* Deloitte
+* PwC
+* Accenture
+* EY
+* KPMG
+* BCG
+* World Economic Forum
+
+---
+
+## Tier 4 — Academic Research
+
+* IEEE
+* ACM
+* Nature
+* Science
+* Springer
+* Elsevier
+* arXiv (only when no higher-authority source exists)
+
+---
+
+# Cross-Linking Requirement
+
+Treat the knowledge base as a connected learning system.
+
+Whenever an answer references another AI concept, create a "See Also" section linking to related FAQs and concepts.
+
+The learner should be able to navigate naturally between topics.
+
+---
+
+# Writing Style
+
+* Professional
+* Enterprise-friendly
+* Practical
+* Clear
+* Neutral
+* Evidence-based
+* Easy to understand
+* Suitable for both technical and non-technical audiences
+
+Avoid marketing language, unsupported opinions, and unnecessary jargon.
+
+---
+
+# Final Deliverable
+
+Produce a complete Markdown knowledge base that answers every question in the supplied FAQ file.
+
+The output should resemble a professionally published AI handbook covering the full spectrum of AI, including governance, responsible AI, enterprise security, privacy, legal considerations, architecture, operations, risk management, compliance, adoption, and emerging AI capabilities.
+
+The knowledge base should be publication-ready with minimal editing required and should serve as a long-term reference for enterprise AI education and governance.
