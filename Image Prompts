@@ -1,64 +1,654 @@
-# PROMPT 1 
-**Photorealistic premium corporate editorial image for [SERVICE / PAGE TITLE].**
+**Premium editorial illustration and graphic composition for [SERVICE / PAGE TITLE].**
 
-Create a **clean pure white background** with [SCENE / HUMAN ACTION] representing [CORE IDEA]. Human-first, authentic professionals, natural expressions, realistic details, soft daylight, premium consulting aesthetic.
-
-**Visual focus:** [SIGNATURE ELEMENT / METAPHOR]
-**Palette:** 75% pure white, 12% neutral grey, 7% Deep Navy, 4% Emerald Green, 2% Human Orange #F47B3A.
-**Style:** high-end editorial photography, minimal, sophisticated, natural shadows, realistic textures, subtle depth of field, 16:9.
-
-**Consistency:** When [TEXT / DESCRIPTION] changes, keep the same white background, lighting, photographic style, composition quality, color balance, and visual identity.
-
-**Avoid:** dark backgrounds, gradients, robots, holograms, sci-fi, glowing brains, matrix code, 3D illustration, stock-photo look, readable text, logos, watermarks.
-
-**Change only:** [TEXT / DESCRIPTION / SCENE]
-
-
-
-
-#white PROMPT 2
-
-**Photorealistic premium corporate editorial image for [SERVICE / PAGE TITLE].**
-
-Create a **clean pure white background** with [SCENE / HUMAN ACTION] representing [CORE IDEA]. Human-first, authentic professionals, natural expressions, realistic details, soft daylight, premium consulting aesthetic.
+Create a **clean pure white background** with a sophisticated visual representation of [SCENE / CORE IDEA]. Human-first, minimal, intelligent, and visually symbolic.
 
 **Visual focus:** [SIGNATURE ELEMENT / METAPHOR]
-**Palette:** 75% pure white, 12% neutral grey, 7% Deep Navy, 4% Emerald Green, 2% Human Orange #F47B3A.
-**Style:** high-end editorial photography, minimal, sophisticated, natural shadows, realistic textures, subtle depth of field, 16:9.
 
-**Consistency:** When [TEXT / DESCRIPTION] changes, keep the same white background, lighting, photographic style, composition quality, color balance, and visual identity.
+**Graphics:** layered geometric shapes, subtle paper and acrylic textures, refined linework, soft shadows, elegant composition, balanced negative space.
 
-**Avoid:** dark backgrounds, gradients, robots, holograms, sci-fi, glowing brains, matrix code, 3D illustration, stock-photo look, readable text, logos, watermarks.
+**Synottic Color Palette:**
+
+* **Synottic Navy:** #022A4B
+* **Synottic Teal:** #03C9B1
+* **Human Coral:** #FF904B
+* **Deep Navy:** #011D35
+* **Ink:** #132A3A
+* **Slate:** #526575
+* **Cloud:** #F4F8FA
+* **Warm White:** #FCFBF8
+* **White:** #FFFFFF
+
+**Color usage:** 60% White, 25% Navy, 12% Teal, 3% Human Coral. Use neutral tones for supporting elements and Human Coral only as a small focal accent.
+
+**Style:** premium consulting editorial illustration, modern, minimal, sophisticated, human-centered, suitable for McKinsey or Harvard Business Review, 16:9.
+
+**Consistency:** When [TEXT / DESCRIPTION] changes, keep the same white background, illustration style, composition quality, graphic language, visual hierarchy, and Synottic color system.
+
+**Avoid:** dark backgrounds, excessive gradients, robots, holograms, sci-fi, glowing brains, matrix code, generic AI imagery, clutter, logos, watermarks, and readable text.
+
+**Change only:** [TEXT / DESCRIPTION / VISUAL CONCEPT]
 
 
-**Change only:** [TEXT / DESCRIPTION / SCENE]
+
+
+------------------
+=================
+
+
+**Create a premium Synottic editorial illustration based ONLY on the text provided below.**
+
+**INPUT:**
+[PASTE SERVICE TITLE + DESCRIPTION HERE]
+
+### YOUR TASK
+
+Interpret the meaning, purpose, audience, and key idea in the input. **Automatically decide the strongest visual metaphor, visual focus, composition, human interaction, graphic elements, and storytelling approach.**
+
+Do not literally illustrate the words. Translate the meaning into a **simple, intelligent, human-centered visual concept**.
+
+### SYNOTTIC VISUAL LANGUAGE
+
+Create a clean **pure white background** with:
+
+* Human-centered composition
+* Minimal geometric graphics
+* Layered paper, acrylic, or frosted-glass textures
+* Refined linework
+* Soft natural shadows
+* Elegant depth and dimensionality
+* Generous negative space
+* Premium consulting editorial aesthetic
+* Modern, intelligent, sophisticated, and approachable
+
+### SYNOTTIC COLOR SYSTEM
+
+Use the Synottic palette consistently:
+
+* **Synottic Navy:** #022A4B
+* **Synottic Teal:** #03C9B1
+* **Human Coral:** #FF904B
+* **Deep Navy:** #011D35
+* **Ink:** #132A3A
+* **Slate:** #526575
+* **Cloud:** #F4F8FA
+* **Warm White:** #FCFBF8
+* **White:** #FFFFFF
+
+Target visual balance: **60% White, 25% Navy, 12% Teal, 3% Human Coral.**
+
+### CREATIVE INTELLIGENCE
+
+Before creating the image, silently determine:
+
+1. What is the core message?
+2. What human problem or opportunity does it represent?
+3. What is the strongest visual metaphor?
+4. What objects, people, shapes, or relationships communicate that idea?
+5. What composition best communicates it at a glance?
+
+Then create the image using your own visual judgment.
+
+**Every image should feel like part of the same Synottic visual family, but the visual concept should be unique to the input.**
+
+### IMPORTANT
+
+Do NOT create generic AI imagery. Do NOT automatically use brains, robots, circuits, holograms, or glowing technology.
+
+The image should communicate **Human-Centred AI**, not "technology for technology's sake."
+
+**No text, words, letters, numbers, logos, UI screenshots, or watermarks inside the image.**
+
+**Format:** 16:9 website hero image.
+
+**Input to transform:**
+[PASTE TEXT HERE]
 
 
 
-# Prompt for main image with graphics 
 
-Premium editorial illustration and graphic composition for [SERVICE / PAGE TITLE].
 
-Create a clean white background with a sophisticated visual representation of [SCENE / CORE IDEA]. Human-first, minimal, intelligent, and visually symbolic.
 
-Visual focus: [SIGNATURE ELEMENT / METAPHOR]
-Graphics: layered geometric shapes, subtle paper/acrylic textures, refined linework, soft shadows, elegant composition, balanced negative space.
-Palette: 75% white, 12% neutral grey, 7% Deep Navy, 4% Emerald Green, 2% Human Orange #F47B3A.
-Style: premium consulting editorial illustration, modern, minimal, sophisticated, suitable for McKinsey or Harvard Business Review, 16:9.
+----------
 
-Consistency: When [TEXT / DESCRIPTION] changes, keep the same white background, illustration style, composition quality, graphic language, lighting, and color balance.
 
-Avoid: dark backgrounds, gradients, robots, holograms, sci-fi, glowing brains, matrix code, generic AI imagery, clutter, logos, watermarks.
+Create a premium Synottic editorial illustration based ONLY on the text provided below.
+INPUT:
+[YOUR TEXT]
 
-Change only: [TEXT / DESCRIPTION / VISUAL CONCEPT]
+YOUR TASK
+Interpret the meaning, purpose, audience, and key idea in the input. Automatically decide the strongest visual metaphor, visual focus, composition, human interaction, graphic elements, and storytelling approach.
+Do not literally illustrate the words. Translate the meaning into a simple, intelligent, human-centered visual concept.
 
------
+SYNOTTIC VISUAL LANGUAGE
+Create a clean pure white background with:
 
-Premium editorial illustration and graphic composition for AI Readiness Assessment 
-Create a clean white background with a sophisticated visual representation of Employees are taking assessment. Human-first, minimal, intelligent, and visually symbolic.
-Visual focus:  AI Assessment 
-Graphics: layered geometric shapes, subtle paper/acrylic textures, refined linework, soft shadows, elegant composition, balanced negative space.
-Palette: 75% white, 12% neutral grey, 7% Deep Navy, 4% Emerald Green, 2% Human Orange #F47B3A.
-Style: premium consulting editorial illustration, modern, minimal, sophisticated, suitable for McKinsey or Harvard Business Review, 16:9.
-Avoid: dark backgrounds, gradients, robots, holograms, sci-fi, glowing brains, matrix code, generic AI imagery, clutter, logos, watermarks.
+Human-centered composition
+Minimal geometric graphics
+Layered paper, acrylic, or frosted-glass textures
+Refined linework
+Soft natural shadows
+Elegant depth and dimensionality
+Generous negative space
+Premium consulting editorial aesthetic
+Modern, intelligent, sophisticated, and approachable
+
+
+SYNOTTIC VISUAL LANGUAGE
+
+Create a sophisticated white-first composition with an ultra-light white-to-teal atmosphere.
+The visual should feel
+light, airy, premium, calm, intelligent, minimal, sophisticated, and expensive.
+
+ULTRA-LIGHT GRADIENT
+
+Create a barely visible White → Ultra-Pale Teal → White gradient using:
+
+Teal must feel like soft natural light, atmospheric color, or a faint glass reflection, never like a colored background.
+Keep large negative-space areas and corners almost pure white. Let the subtle teal atmosphere gently appear around the main visual and softly fade into white.
+The gradient must be extremely subtle.
+Avoid: strong teal wash, cyan backgrounds, visible color bands, saturated gradients, neon glow, colored corners, or heavy atmospheric effects.
+
+
+Use the Synottic palette consistently:
+
+Synottic Navy: #022A4B
+Synottic Teal: #03C9B1
+Human Coral: #FF904B
+Deep Navy: #011D35
+Ink: #132A3A
+Slate: #526575
+Cloud: #F4F8FA
+Warm White: #FCFBF8
+White: #FFFFFF
+Target visual balance: The background must be 70–95% white White, 25% Synottic Navy, 12% Teal, 3% Human Coral.
+
+CREATIVE INTELLIGENCE
+Before creating the image, silently determine:
+
+What is the core message?
+What human problem or opportunity does it represent?
+What is the strongest visual metaphor?
+What objects, people, shapes, or relationships communicate that idea?
+What composition best communicates it at a glance?
+Then create the image using your own visual judgment.
+Every image should feel like part of the same Synottic visual family, but the visual concept should be unique to the input.
+
+IMPORTANT
+Do NOT create generic AI imagery. Do NOT automatically use brains, robots, circuits, holograms, or glowing technology.
+The image should communicate Human-Centred AI, not "technology for technology's sake."
+No text, words, letters, numbers, logos, UI screenshots, or watermarks inside the image.
+Format: 16:9 website hero image.
+
+
+
+------------------------
+-----------------------
+
+
+SYNOTTIC INTELLIGENT VISUAL GENERATOR
+Create a premium Synottic editorial illustration from:
+INPUT:
+Make people do onlin AI Readiness assement for future of AI
+
+1. UNDERSTAND THE MEANING
+Before creating anything, silently interpret the input.
+Identify:
+WHO → Who is involved?
+ACTION → What are they doing?
+PURPOSE → Why are they doing it?
+PROBLEM → What challenge or gap exists?
+CHANGE → What is being assessed, improved, enabled, or transformed?
+OUTCOME → What does success look like?
+FUTURE → What becomes possible afterward?
+Do not generate the image yet.
+2. TRANSLATE MEANING INTO VISUAL EVIDENCE
+Convert the meaning into something the viewer can see happening.
+Every important concept in the input must have visible visual evidence.
+Do not simply represent a concept with a decorative symbol.
+For example:
+Assessment → people evaluating, comparing, discovering gaps, or moving through readiness checkpoints.
+Transformation → visible movement from a current state toward a better future state.
+Capability building → visible development, progression, or increasing capability.
+Governance → visible structure, connection, boundaries, safeguards, and accountability.
+AI adoption → people becoming more capable and confident in an AI-enabled future.
+Use these only as thinking aids. Choose the best visual interpretation for the actual input.
+3. BUILD THE VISUAL STORY
+Think in this sequence:
+CURRENT STATE → HUMAN ACTION → DISCOVERY / CHANGE → FUTURE STATE
+Ask:
+
+If all words disappeared, what scene would best explain this message?
+Create one clear visual story.
+The viewer should understand the core meaning without reading the original text.
+4. CHOOSE THE VISUAL CONCEPT
+Choose:
+ONE dominant visual concept
+
+maximum TWO supporting concepts
+Do not combine unrelated metaphors.
+Prefer:
+Human scene + meaningful action + subtle conceptual metaphor
+over:
+multiple abstract symbols + decorative technology.
+The visual metaphor must come from the meaning of the input.
+Never use a generic AI metaphor simply because the word "AI" appears.
+5. HUMAN ACTION IS ESSENTIAL
+People must be active participants, not decorative figures.
+Their:
+
+posture
+gestures
+interaction
+attention
+positioning
+movement
+must communicate what is happening.
+Show people doing something meaningful related to the input.
+6. VISUAL HIERARCHY
+Build the image in this order:
+PRIMARY: Main human story and core meaning
+SECONDARY: Transformation, outcome, or supporting concept
+TERTIARY: Subtle geometric and material details
+Every element must strengthen the story.
+Remove anything that does not contribute to meaning.
+SYNOTTIC VISUAL SYSTEM
+Maintain the same visual identity across every image.
+
+Background
+Use an ultra-light white-first background.
+Create a barely visible:
+WHITE → ULTRA-PALE TEAL → WHITE
+atmosphere.
+Teal should feel like soft natural light or a subtle glass reflection.
+Never create a teal-colored background.
+Keep corners and large negative-space areas almost pure white.
+
+Color Palette
+Synottic Navy: #022A4B
+Synottic Teal: #03C9B1
+Human Coral: #FF904B
+Deep Navy: #011D35
+Ink: #132A3A
+Slate: #526575
+Cloud: #F4F8FA
+Warm White: #FCFBF8
+White: #FFFFFF
+Balance
+Approximately:
+80% White / 10% Neutral / 7% Navy / 2% Teal / 1% Coral
+White dominates.
+Navy provides structure.
+Teal provides subtle energy and connection.
+Coral is an extremely small focal accent.
+VISUAL LANGUAGE
+Use:
+
+Human-centered editorial storytelling
+Semi-realistic conceptual illustration
+Minimal geometric forms
+Layered paper, acrylic, or frosted glass
+Refined linework
+Soft natural shadows
+Subtle dimensionality
+Clear foreground, middle ground, and background
+Elegant depth
+Clean architectural composition
+Generous negative space
+Premium consulting aesthetic
+The image should feel:
+Light. Intelligent. Human. Calm. Premium. Modern.
+HUMAN-CENTRED AI
+Prioritize:
+HUMAN → PURPOSE → INTELLIGENCE → TECHNOLOGY
+Technology supports the human story.
+Technology must never become the dominant subject unless the input specifically requires it.
+WEBSITE COMPOSITION
+Create a sophisticated 16:9 website hero composition.
+Keep the primary visual concentrated within approximately 60–70% of the canvas.
+Reserve 30–40% clean negative space for website copy.
+Do not place important visual elements close to the edges.
+Use balanced asymmetry and sophisticated visual flow.
+DEPTH & MATERIALS
+Create subtle visual depth using:
+foreground → main subject → supporting elements → background
+Use realistic but restrained:
+
+acrylic
+frosted glass
+paper
+translucent layers
+soft shadows
+subtle reflections
+Do not make the image look overly 3D or glossy.
+CONSISTENCY
+When the input changes:
+KEEP:
+Synottic palette, white background, ultra-light teal atmosphere, lighting, material language, illustration quality, visual hierarchy, composition discipline, and premium aesthetic.
+CHANGE:
+People, actions, objects, relationships, metaphor, transformation, and visual story.
+Every image must look like part of the same Synottic visual family while communicating a different idea.
+FINAL SEMANTIC TEST
+Before finalizing, silently ask:
+1. Can I understand the subject without seeing the text?
+2. Can I see what the people are actually doing?
+3. Can I see the problem, action, transformation, or outcome?
+4. Is the dominant metaphor directly connected to the input?
+5. Is there ONE clear visual idea?
+6. Would the image still communicate the idea if the title were removed?
+7. Is the meaning stronger than the decoration?
+8. Does it feel unmistakably Synottic?
+9. Is white the dominant visual experience?
+10. Is the teal subtle enough to feel premium?
+If any answer is NO, rethink the visual concept before generating the final image.
+AVOID
+No text, words, letters, numbers, logos, watermarks, UI screenshots, robots, humanoid AI, brains, circuit boards, holograms, matrix code, sci-fi environments, neon effects, dark backgrounds, heavy gradients, generic AI icons, stock-art aesthetics, visual clutter, or decorative elements without meaning.
+FORMAT: 16:9 premium Synottic website hero illustration.
+
+
+
+
+
+--------------------
+---------------------
+
+
+
+Absolutely. If you want **pure illustration + visualisation + infographic**, I would remove the photographic/editorial language and make the prompt explicitly tell the model to **turn the meaning into a visual information system**.
+
+The important shift is:
+
+**TEXT → THINK → STRUCTURE → VISUALIZE → ILLUSTRATE**
+
+Here is the updated version:
+
+# SYNOTTIC INTELLIGENT VISUAL GENERATOR
+
+Create a premium **Synottic illustration, visualisation, and infographic** based only on:
+
+**INPUT:**
+[PASTE TEXT HERE]
+
+---
+
+## 1. UNDERSTAND THE INPUT
+
+Before creating the visual, silently identify:
+
+**WHO** → Who is involved?
+**ACTION** → What are they doing?
+**PURPOSE** → Why?
+**PROBLEM** → What challenge exists?
+**CHANGE** → What is being assessed, improved, or transformed?
+**OUTCOME** → What does success look like?
+**FUTURE** → What becomes possible?
+
+---
+
+## 2. THINK VISUALLY
+
+Convert the meaning into **visual information**, not decorative artwork.
+
+Ask:
+
+> "If I could explain this entire message using only illustration, shapes, relationships, movement, and visual hierarchy, what would I create?"
+
+Choose the strongest visual structure:
+
+* **Process** → visual journey or sequential flow
+* **Assessment** → evaluation, comparison, checkpoints, readiness levels
+* **Transformation** → before → change → after
+* **Capability** → progression, growth, development
+* **Strategy** → pathways, alignment, direction
+* **Governance** → connected structure, safeguards, control
+* **Collaboration** → people, relationships, connected elements
+* **AI adoption** → people progressing toward AI-enabled work
+
+Do not mechanically use these patterns. Choose the structure that best explains the actual input.
+
+---
+
+## 3. CREATE ONE VISUAL STORY
+
+Build the visual around:
+
+**CORE IDEA → RELATIONSHIP → ACTION → OUTCOME**
+
+The viewer should understand the meaning **without reading the original input**.
+
+Use:
+
+**One dominant visual concept + supporting infographic elements.**
+
+Do not create unrelated symbols or decorative objects.
+
+Every visual element must communicate information.
+
+---
+
+## 4. PURE ILLUSTRATION STYLE
+
+Create a **pure conceptual editorial illustration**, not photography.
+
+Use:
+
+* Clean vector-like illustration
+* Sophisticated geometric forms
+* Human figures with natural poses
+* Visual metaphors
+* Diagrams
+* Connected pathways
+* Progress indicators
+* Layers
+* Nodes
+* Containers
+* Arrows and directional movement when useful
+* Abstract but recognizable objects
+* Subtle paper, acrylic, and frosted-glass textures
+* Soft dimensional shadows
+* Refined linework
+* Elegant visual hierarchy
+
+The illustration should feel **intelligent, premium, human, and contemporary**.
+
+---
+
+## 5. INFOGRAPHIC INTELLIGENCE
+
+When the input contains multiple concepts, relationships, stages, dimensions, or steps, automatically organize them into an **infographic structure**.
+
+Choose the most appropriate structure:
+
+**Journey / Flow / Cycle / Framework / Comparison / Layered System / Ecosystem / Pyramid / Matrix / Progression**
+
+Do not use an infographic structure unless it improves understanding.
+
+**Meaning always comes before design.**
+
+---
+
+# SYNOTTIC VISUAL SYSTEM
+
+Maintain the same visual identity across every image.
+
+### Background
+
+Use an **ultra-light white-first background**.
+
+Create a barely visible:
+
+**WHITE → ULTRA-PALE TEAL → WHITE**
+
+atmosphere.
+
+The teal should feel like a subtle glass reflection or soft natural light.
+
+Never create a teal-colored background.
+
+Keep large areas and corners almost pure white.
+
+### COLORS
+
+**Synottic Navy:** #022A4B
+**Synottic Teal:** #03C9B1
+**Human Coral:** #FF904B
+**Deep Navy:** #011D35
+**Ink:** #132A3A
+**Slate:** #526575
+**Cloud:** #F4F8FA
+**Warm White:** #FCFBF8
+**White:** #FFFFFF
+
+### COLOR BALANCE
+
+Approximately:
+
+**80% White / 10% Neutral / 7% Navy / 2% Teal / 1% Coral**
+
+White dominates.
+
+Navy creates structure.
+
+Teal creates connection and highlights.
+
+Coral is used only for a tiny focal accent.
+
+---
+
+## 6. HUMAN-CENTRED VISUAL LANGUAGE
+
+Prioritize:
+
+**HUMAN → PURPOSE → INTELLIGENCE → TECHNOLOGY**
+
+People should be meaningful parts of the illustration.
+
+If people are relevant to the input, show them **doing something**, not simply standing.
+
+Technology should support the concept, not dominate it.
+
+---
+
+## 7. VISUAL HIERARCHY
+
+Use three levels:
+
+**PRIMARY**
+The main concept or story.
+
+**SECONDARY**
+Supporting relationships, stages, people, or outcomes.
+
+**TERTIARY**
+Subtle geometric, material, and decorative details.
+
+Keep the visual simple enough to understand immediately.
+
+---
+
+## 8. SYNOTTIC CONSISTENCY
+
+When the input changes:
+
+**KEEP:**
+
+* White-first background
+* Ultra-light teal atmosphere
+* Synottic palette
+* Illustration language
+* Geometric style
+* Material language
+* Line quality
+* Shadow treatment
+* Visual sophistication
+* Premium aesthetic
+
+**CHANGE:**
+
+* People
+* Actions
+* Objects
+* Metaphor
+* Information structure
+* Relationships
+* Progression
+* Visual story
+
+Every image should look like it belongs to the **same Synottic visual system**, while communicating a unique idea.
+
+---
+
+## 9. FINAL VISUAL TEST
+
+Before generating the final image, silently check:
+
+**Does the illustration clearly communicate the input?**
+
+**Can the viewer understand the main idea without text?**
+
+**Is the information organized visually?**
+
+**Is there one dominant concept?**
+
+**Are the relationships between elements clear?**
+
+**Are people doing something meaningful?**
+
+**Is the infographic structure helping understanding rather than adding clutter?**
+
+**Is the Synottic identity clearly visible?**
+
+**Is white dominant and teal extremely subtle?**
+
+If not, redesign the visual before generating.
+
+---
+
+## AVOID
+
+No photography.
+
+No photorealism.
+
+No text.
+
+No words.
+
+No letters.
+
+No numbers.
+
+No logos.
+
+No watermarks.
+
+No UI screenshots.
+
+No robots.
+
+No humanoid AI.
+
+No glowing brains.
+
+No circuit-board clichés.
+
+No holograms.
+
+No sci-fi.
+
+No neon.
+
+No dark backgrounds.
+
+No heavy gradients.
+
+No generic AI icons.
+
+No random decorative elements.
+
+No visual clutter.
+
+**FORMAT:** 16:9 premium Synottic illustration + visualisation + infographic.
+
+**INPUT:**
+[PASTE TEXT HERE]
 
