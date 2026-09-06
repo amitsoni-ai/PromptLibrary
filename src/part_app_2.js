@@ -103,6 +103,8 @@ function programPromptIds(programId) {
   const prog = ORG_INDEX.programs[programId];
   if (!prog) return [];
   const ids = new Set();
+  const flag = (typeof PROGRAM_FLAGSHIP !== "undefined") && PROGRAM_FLAGSHIP[programId];
+  if (flag) ids.add(flag);
   (prog.modules || []).forEach((m) => (MODULE_PROMPTS[m.id] || []).forEach((id) => ids.add(id)));
   return Array.from(ids);
 }
@@ -116,6 +118,10 @@ function scopedLibrary() {
     if (!cats || cats.size === 0) return ALL_PROMPTS;
     const linked = new Set();
     (s.programIds || []).forEach((pid) => programPromptIds(pid).forEach((id) => linked.add(id)));
+    (s.functions || []).forEach((f) => {
+      const p = (typeof FUNCTIONS !== "undefined" && FUNCTIONS[f]) ? FUNCTIONS[f].program : null;
+      if (p) programPromptIds(p).forEach((id) => linked.add(id));
+    });
     return ALL_PROMPTS.filter((r) => cats.has(r.category) || linked.has(r.id));
   }
   const sc = currentScope();

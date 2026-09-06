@@ -514,13 +514,22 @@ document.addEventListener("keydown", (e) => {
 });
 
 /* ---------- Init ---------- */
+let CURRICULUM_PROMPTS = [];
+let PROGRAM_FLAGSHIP = {};
 function loadData() {
   ALL_PROMPTS = JSON.parse(document.getElementById("data-prompts").textContent);
   CATEGORIES = JSON.parse(document.getElementById("data-categories").textContent);
   STATS = JSON.parse(document.getElementById("data-stats").textContent);
   ORG_MODEL = JSON.parse(document.getElementById("data-orgmodel").textContent);
   ORG_INDEX = buildOrgIndex(ORG_MODEL);
+  const curEl = document.getElementById("data-curriculum");
+  CURRICULUM_PROMPTS = curEl ? JSON.parse(curEl.textContent) : [];
+  // Synottic course-companion prompts join the central library as their own
+  // curated source layer (the Excel originals are never touched).
+  ALL_PROMPTS = ALL_PROMPTS.concat(CURRICULUM_PROMPTS);
   ALL_PROMPTS.forEach((r) => { enrichRecord(r); ALL_PROMPTS_BY_ID[r.id] = r; });
+  PROGRAM_FLAGSHIP = {};
+  CURRICULUM_PROMPTS.forEach((r) => { if (r.programId) PROGRAM_FLAGSHIP[r.programId] = r.id; });
   resolveModulePrompts();
 }
 async function bootApp() {

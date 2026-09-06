@@ -312,8 +312,10 @@ function renderDrawer(rec) {
   const body = root.querySelector("#drawer-body");
   body.innerHTML = detailBodyHtml(rec);
   requestAnimationFrame(() => {
-    root.querySelector("#detail-overlay").classList.add("show");
-    root.querySelector("#detail-drawer").classList.add("show");
+    const ov = root.querySelector("#detail-overlay");
+    const dr = root.querySelector("#detail-drawer");
+    if (ov) ov.classList.add("show");
+    if (dr) dr.classList.add("show");
   });
   root.querySelector("#detail-overlay").addEventListener("click", closeDetail);
   root.querySelector("#drawer-close").addEventListener("click", closeDetail);

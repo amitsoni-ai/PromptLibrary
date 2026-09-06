@@ -20,6 +20,31 @@ git push origin main
 Then vercel.com → Add New Project → import `amitsoni-ai/PromptLibrary` → deploy. Root `index.html`
 is picked up automatically.
 
+## Synottic course catalogue
+
+`src/curriculum.py` holds the Synottic AI Institute course catalogue (7 tracks, 44 courses,
+sourced from the OneDrive `AI Course Curriculum` folder). Running it regenerates:
+
+- `part_orgmodel.json` — the 44 courses as programs (`prog-syn-*`), each with a house
+  Learn -> Demonstrate -> Practice -> Apply module set and category rules.
+- `part_curriculum.json` — one **Course Companion Prompt** per course (`crs-*`, source
+  "Synottic Curriculum"): a reusable template that turns any in-scope task into a governed,
+  step-by-step AI workflow with the exact prompts to run. These join the central library as a
+  separate curated layer — the 3,367 Excel originals are never touched.
+- `part_admin_seed.json` — one editable admin access code per track
+  (`SYNOTTIC-FUNCTIONS`, `SYNOTTIC-LEADERS`, `SYNOTTIC-TOOLS`, `SYNOTTIC-ESSENTIALS`,
+  `SYNOTTIC-WORK`, `SYNOTTIC-GOVERNANCE`, `SYNOTTIC-AGENTIC`), each mapped to every course in
+  that track with full-library access. AdminStore merges these on first run.
+
+The admin console's **Functions** list is the 13 Synottic "AI for Functions" functions
+(Sales, Marketing, HR, L&D, Finance & Accounting, Legal & Compliance, IT & Engineering,
+Product Management, Project & Program Management, Customer Service, Data & Business Analysis,
+Operations & Supply Chain, Procurement), each carrying its target roles (from the course
+outlines) and the library categories + course program it draws prompts from.
+
+To change the catalogue: edit the `CATALOGUE` dict in `src/curriculum.py`, then
+`python3 curriculum.py && python3 build.py`.
+
 ## Admin console
 
 Open it from the "Admin console →" link on the sign-in screen. Default admin key: `SYNOTTIC-ADMIN`

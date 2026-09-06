@@ -1,0 +1,151 @@
+[
+  {
+    "id": "seed-ai-essentials",
+    "code": "SYNOTTIC-ESSENTIALS",
+    "orgName": "Synottic AI Institute",
+    "domain": "synottic.com",
+    "industry": "Education",
+    "functions": [],
+    "roles": [],
+    "programIds": [
+      "prog-syn-ai-literacy-essentials",
+      "prog-syn-advance-ai-literacy",
+      "prog-syn-genai-essentials",
+      "prog-syn-ai-security-responsible-use"
+    ],
+    "fullLibrary": true,
+    "enabled": true,
+    "note": "AI Essentials track \u2014 all courses",
+    "createdAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "id": "seed-ai-at-work",
+    "code": "SYNOTTIC-WORK",
+    "orgName": "Synottic AI Institute",
+    "domain": "synottic.com",
+    "industry": "Education",
+    "functions": [],
+    "roles": [],
+    "programIds": [
+      "prog-syn-advanced-prompt-context",
+      "prog-syn-data-analysis-decision",
+      "prog-syn-productivity-at-work",
+      "prog-syn-deep-research",
+      "prog-syn-genai-tools-mastery",
+      "prog-syn-prompt-engineering-mastery"
+    ],
+    "fullLibrary": true,
+    "enabled": true,
+    "note": "AI at Work track \u2014 all courses",
+    "createdAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "id": "seed-ai-tools",
+    "code": "SYNOTTIC-TOOLS",
+    "orgName": "Synottic AI Institute",
+    "domain": "synottic.com",
+    "industry": "Education",
+    "functions": [],
+    "roles": [],
+    "programIds": [
+      "prog-syn-chatgpt-mastery",
+      "prog-syn-claude-mastery",
+      "prog-syn-gemini-mastery",
+      "prog-syn-copilot-mastery",
+      "prog-syn-perplexity-mastery",
+      "prog-syn-notebooklm-mastery",
+      "prog-syn-grok-mastery",
+      "prog-syn-deepseek-mastery",
+      "prog-syn-ai-productivity-stack"
+    ],
+    "fullLibrary": true,
+    "enabled": true,
+    "note": "AI Tools track \u2014 all courses",
+    "createdAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "id": "seed-ai-for-leaders",
+    "code": "SYNOTTIC-LEADERS",
+    "orgName": "Synottic AI Institute",
+    "domain": "synottic.com",
+    "industry": "Education",
+    "functions": [],
+    "roles": [],
+    "programIds": [
+      "prog-syn-business-leaders",
+      "prog-syn-executives-mastery",
+      "prog-syn-leaders",
+      "prog-syn-people-managers"
+    ],
+    "fullLibrary": true,
+    "enabled": true,
+    "note": "AI for Leaders track \u2014 all courses",
+    "createdAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "id": "seed-ai-for-functions",
+    "code": "SYNOTTIC-FUNCTIONS",
+    "orgName": "Synottic AI Institute",
+    "domain": "synottic.com",
+    "industry": "Education",
+    "functions": [],
+    "roles": [],
+    "programIds": [
+      "prog-syn-sales",
+      "prog-syn-marketing",
+      "prog-syn-hr",
+      "prog-syn-ld",
+      "prog-syn-finance",
+      "prog-syn-legal",
+      "prog-syn-it-eng",
+      "prog-syn-product",
+      "prog-syn-ppm",
+      "prog-syn-customer-service",
+      "prog-syn-data-analyst",
+      "prog-syn-operations",
+      "prog-syn-procurement"
+    ],
+    "fullLibrary": true,
+    "enabled": true,
+    "note": "AI for Functions track \u2014 all courses",
+    "createdAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "id": "seed-responsible-ai-governance",
+    "code": "SYNOTTIC-GOVERNANCE",
+    "orgName": "Synottic AI Institute",
+    "domain": "synottic.com",
+    "industry": "Education",
+    "functions": [],
+    "roles": [],
+    "programIds": [
+      "prog-syn-responsible-ai-essentials",
+      "prog-syn-ai-risk-governance-leaders",
+      "prog-syn-ai-governance-practitioner",
+      "prog-syn-enterprise-ai-governance"
+    ],
+    "fullLibrary": true,
+    "enabled": true,
+    "note": "Responsible AI & Governance track \u2014 all courses",
+    "createdAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "id": "seed-agentic-ai",
+    "code": "SYNOTTIC-AGENTIC",
+    "orgName": "Synottic AI Institute",
+    "domain": "synottic.com",
+    "industry": "Education",
+    "functions": [],
+    "roles": [],
+    "programIds": [
+      "prog-syn-ai-agents-essentials",
+      "prog-syn-ai-agent-builder",
+      "prog-syn-advanced-agentic-ai",
+      "prog-syn-enterprise-agentic-ai"
+    ],
+    "fullLibrary": true,
+    "enabled": true,
+    "note": "Agentic AI track \u2014 all courses",
+    "createdAt": "2026-09-01T00:00:00.000Z"
+  }
+]

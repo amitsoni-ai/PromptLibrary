@@ -18,24 +18,23 @@ const INDUSTRIES = [
   "Hospitality & Travel", "Agriculture", "Other",
 ];
 
-/* function name -> { categories in the 28-category library, representative roles } */
+/* The Synottic "AI for Functions" catalogue. Each function ->
+   { library categories it draws prompts from, target roles (from the
+   course outlines), and the matching Synottic program id }. */
 const FUNCTIONS = {
-  "Leadership & Strategy": { categories: ["Business Strategy", "Communication & Leadership"], roles: ["Founder / CEO", "COO", "Chief of Staff", "VP / Director", "Team Lead", "Board Member"] },
-  "Sales": { categories: ["Sales & Lead Generation", "Communication & Leadership"], roles: ["SDR / BDR", "Account Executive", "Sales Manager", "Sales Enablement", "RevOps", "Customer Success Manager"] },
-  "Marketing": { categories: ["Marketing & Branding", "Social Media", "Email Marketing", "SEO & Analytics"], roles: ["Content Marketer", "Brand Manager", "Growth Marketer", "SEO Specialist", "Social Media Manager", "Lifecycle / Email Marketer", "Marketing Ops", "PR / Comms"] },
-  "Product": { categories: ["Product Management", "UX/UI Design", "Research & Data Analysis"], roles: ["Product Manager", "Product Owner", "UX Researcher", "Product Designer", "Product Marketing"] },
-  "Engineering & Tech": { categories: ["Coding & Tech", "Productivity & Automation", "AI & Prompt Engineering"], roles: ["Software Engineer", "Engineering Manager", "DevOps / SRE", "QA Engineer", "Data Engineer", "Solutions Architect"] },
-  "Customer Support": { categories: ["Customer Support"], roles: ["Support Agent", "Support Team Lead", "CX Manager", "Knowledge Base Manager"] },
-  "People & HR": { categories: ["HR & Recruiting", "Career Growth", "Coaching & Self-Development"], roles: ["Recruiter", "HR Business Partner", "L&D Manager", "People Ops", "Hiring Manager", "Compensation & Benefits"] },
-  "Finance": { categories: ["Finance & Accounting"], roles: ["Financial Analyst", "FP&A", "Controller", "Accountant", "Procurement"] },
-  "Operations": { categories: ["Productivity & Automation", "Business Strategy"], roles: ["Operations Manager", "Program Manager", "BizOps", "Supply Chain"] },
-  "Legal & Compliance": { categories: ["Legal & Compliance"], roles: ["Legal Counsel", "Compliance Officer", "Contracts Manager", "Privacy / DPO"] },
-  "Data & Research": { categories: ["Research & Data Analysis", "SEO & Analytics"], roles: ["Data Analyst", "Data Scientist", "Market Researcher", "Insights Manager", "BI Analyst"] },
-  "Content & Communications": { categories: ["Content Writing & Copywriting", "Book & Ebook Writing", "Presentation & Slides"], roles: ["Copywriter", "Content Strategist", "Technical Writer", "Editor", "Communications Manager"] },
-  "E-Commerce": { categories: ["E-Commerce", "Marketing & Branding"], roles: ["Ecommerce Manager", "Merchandiser", "Catalogue Manager", "Marketplace Specialist"] },
-  "Education & Training": { categories: ["Education & Learning", "Coaching & Self-Development"], roles: ["Instructional Designer", "Trainer / Facilitator", "Curriculum Developer", "Learning Experience Designer"] },
-  "Health & Wellbeing": { categories: ["Health & Fitness", "Spirituality & Wellness"], roles: ["Wellness Coach", "Health Practitioner", "Fitness Professional"] },
-  "General / Cross-functional": { categories: ["General", "AI & Prompt Engineering", "Productivity & Automation"], roles: ["Individual Contributor", "People Manager", "Executive Assistant", "Consultant"] },
+  "Sales": { program: "prog-syn-sales", categories: ["Sales & Lead Generation", "Communication & Leadership", "Email Marketing"], roles: ["Chief Sales Officer", "Sales Director", "Sales Manager", "Business Development Manager", "Account Manager", "Key Account Manager", "Sales Executive", "Inside Sales", "Enterprise Sales", "Customer Success Manager", "Pre-Sales Consultant", "Sales Operations", "Revenue Operations (RevOps)"] },
+  "Marketing": { program: "prog-syn-marketing", categories: ["Marketing & Branding", "Social Media", "Email Marketing", "SEO & Analytics", "Content Writing & Copywriting"], roles: ["CMO", "Marketing Director", "Brand Manager", "Content Marketer", "Growth Marketer", "SEO Specialist", "Social Media Manager", "Lifecycle / Email Marketer", "Marketing Operations", "Product Marketer", "PR & Communications"] },
+  "HR": { program: "prog-syn-hr", categories: ["HR & Recruiting", "Career Growth", "Coaching & Self-Development", "Communication & Leadership"], roles: ["HR Director", "HR Manager", "Talent Acquisition Specialist", "Recruiter", "HR Business Partner", "Talent Management", "Employee Experience Team", "Organisational Development", "People Analytics Specialist", "HR Operations"] },
+  "L&D": { program: "prog-syn-ld", categories: ["Education & Learning", "Coaching & Self-Development", "HR & Recruiting"], roles: ["L&D Director", "L&D Manager", "Instructional Designer", "Learning Experience Designer", "Corporate Trainer", "Facilitator", "Capability Building Lead", "Talent Development Partner"] },
+  "Finance & Accounting": { program: "prog-syn-finance", categories: ["Finance & Accounting", "Research & Data Analysis"], roles: ["CFO", "Finance Director", "Financial Controller", "FP&A Analyst", "Accountant", "Management Accountant", "Treasury", "Finance Business Partner", "Audit & Assurance"] },
+  "Legal & Compliance": { program: "prog-syn-legal", categories: ["Legal & Compliance"], roles: ["General Counsel", "Legal Counsel", "Contracts Manager", "Compliance Officer", "Privacy / DPO", "Company Secretary", "Paralegal", "Regulatory Affairs"] },
+  "IT & Engineering": { program: "prog-syn-it-eng", categories: ["Coding & Tech", "Productivity & Automation", "AI & Prompt Engineering"], roles: ["CTO", "Engineering Manager", "Software Engineer", "DevOps / SRE", "QA Engineer", "Solutions Architect", "IT Support Lead", "Platform Engineer", "Security Engineer"] },
+  "Product Management": { program: "prog-syn-product", categories: ["Product Management", "UX/UI Design", "Research & Data Analysis"], roles: ["Head of Product", "Product Manager", "Product Owner", "Technical Product Manager", "Product Marketing Manager", "UX Researcher", "Product Designer", "Product Operations"] },
+  "Project & Program Management": { program: "prog-syn-ppm", categories: ["Business Strategy", "Productivity & Automation", "Communication & Leadership"], roles: ["Programme Director", "Project Manager", "Programme Manager", "Scrum Master", "Delivery Lead", "PMO Analyst", "Portfolio Manager", "Agile Coach"] },
+  "Customer Service": { program: "prog-syn-customer-service", categories: ["Customer Support"], roles: ["Head of Customer Support", "Support Team Lead", "Support Agent", "CX Manager", "Knowledge Base Manager", "Quality Analyst", "Community Manager"] },
+  "Data & Business Analysis": { program: "prog-syn-data-analyst", categories: ["Research & Data Analysis", "SEO & Analytics"], roles: ["Head of Analytics", "Data Analyst", "Business Analyst", "BI Analyst", "Data Scientist", "Insights Manager", "Reporting Analyst"] },
+  "Operations & Supply Chain": { program: "prog-syn-operations", categories: ["Productivity & Automation", "Business Strategy"], roles: ["COO", "Operations Director", "Operations Manager", "Supply Chain Manager", "Logistics Manager", "Process Improvement Lead", "S&OP Planner", "Warehouse Manager"] },
+  "Procurement": { program: "prog-syn-procurement", categories: ["Finance & Accounting", "Legal & Compliance", "Business Strategy"], roles: ["CPO", "Procurement Director", "Procurement Manager", "Category Manager", "Buyer", "Sourcing Specialist", "Vendor Manager", "Contracts & Compliance Analyst"] },
 };
 const FUNCTION_NAMES = Object.keys(FUNCTIONS);
 const CATEGORY_TO_FUNCTIONS = (function () {
@@ -66,6 +65,17 @@ const AdminStore = (function () {
     }
     if (!db) { try { const v = localStorage.getItem("prompt-lib:admin"); if (v) cfg = Object.assign(cfg, JSON.parse(v)); } catch (e) {} }
     if (!Array.isArray(cfg.codes)) cfg.codes = [];
+    // Merge built-in seed codes (one per Synottic track) that aren't present yet.
+    try {
+      const el = document.getElementById("data-admin-seed");
+      if (el) {
+        const seed = JSON.parse(el.textContent);
+        const have = new Set(cfg.codes.map((c) => c.code.toUpperCase()));
+        let added = false;
+        seed.forEach((s) => { if (!have.has(s.code.toUpperCase())) { cfg.codes.push(s); added = true; } });
+        if (added) persist();
+      }
+    } catch (e) {}
   }
   function persist() {
     if (db) db.doc("admin/config").set(cfg).catch(() => {});
@@ -100,6 +110,8 @@ function promptsForSelection(sel) {
   const cats = categoriesForFunctions(fns);
   const linked = new Set();
   programIds.forEach((pid) => programPromptIds(pid).forEach((id) => linked.add(id)));
+  // each selected function also carries its Synottic course program
+  fns.forEach((f) => { const p = FUNCTIONS[f] && FUNCTIONS[f].program; if (p) programPromptIds(p).forEach((id) => linked.add(id)); });
 
   if (programIds.length && cats.size) {
     list = list.filter((r) => linked.has(r.id) || cats.has(r.category));

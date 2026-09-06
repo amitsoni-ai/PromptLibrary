@@ -1,0 +1,3086 @@
+[
+  {
+    "id": "crs-ai-literacy-essentials",
+    "sourceNumber": null,
+    "title": "AI Literacy Essentials \u2014 Course Companion Prompt",
+    "originalTitle": "AI Literacy Essentials \u2014 Course Companion Prompt",
+    "category": "AI & Prompt Engineering",
+    "description": "A reusable prompt for learners on the AI Literacy Essentials program: turns any task in scope into an AI-assisted, governed workflow with the exact prompts to run.",
+    "useCase": "Use on the AI Literacy Essentials program whenever you have a real task and want a step-by-step AI workflow, the prompts to run, and the Responsible-AI checks for it.",
+    "originalPrompt": "Role: Act as a senior AI practitioner and AI enablement coach trained in Synottic's Learn -> Demonstrate -> Practice -> Apply method.\n\nObjective: Help me apply AI to ai literacy essentials for my organisation.\n\nContext I will provide:\n- My role: [ROLE]\n- Team / organisation: [ORGANISATION] in the [INDUSTRY] industry\n- The task or decision in front of me: [TASK]\n- Constraints (tools available, data I can use, policy, tone): [CONSTRAINTS]\n\nWhat to do:\n1. Restate, in one line, the business outcome this task should move.\n2. Give me a step-by-step, AI-assisted workflow to get it done, organised around these stages: understand the goal, draft with AI, pressure-test the output, and finalise for use.\n3. For each step, give the exact prompt I should run next, with [placeholders] for my inputs.\n4. Call out the Responsible-AI checks I must not skip for this task (confidentiality, personal data, bias, and where a human must review before anything goes out).\n5. Finish with two concrete ways I can measure whether it worked.\n\nOutput format: a numbered workflow. For each step show: goal | prompt to run | what to watch out for. Keep it specific enough to use today.",
+    "promptType": "Workflow",
+    "role": "Individual Contributor",
+    "outcome": "A step-by-step AI-assisted workflow with ready-to-run prompts and Responsible-AI checks",
+    "aiTool": "General AI",
+    "variables": [
+      "ROLE",
+      "ORGANISATION",
+      "INDUSTRY",
+      "TASK",
+      "CONSTRAINTS"
+    ],
+    "variablesRaw": [
+      "[ROLE]",
+      "[ORGANISATION]",
+      "[INDUSTRY]",
+      "[TASK]",
+      "[CONSTRAINTS]"
+    ],
+    "isTemplate": true,
+    "tags": [
+      "Synottic",
+      "curriculum",
+      "AI Essentials",
+      "Literacy",
+      "Essentials"
+    ],
+    "qualityScore": 92,
+    "qualityBreakdown": {
+      "clarity": 92,
+      "context": 88,
+      "specificity": 84,
+      "outputDefinition": 95,
+      "reusability": 96
+    },
+    "strengths": [
+      "Explicit role and method",
+      "Asks for real context via placeholders",
+      "Defines the output shape precisely",
+      "Builds in Responsible-AI checks"
+    ],
+    "improvements": [],
+    "flags": {
+      "modelSpecific": false,
+      "containsWebSearch": false,
+      "containsInteractiveQuestioning": false,
+      "embeddedMetadata": false,
+      "incompleteTitle": false,
+      "hasOutputCue": true
+    },
+    "source": "Synottic Curriculum",
+    "programId": "prog-syn-ai-literacy-essentials",
+    "track": "AI Essentials",
+    "version": "1.0",
+    "sensitiveCategory": false,
+    "duplicateGroup": null,
+    "healthStatus": "Excellent",
+    "healthReasons": [],
+    "difficulty": "Intermediate",
+    "skill": null,
+    "lifecycle": "Recommended"
+  },
+  {
+    "id": "crs-advance-ai-literacy",
+    "sourceNumber": null,
+    "title": "Advance AI Literacy \u2014 Course Companion Prompt",
+    "originalTitle": "Advance AI Literacy \u2014 Course Companion Prompt",
+    "category": "AI & Prompt Engineering",
+    "description": "A reusable prompt for learners on the Advance AI Literacy program: turns any task in scope into an AI-assisted, governed workflow with the exact prompts to run.",
+    "useCase": "Use on the Advance AI Literacy program whenever you have a real task and want a step-by-step AI workflow, the prompts to run, and the Responsible-AI checks for it.",
+    "originalPrompt": "Role: Act as a senior AI practitioner and AI enablement coach trained in Synottic's Learn -> Demonstrate -> Practice -> Apply method.\n\nObjective: Help me apply AI to advance ai literacy for my organisation.\n\nContext I will provide:\n- My role: [ROLE]\n- Team / organisation: [ORGANISATION] in the [INDUSTRY] industry\n- The task or decision in front of me: [TASK]\n- Constraints (tools available, data I can use, policy, tone): [CONSTRAINTS]\n\nWhat to do:\n1. Restate, in one line, the business outcome this task should move.\n2. Give me a step-by-step, AI-assisted workflow to get it done, organised around these stages: understand the goal, draft with AI, pressure-test the output, and finalise for use.\n3. For each step, give the exact prompt I should run next, with [placeholders] for my inputs.\n4. Call out the Responsible-AI checks I must not skip for this task (confidentiality, personal data, bias, and where a human must review before anything goes out).\n5. Finish with two concrete ways I can measure whether it worked.\n\nOutput format: a numbered workflow. For each step show: goal | prompt to run | what to watch out for. Keep it specific enough to use today.",
+    "promptType": "Workflow",
+    "role": "Individual Contributor",
+    "outcome": "A step-by-step AI-assisted workflow with ready-to-run prompts and Responsible-AI checks",
+    "aiTool": "General AI",
+    "variables": [
+      "ROLE",
+      "ORGANISATION",
+      "INDUSTRY",
+      "TASK",
+      "CONSTRAINTS"
+    ],
+    "variablesRaw": [
+      "[ROLE]",
+      "[ORGANISATION]",
+      "[INDUSTRY]",
+      "[TASK]",
+      "[CONSTRAINTS]"
+    ],
+    "isTemplate": true,
+    "tags": [
+      "Synottic",
+      "curriculum",
+      "AI Essentials",
+      "Advance",
+      "Literacy"
+    ],
+    "qualityScore": 92,
+    "qualityBreakdown": {
+      "clarity": 92,
+      "context": 88,
+      "specificity": 84,
+      "outputDefinition": 95,
+      "reusability": 96
+    },
+    "strengths": [
+      "Explicit role and method",
+      "Asks for real context via placeholders",
+      "Defines the output shape precisely",
+      "Builds in Responsible-AI checks"
+    ],
+    "improvements": [],
+    "flags": {
+      "modelSpecific": false,
+      "containsWebSearch": false,
+      "containsInteractiveQuestioning": false,
+      "embeddedMetadata": false,
+      "incompleteTitle": false,
+      "hasOutputCue": true
+    },
+    "source": "Synottic Curriculum",
+    "programId": "prog-syn-advance-ai-literacy",
+    "track": "AI Essentials",
+    "version": "1.0",
+    "sensitiveCategory": false,
+    "duplicateGroup": null,
+    "healthStatus": "Excellent",
+    "healthReasons": [],
+    "difficulty": "Intermediate",
+    "skill": null,
+    "lifecycle": "Recommended"
+  },
+  {
+    "id": "crs-genai-essentials",
+    "sourceNumber": null,
+    "title": "Generative AI Essentials \u2014 Course Companion Prompt",
+    "originalTitle": "Generative AI Essentials \u2014 Course Companion Prompt",
+    "category": "AI & Prompt Engineering",
+    "description": "A reusable prompt for learners on the Generative AI Essentials program: turns any task in scope into an AI-assisted, governed workflow with the exact prompts to run.",
+    "useCase": "Use on the Generative AI Essentials program whenever you have a real task and want a step-by-step AI workflow, the prompts to run, and the Responsible-AI checks for it.",
+    "originalPrompt": "Role: Act as a senior AI practitioner and AI enablement coach trained in Synottic's Learn -> Demonstrate -> Practice -> Apply method.\n\nObjective: Help me apply AI to generative ai essentials for my organisation.\n\nContext I will provide:\n- My role: [ROLE]\n- Team / organisation: [ORGANISATION] in the [INDUSTRY] industry\n- The task or decision in front of me: [TASK]\n- Constraints (tools available, data I can use, policy, tone): [CONSTRAINTS]\n\nWhat to do:\n1. Restate, in one line, the business outcome this task should move.\n2. Give me a step-by-step, AI-assisted workflow to get it done, organised around these stages: understand the goal, draft with AI, pressure-test the output, and finalise for use.\n3. For each step, give the exact prompt I should run next, with [placeholders] for my inputs.\n4. Call out the Responsible-AI checks I must not skip for this task (confidentiality, personal data, bias, and where a human must review before anything goes out).\n5. Finish with two concrete ways I can measure whether it worked.\n\nOutput format: a numbered workflow. For each step show: goal | prompt to run | what to watch out for. Keep it specific enough to use today.",
+    "promptType": "Workflow",
+    "role": "Individual Contributor",
+    "outcome": "A step-by-step AI-assisted workflow with ready-to-run prompts and Responsible-AI checks",
+    "aiTool": "General AI",
+    "variables": [
+      "ROLE",
+      "ORGANISATION",
+      "INDUSTRY",
+      "TASK",
+      "CONSTRAINTS"
+    ],
+    "variablesRaw": [
+      "[ROLE]",
+      "[ORGANISATION]",
+      "[INDUSTRY]",
+      "[TASK]",
+      "[CONSTRAINTS]"
+    ],
+    "isTemplate": true,
+    "tags": [
+      "Synottic",
+      "curriculum",
+      "AI Essentials",
+      "Generative",
+      "Essentials"
+    ],
+    "qualityScore": 92,
+    "qualityBreakdown": {
+      "clarity": 92,
+      "context": 88,
+      "specificity": 84,
+      "outputDefinition": 95,
+      "reusability": 96
+    },
+    "strengths": [
+      "Explicit role and method",
+      "Asks for real context via placeholders",
+      "Defines the output shape precisely",
+      "Builds in Responsible-AI checks"
+    ],
+    "improvements": [],
+    "flags": {
+      "modelSpecific": false,
+      "containsWebSearch": false,
+      "containsInteractiveQuestioning": false,
+      "embeddedMetadata": false,
+      "incompleteTitle": false,
+      "hasOutputCue": true
+    },
+    "source": "Synottic Curriculum",
+    "programId": "prog-syn-genai-essentials",
+    "track": "AI Essentials",
+    "version": "1.0",
+    "sensitiveCategory": false,
+    "duplicateGroup": null,
+    "healthStatus": "Excellent",
+    "healthReasons": [],
+    "difficulty": "Intermediate",
+    "skill": null,
+    "lifecycle": "Recommended"
+  },
+  {
+    "id": "crs-ai-security-responsible-use",
+    "sourceNumber": null,
+    "title": "AI Security and Responsible Use \u2014 Course Companion Prompt",
+    "originalTitle": "AI Security and Responsible Use \u2014 Course Companion Prompt",
+    "category": "Legal & Compliance",
+    "description": "A reusable prompt for learners on the AI Security and Responsible Use program: turns any task in scope into an AI-assisted, governed workflow with the exact prompts to run.",
+    "useCase": "Use on the AI Security and Responsible Use program whenever you have a real task and want a step-by-step AI workflow, the prompts to run, and the Responsible-AI checks for it.",
+    "originalPrompt": "Role: Act as a senior AI practitioner and AI enablement coach trained in Synottic's Learn -> Demonstrate -> Practice -> Apply method.\n\nObjective: Help me apply AI to ai security and responsible use for my organisation.\n\nContext I will provide:\n- My role: [ROLE]\n- Team / organisation: [ORGANISATION] in the [INDUSTRY] industry\n- The task or decision in front of me: [TASK]\n- Constraints (tools available, data I can use, policy, tone): [CONSTRAINTS]\n\nWhat to do:\n1. Restate, in one line, the business outcome this task should move.\n2. Give me a step-by-step, AI-assisted workflow to get it done, organised around these stages: understand the goal, draft with AI, pressure-test the output, and finalise for use.\n3. For each step, give the exact prompt I should run next, with [placeholders] for my inputs.\n4. Call out the Responsible-AI checks I must not skip for this task (confidentiality, personal data, bias, and where a human must review before anything goes out).\n5. Finish with two concrete ways I can measure whether it worked.\n\nOutput format: a numbered workflow. For each step show: goal | prompt to run | what to watch out for. Keep it specific enough to use today.",
+    "promptType": "Workflow",
+    "role": "Individual Contributor",
+    "outcome": "A step-by-step AI-assisted workflow with ready-to-run prompts and Responsible-AI checks",
+    "aiTool": "General AI",
+    "variables": [
+      "ROLE",
+      "ORGANISATION",
+      "INDUSTRY",
+      "TASK",
+      "CONSTRAINTS"
+    ],
+    "variablesRaw": [
+      "[ROLE]",
+      "[ORGANISATION]",
+      "[INDUSTRY]",
+      "[TASK]",
+      "[CONSTRAINTS]"
+    ],
+    "isTemplate": true,
+    "tags": [
+      "Synottic",
+      "curriculum",
+      "AI Essentials",
+      "Security",
+      "Responsible"
+    ],
+    "qualityScore": 92,
+    "qualityBreakdown": {
+      "clarity": 92,
+      "context": 88,
+      "specificity": 84,
+      "outputDefinition": 95,
+      "reusability": 96
+    },
+    "strengths": [
+      "Explicit role and method",
+      "Asks for real context via placeholders",
+      "Defines the output shape precisely",
+      "Builds in Responsible-AI checks"
+    ],
+    "improvements": [],
+    "flags": {
+      "modelSpecific": false,
+      "containsWebSearch": false,
+      "containsInteractiveQuestioning": false,
+      "embeddedMetadata": false,
+      "incompleteTitle": false,
+      "hasOutputCue": true
+    },
+    "source": "Synottic Curriculum",
+    "programId": "prog-syn-ai-security-responsible-use",
+    "track": "AI Essentials",
+    "version": "1.0",
+    "sensitiveCategory": true,
+    "duplicateGroup": null,
+    "healthStatus": "Excellent",
+    "healthReasons": [],
+    "difficulty": "Intermediate",
+    "skill": null,
+    "lifecycle": "Recommended"
+  },
+  {
+    "id": "crs-advanced-prompt-context",
+    "sourceNumber": null,
+    "title": "Advanced Prompt and Context Engineering \u2014 Course Companion Prompt",
+    "originalTitle": "Advanced Prompt and Context Engineering \u2014 Course Companion Prompt",
+    "category": "AI & Prompt Engineering",
+    "description": "A reusable prompt for learners on the Advanced Prompt and Context Engineering program: turns any task in scope into an AI-assisted, governed workflow with the exact prompts to run.",
+    "useCase": "Use on the Advanced Prompt and Context Engineering program whenever you have a real task and want a step-by-step AI workflow, the prompts to run, and the Responsible-AI checks for it.",
+    "originalPrompt": "Role: Act as a senior AI practitioner and AI enablement coach trained in Synottic's Learn -> Demonstrate -> Practice -> Apply method.\n\nObjective: Help me apply AI to advanced prompt and context engineering for my organisation.\n\nContext I will provide:\n- My role: [ROLE]\n- Team / organisation: [ORGANISATION] in the [INDUSTRY] industry\n- The task or decision in front of me: [TASK]\n- Constraints (tools available, data I can use, policy, tone): [CONSTRAINTS]\n\nWhat to do:\n1. Restate, in one line, the business outcome this task should move.\n2. Give me a step-by-step, AI-assisted workflow to get it done, organised around these stages: understand the goal, draft with AI, pressure-test the output, and finalise for use.\n3. For each step, give the exact prompt I should run next, with [placeholders] for my inputs.\n4. Call out the Responsible-AI checks I must not skip for this task (confidentiality, personal data, bias, and where a human must review before anything goes out).\n5. Finish with two concrete ways I can measure whether it worked.\n\nOutput format: a numbered workflow. For each step show: goal | prompt to run | what to watch out for. Keep it specific enough to use today.",
+    "promptType": "Workflow",
+    "role": "Individual Contributor",
+    "outcome": "A step-by-step AI-assisted workflow with ready-to-run prompts and Responsible-AI checks",
+    "aiTool": "General AI",
+    "variables": [
+      "ROLE",
+      "ORGANISATION",
+      "INDUSTRY",
+      "TASK",
+      "CONSTRAINTS"
+    ],
+    "variablesRaw": [
+      "[ROLE]",
+      "[ORGANISATION]",
+      "[INDUSTRY]",
+      "[TASK]",
+      "[CONSTRAINTS]"
+    ],
+    "isTemplate": true,
+    "tags": [
+      "Synottic",
+      "curriculum",
+      "AI at Work",
+      "Advanced",
+      "Prompt",
+      "Context"
+    ],
+    "qualityScore": 92,
+    "qualityBreakdown": {
+      "clarity": 92,
+      "context": 88,
+      "specificity": 84,
+      "outputDefinition": 95,
+      "reusability": 96
+    },
+    "strengths": [
+      "Explicit role and method",
+      "Asks for real context via placeholders",
+      "Defines the output shape precisely",
+      "Builds in Responsible-AI checks"
+    ],
+    "improvements": [],
+    "flags": {
+      "modelSpecific": false,
+      "containsWebSearch": false,
+      "containsInteractiveQuestioning": false,
+      "embeddedMetadata": false,
+      "incompleteTitle": false,
+      "hasOutputCue": true
+    },
+    "source": "Synottic Curriculum",
+    "programId": "prog-syn-advanced-prompt-context",
+    "track": "AI at Work",
+    "version": "1.0",
+    "sensitiveCategory": false,
+    "duplicateGroup": null,
+    "healthStatus": "Excellent",
+    "healthReasons": [],
+    "difficulty": "Intermediate",
+    "skill": null,
+    "lifecycle": "Recommended"
+  },
+  {
+    "id": "crs-data-analysis-decision",
+    "sourceNumber": null,
+    "title": "AI for Data Analysis and Decision Support \u2014 Course Companion Prompt",
+    "originalTitle": "AI for Data Analysis and Decision Support \u2014 Course Companion Prompt",
+    "category": "Research & Data Analysis",
+    "description": "A reusable prompt for learners on the AI for Data Analysis and Decision Support program: turns any task in scope into an AI-assisted, governed workflow with the exact prompts to run.",
+    "useCase": "Use on the AI for Data Analysis and Decision Support program whenever you have a real task and want a step-by-step AI workflow, the prompts to run, and the Responsible-AI checks for it.",
+    "originalPrompt": "Role: Act as a senior AI practitioner and AI enablement coach trained in Synottic's Learn -> Demonstrate -> Practice -> Apply method.\n\nObjective: Help me apply AI to data analysis and decision support for my organisation.\n\nContext I will provide:\n- My role: [ROLE]\n- Team / organisation: [ORGANISATION] in the [INDUSTRY] industry\n- The task or decision in front of me: [TASK]\n- Constraints (tools available, data I can use, policy, tone): [CONSTRAINTS]\n\nWhat to do:\n1. Restate, in one line, the business outcome this task should move.\n2. Give me a step-by-step, AI-assisted workflow to get it done, organised around these stages: understand the goal, draft with AI, pressure-test the output, and finalise for use.\n3. For each step, give the exact prompt I should run next, with [placeholders] for my inputs.\n4. Call out the Responsible-AI checks I must not skip for this task (confidentiality, personal data, bias, and where a human must review before anything goes out).\n5. Finish with two concrete ways I can measure whether it worked.\n\nOutput format: a numbered workflow. For each step show: goal | prompt to run | what to watch out for. Keep it specific enough to use today.",
+    "promptType": "Workflow",
+    "role": "Individual Contributor",
+    "outcome": "A step-by-step AI-assisted workflow with ready-to-run prompts and Responsible-AI checks",
+    "aiTool": "General AI",
+    "variables": [
+      "ROLE",
+      "ORGANISATION",
+      "INDUSTRY",
+      "TASK",
+      "CONSTRAINTS"
+    ],
+    "variablesRaw": [
+      "[ROLE]",
+      "[ORGANISATION]",
+      "[INDUSTRY]",
+      "[TASK]",
+      "[CONSTRAINTS]"
+    ],
+    "isTemplate": true,
+    "tags": [
+      "Synottic",
+      "curriculum",
+      "AI at Work",
+      "Data",
+      "Analysis",
+      "Decision"
+    ],
+    "qualityScore": 92,
+    "qualityBreakdown": {
+      "clarity": 92,
+      "context": 88,
+      "specificity": 84,
+      "outputDefinition": 95,
+      "reusability": 96
+    },
+    "strengths": [
+      "Explicit role and method",
+      "Asks for real context via placeholders",
+      "Defines the output shape precisely",
+      "Builds in Responsible-AI checks"
+    ],
+    "improvements": [],
+    "flags": {
+      "modelSpecific": false,
+      "containsWebSearch": false,
+      "containsInteractiveQuestioning": false,
+      "embeddedMetadata": false,
+      "incompleteTitle": false,
+      "hasOutputCue": true
+    },
+    "source": "Synottic Curriculum",
+    "programId": "prog-syn-data-analysis-decision",
+    "track": "AI at Work",
+    "version": "1.0",
+    "sensitiveCategory": false,
+    "duplicateGroup": null,
+    "healthStatus": "Excellent",
+    "healthReasons": [],
+    "difficulty": "Intermediate",
+    "skill": null,
+    "lifecycle": "Recommended"
+  },
+  {
+    "id": "crs-productivity-at-work",
+    "sourceNumber": null,
+    "title": "AI Productivity at Work \u2014 Course Companion Prompt",
+    "originalTitle": "AI Productivity at Work \u2014 Course Companion Prompt",
+    "category": "Productivity & Automation",
+    "description": "A reusable prompt for learners on the AI Productivity at Work program: turns any task in scope into an AI-assisted, governed workflow with the exact prompts to run.",
+    "useCase": "Use on the AI Productivity at Work program whenever you have a real task and want a step-by-step AI workflow, the prompts to run, and the Responsible-AI checks for it.",
+    "originalPrompt": "Role: Act as a senior AI practitioner and AI enablement coach trained in Synottic's Learn -> Demonstrate -> Practice -> Apply method.\n\nObjective: Help me apply AI to ai productivity at work for my organisation.\n\nContext I will provide:\n- My role: [ROLE]\n- Team / organisation: [ORGANISATION] in the [INDUSTRY] industry\n- The task or decision in front of me: [TASK]\n- Constraints (tools available, data I can use, policy, tone): [CONSTRAINTS]\n\nWhat to do:\n1. Restate, in one line, the business outcome this task should move.\n2. Give me a step-by-step, AI-assisted workflow to get it done, organised around these stages: understand the goal, draft with AI, pressure-test the output, and finalise for use.\n3. For each step, give the exact prompt I should run next, with [placeholders] for my inputs.\n4. Call out the Responsible-AI checks I must not skip for this task (confidentiality, personal data, bias, and where a human must review before anything goes out).\n5. Finish with two concrete ways I can measure whether it worked.\n\nOutput format: a numbered workflow. For each step show: goal | prompt to run | what to watch out for. Keep it specific enough to use today.",
+    "promptType": "Workflow",
+    "role": "Individual Contributor",
+    "outcome": "A step-by-step AI-assisted workflow with ready-to-run prompts and Responsible-AI checks",
+    "aiTool": "General AI",
+    "variables": [
+      "ROLE",
+      "ORGANISATION",
+      "INDUSTRY",
+      "TASK",
+      "CONSTRAINTS"
+    ],
+    "variablesRaw": [
+      "[ROLE]",
+      "[ORGANISATION]",
+      "[INDUSTRY]",
+      "[TASK]",
+      "[CONSTRAINTS]"
+    ],
+    "isTemplate": true,
+    "tags": [
+      "Synottic",
+      "curriculum",
+      "AI at Work",
+      "Productivity",
+      "Work"
+    ],
+    "qualityScore": 92,
+    "qualityBreakdown": {
+      "clarity": 92,
+      "context": 88,
+      "specificity": 84,
+      "outputDefinition": 95,
+      "reusability": 96
+    },
+    "strengths": [
+      "Explicit role and method",
+      "Asks for real context via placeholders",
+      "Defines the output shape precisely",
+      "Builds in Responsible-AI checks"
+    ],
+    "improvements": [],
+    "flags": {
+      "modelSpecific": false,
+      "containsWebSearch": false,
+      "containsInteractiveQuestioning": false,
+      "embeddedMetadata": false,
+      "incompleteTitle": false,
+      "hasOutputCue": true
+    },
+    "source": "Synottic Curriculum",
+    "programId": "prog-syn-productivity-at-work",
+    "track": "AI at Work",
+    "version": "1.0",
+    "sensitiveCategory": false,
+    "duplicateGroup": null,
+    "healthStatus": "Excellent",
+    "healthReasons": [],
+    "difficulty": "Intermediate",
+    "skill": null,
+    "lifecycle": "Recommended"
+  },
+  {
+    "id": "crs-deep-research",
+    "sourceNumber": null,
+    "title": "AI Research and Deep Research \u2014 Course Companion Prompt",
+    "originalTitle": "AI Research and Deep Research \u2014 Course Companion Prompt",
+    "category": "Research & Data Analysis",
+    "description": "A reusable prompt for learners on the AI Research and Deep Research program: turns any task in scope into an AI-assisted, governed workflow with the exact prompts to run.",
+    "useCase": "Use on the AI Research and Deep Research program whenever you have a real task and want a step-by-step AI workflow, the prompts to run, and the Responsible-AI checks for it.",
+    "originalPrompt": "Role: Act as a senior AI practitioner and AI enablement coach trained in Synottic's Learn -> Demonstrate -> Practice -> Apply method.\n\nObjective: Help me apply AI to ai research and deep research for my organisation.\n\nContext I will provide:\n- My role: [ROLE]\n- Team / organisation: [ORGANISATION] in the [INDUSTRY] industry\n- The task or decision in front of me: [TASK]\n- Constraints (tools available, data I can use, policy, tone): [CONSTRAINTS]\n\nWhat to do:\n1. Restate, in one line, the business outcome this task should move.\n2. Give me a step-by-step, AI-assisted workflow to get it done, organised around these stages: understand the goal, draft with AI, pressure-test the output, and finalise for use.\n3. For each step, give the exact prompt I should run next, with [placeholders] for my inputs.\n4. Call out the Responsible-AI checks I must not skip for this task (confidentiality, personal data, bias, and where a human must review before anything goes out).\n5. Finish with two concrete ways I can measure whether it worked.\n\nOutput format: a numbered workflow. For each step show: goal | prompt to run | what to watch out for. Keep it specific enough to use today.",
+    "promptType": "Workflow",
+    "role": "Individual Contributor",
+    "outcome": "A step-by-step AI-assisted workflow with ready-to-run prompts and Responsible-AI checks",
+    "aiTool": "General AI",
+    "variables": [
+      "ROLE",
+      "ORGANISATION",
+      "INDUSTRY",
+      "TASK",
+      "CONSTRAINTS"
+    ],
+    "variablesRaw": [
+      "[ROLE]",
+      "[ORGANISATION]",
+      "[INDUSTRY]",
+      "[TASK]",
+      "[CONSTRAINTS]"
+    ],
+    "isTemplate": true,
+    "tags": [
+      "Synottic",
+      "curriculum",
+      "AI at Work",
+      "Research",
+      "Deep"
+    ],
+    "qualityScore": 92,
+    "qualityBreakdown": {
+      "clarity": 92,
+      "context": 88,
+      "specificity": 84,
+      "outputDefinition": 95,
+      "reusability": 96
+    },
+    "strengths": [
+      "Explicit role and method",
+      "Asks for real context via placeholders",
+      "Defines the output shape precisely",
+      "Builds in Responsible-AI checks"
+    ],
+    "improvements": [],
+    "flags": {
+      "modelSpecific": false,
+      "containsWebSearch": false,
+      "containsInteractiveQuestioning": false,
+      "embeddedMetadata": false,
+      "incompleteTitle": false,
+      "hasOutputCue": true
+    },
+    "source": "Synottic Curriculum",
+    "programId": "prog-syn-deep-research",
+    "track": "AI at Work",
+    "version": "1.0",
+    "sensitiveCategory": false,
+    "duplicateGroup": null,
+    "healthStatus": "Excellent",
+    "healthReasons": [],
+    "difficulty": "Intermediate",
+    "skill": null,
+    "lifecycle": "Recommended"
+  },
+  {
+    "id": "crs-genai-tools-mastery",
+    "sourceNumber": null,
+    "title": "Generative AI Tools Mastery \u2014 Course Companion Prompt",
+    "originalTitle": "Generative AI Tools Mastery \u2014 Course Companion Prompt",
+    "category": "AI & Prompt Engineering",
+    "description": "A reusable prompt for learners on the Generative AI Tools Mastery program: turns any task in scope into an AI-assisted, governed workflow with the exact prompts to run.",
+    "useCase": "Use on the Generative AI Tools Mastery program whenever you have a real task and want a step-by-step AI workflow, the prompts to run, and the Responsible-AI checks for it.",
+    "originalPrompt": "Role: Act as a senior AI practitioner and AI enablement coach trained in Synottic's Learn -> Demonstrate -> Practice -> Apply method.\n\nObjective: Help me apply AI to generative ai tools for my organisation.\n\nContext I will provide:\n- My role: [ROLE]\n- Team / organisation: [ORGANISATION] in the [INDUSTRY] industry\n- The task or decision in front of me: [TASK]\n- Constraints (tools available, data I can use, policy, tone): [CONSTRAINTS]\n\nWhat to do:\n1. Restate, in one line, the business outcome this task should move.\n2. Give me a step-by-step, AI-assisted workflow to get it done, organised around these stages: understand the goal, draft with AI, pressure-test the output, and finalise for use.\n3. For each step, give the exact prompt I should run next, with [placeholders] for my inputs.\n4. Call out the Responsible-AI checks I must not skip for this task (confidentiality, personal data, bias, and where a human must review before anything goes out).\n5. Finish with two concrete ways I can measure whether it worked.\n\nOutput format: a numbered workflow. For each step show: goal | prompt to run | what to watch out for. Keep it specific enough to use today.",
+    "promptType": "Workflow",
+    "role": "Individual Contributor",
+    "outcome": "A step-by-step AI-assisted workflow with ready-to-run prompts and Responsible-AI checks",
+    "aiTool": "General AI",
+    "variables": [
+      "ROLE",
+      "ORGANISATION",
+      "INDUSTRY",
+      "TASK",
+      "CONSTRAINTS"
+    ],
+    "variablesRaw": [
+      "[ROLE]",
+      "[ORGANISATION]",
+      "[INDUSTRY]",
+      "[TASK]",
+      "[CONSTRAINTS]"
+    ],
+    "isTemplate": true,
+    "tags": [
+      "Synottic",
+      "curriculum",
+      "AI at Work",
+      "Generative",
+      "Tools",
+      "Mastery"
+    ],
+    "qualityScore": 92,
+    "qualityBreakdown": {
+      "clarity": 92,
+      "context": 88,
+      "specificity": 84,
+      "outputDefinition": 95,
+      "reusability": 96
+    },
+    "strengths": [
+      "Explicit role and method",
+      "Asks for real context via placeholders",
+      "Defines the output shape precisely",
+      "Builds in Responsible-AI checks"
+    ],
+    "improvements": [],
+    "flags": {
+      "modelSpecific": false,
+      "containsWebSearch": false,
+      "containsInteractiveQuestioning": false,
+      "embeddedMetadata": false,
+      "incompleteTitle": false,
+      "hasOutputCue": true
+    },
+    "source": "Synottic Curriculum",
+    "programId": "prog-syn-genai-tools-mastery",
+    "track": "AI at Work",
+    "version": "1.0",
+    "sensitiveCategory": false,
+    "duplicateGroup": null,
+    "healthStatus": "Excellent",
+    "healthReasons": [],
+    "difficulty": "Intermediate",
+    "skill": null,
+    "lifecycle": "Recommended"
+  },
+  {
+    "id": "crs-prompt-engineering-mastery",
+    "sourceNumber": null,
+    "title": "Prompt Engineering Mastery Program \u2014 Course Companion Prompt",
+    "originalTitle": "Prompt Engineering Mastery Program \u2014 Course Companion Prompt",
+    "category": "AI & Prompt Engineering",
+    "description": "A reusable prompt for learners on the Prompt Engineering Mastery Program program: turns any task in scope into an AI-assisted, governed workflow with the exact prompts to run.",
+    "useCase": "Use on the Prompt Engineering Mastery Program program whenever you have a real task and want a step-by-step AI workflow, the prompts to run, and the Responsible-AI checks for it.",
+    "originalPrompt": "Role: Act as a senior AI practitioner and AI enablement coach trained in Synottic's Learn -> Demonstrate -> Practice -> Apply method.\n\nObjective: Help me apply AI to prompt engineering for my organisation.\n\nContext I will provide:\n- My role: [ROLE]\n- Team / organisation: [ORGANISATION] in the [INDUSTRY] industry\n- The task or decision in front of me: [TASK]\n- Constraints (tools available, data I can use, policy, tone): [CONSTRAINTS]\n\nWhat to do:\n1. Restate, in one line, the business outcome this task should move.\n2. Give me a step-by-step, AI-assisted workflow to get it done, organised around these stages: understand the goal, draft with AI, pressure-test the output, and finalise for use.\n3. For each step, give the exact prompt I should run next, with [placeholders] for my inputs.\n4. Call out the Responsible-AI checks I must not skip for this task (confidentiality, personal data, bias, and where a human must review before anything goes out).\n5. Finish with two concrete ways I can measure whether it worked.\n\nOutput format: a numbered workflow. For each step show: goal | prompt to run | what to watch out for. Keep it specific enough to use today.",
+    "promptType": "Workflow",
+    "role": "Individual Contributor",
+    "outcome": "A step-by-step AI-assisted workflow with ready-to-run prompts and Responsible-AI checks",
+    "aiTool": "General AI",
+    "variables": [
+      "ROLE",
+      "ORGANISATION",
+      "INDUSTRY",
+      "TASK",
+      "CONSTRAINTS"
+    ],
+    "variablesRaw": [
+      "[ROLE]",
+      "[ORGANISATION]",
+      "[INDUSTRY]",
+      "[TASK]",
+      "[CONSTRAINTS]"
+    ],
+    "isTemplate": true,
+    "tags": [
+      "Synottic",
+      "curriculum",
+      "AI at Work",
+      "Prompt",
+      "Engineering",
+      "Mastery"
+    ],
+    "qualityScore": 92,
+    "qualityBreakdown": {
+      "clarity": 92,
+      "context": 88,
+      "specificity": 84,
+      "outputDefinition": 95,
+      "reusability": 96
+    },
+    "strengths": [
+      "Explicit role and method",
+      "Asks for real context via placeholders",
+      "Defines the output shape precisely",
+      "Builds in Responsible-AI checks"
+    ],
+    "improvements": [],
+    "flags": {
+      "modelSpecific": false,
+      "containsWebSearch": false,
+      "containsInteractiveQuestioning": false,
+      "embeddedMetadata": false,
+      "incompleteTitle": false,
+      "hasOutputCue": true
+    },
+    "source": "Synottic Curriculum",
+    "programId": "prog-syn-prompt-engineering-mastery",
+    "track": "AI at Work",
+    "version": "1.0",
+    "sensitiveCategory": false,
+    "duplicateGroup": null,
+    "healthStatus": "Excellent",
+    "healthReasons": [],
+    "difficulty": "Intermediate",
+    "skill": null,
+    "lifecycle": "Recommended"
+  },
+  {
+    "id": "crs-chatgpt-mastery",
+    "sourceNumber": null,
+    "title": "ChatGPT Mastery Course \u2014 Course Companion Prompt",
+    "originalTitle": "ChatGPT Mastery Course \u2014 Course Companion Prompt",
+    "category": "AI & Prompt Engineering",
+    "description": "A reusable prompt for learners on the ChatGPT Mastery Course program: turns any task in scope into an AI-assisted, governed workflow with the exact prompts to run.",
+    "useCase": "Use on the ChatGPT Mastery Course program whenever you have a real task and want a step-by-step AI workflow, the prompts to run, and the Responsible-AI checks for it.",
+    "originalPrompt": "Role: Act as a senior AI power user and AI enablement coach trained in Synottic's Learn -> Demonstrate -> Practice -> Apply method.\n\nObjective: Help me apply AI to chatgpt for my organisation.\n\nContext I will provide:\n- My role: [ROLE]\n- Team / organisation: [ORGANISATION] in the [INDUSTRY] industry\n- The task or decision in front of me: [TASK]\n- Constraints (tools available, data I can use, policy, tone): [CONSTRAINTS]\n\nWhat to do:\n1. Restate, in one line, the business outcome this task should move.\n2. Give me a step-by-step, AI-assisted workflow to get it done, organised around these stages: understand the goal, draft with AI, pressure-test the output, and finalise for use.\n3. For each step, give the exact prompt I should run next, with [placeholders] for my inputs.\n4. Call out the Responsible-AI checks I must not skip for this task (confidentiality, personal data, bias, and where a human must review before anything goes out).\n5. Finish with two concrete ways I can measure whether it worked.\n\nOutput format: a numbered workflow. For each step show: goal | prompt to run | what to watch out for. Keep it specific enough to use today.",
+    "promptType": "Workflow",
+    "role": "Individual Contributor",
+    "outcome": "A step-by-step AI-assisted workflow with ready-to-run prompts and Responsible-AI checks",
+    "aiTool": "General AI",
+    "variables": [
+      "ROLE",
+      "ORGANISATION",
+      "INDUSTRY",
+      "TASK",
+      "CONSTRAINTS"
+    ],
+    "variablesRaw": [
+      "[ROLE]",
+      "[ORGANISATION]",
+      "[INDUSTRY]",
+      "[TASK]",
+      "[CONSTRAINTS]"
+    ],
+    "isTemplate": true,
+    "tags": [
+      "Synottic",
+      "curriculum",
+      "AI Tools",
+      "ChatGPT",
+      "Mastery",
+      "Course"
+    ],
+    "qualityScore": 92,
+    "qualityBreakdown": {
+      "clarity": 92,
+      "context": 88,
+      "specificity": 84,
+      "outputDefinition": 95,
+      "reusability": 96
+    },
+    "strengths": [
+      "Explicit role and method",
+      "Asks for real context via placeholders",
+      "Defines the output shape precisely",
+      "Builds in Responsible-AI checks"
+    ],
+    "improvements": [],
+    "flags": {
+      "modelSpecific": false,
+      "containsWebSearch": false,
+      "containsInteractiveQuestioning": false,
+      "embeddedMetadata": false,
+      "incompleteTitle": false,
+      "hasOutputCue": true
+    },
+    "source": "Synottic Curriculum",
+    "programId": "prog-syn-chatgpt-mastery",
+    "track": "AI Tools",
+    "version": "1.0",
+    "sensitiveCategory": false,
+    "duplicateGroup": null,
+    "healthStatus": "Excellent",
+    "healthReasons": [],
+    "difficulty": "Intermediate",
+    "skill": null,
+    "lifecycle": "Recommended"
+  },
+  {
+    "id": "crs-claude-mastery",
+    "sourceNumber": null,
+    "title": "Claude AI Mastery \u2014 Course Companion Prompt",
+    "originalTitle": "Claude AI Mastery \u2014 Course Companion Prompt",
+    "category": "AI & Prompt Engineering",
+    "description": "A reusable prompt for learners on the Claude AI Mastery program: turns any task in scope into an AI-assisted, governed workflow with the exact prompts to run.",
+    "useCase": "Use on the Claude AI Mastery program whenever you have a real task and want a step-by-step AI workflow, the prompts to run, and the Responsible-AI checks for it.",
+    "originalPrompt": "Role: Act as a senior AI power user and AI enablement coach trained in Synottic's Learn -> Demonstrate -> Practice -> Apply method.\n\nObjective: Help me apply AI to claude ai for my organisation.\n\nContext I will provide:\n- My role: [ROLE]\n- Team / organisation: [ORGANISATION] in the [INDUSTRY] industry\n- The task or decision in front of me: [TASK]\n- Constraints (tools available, data I can use, policy, tone): [CONSTRAINTS]\n\nWhat to do:\n1. Restate, in one line, the business outcome this task should move.\n2. Give me a step-by-step, AI-assisted workflow to get it done, organised around these stages: understand the goal, draft with AI, pressure-test the output, and finalise for use.\n3. For each step, give the exact prompt I should run next, with [placeholders] for my inputs.\n4. Call out the Responsible-AI checks I must not skip for this task (confidentiality, personal data, bias, and where a human must review before anything goes out).\n5. Finish with two concrete ways I can measure whether it worked.\n\nOutput format: a numbered workflow. For each step show: goal | prompt to run | what to watch out for. Keep it specific enough to use today.",
+    "promptType": "Workflow",
+    "role": "Individual Contributor",
+    "outcome": "A step-by-step AI-assisted workflow with ready-to-run prompts and Responsible-AI checks",
+    "aiTool": "General AI",
+    "variables": [
+      "ROLE",
+      "ORGANISATION",
+      "INDUSTRY",
+      "TASK",
+      "CONSTRAINTS"
+    ],
+    "variablesRaw": [
+      "[ROLE]",
+      "[ORGANISATION]",
+      "[INDUSTRY]",
+      "[TASK]",
+      "[CONSTRAINTS]"
+    ],
+    "isTemplate": true,
+    "tags": [
+      "Synottic",
+      "curriculum",
+      "AI Tools",
+      "Claude",
+      "Mastery"
+    ],
+    "qualityScore": 92,
+    "qualityBreakdown": {
+      "clarity": 92,
+      "context": 88,
+      "specificity": 84,
+      "outputDefinition": 95,
+      "reusability": 96
+    },
+    "strengths": [
+      "Explicit role and method",
+      "Asks for real context via placeholders",
+      "Defines the output shape precisely",
+      "Builds in Responsible-AI checks"
+    ],
+    "improvements": [],
+    "flags": {
+      "modelSpecific": false,
+      "containsWebSearch": false,
+      "containsInteractiveQuestioning": false,
+      "embeddedMetadata": false,
+      "incompleteTitle": false,
+      "hasOutputCue": true
+    },
+    "source": "Synottic Curriculum",
+    "programId": "prog-syn-claude-mastery",
+    "track": "AI Tools",
+    "version": "1.0",
+    "sensitiveCategory": false,
+    "duplicateGroup": null,
+    "healthStatus": "Excellent",
+    "healthReasons": [],
+    "difficulty": "Intermediate",
+    "skill": null,
+    "lifecycle": "Recommended"
+  },
+  {
+    "id": "crs-gemini-mastery",
+    "sourceNumber": null,
+    "title": "Gemini Mastery Course \u2014 Course Companion Prompt",
+    "originalTitle": "Gemini Mastery Course \u2014 Course Companion Prompt",
+    "category": "AI & Prompt Engineering",
+    "description": "A reusable prompt for learners on the Gemini Mastery Course program: turns any task in scope into an AI-assisted, governed workflow with the exact prompts to run.",
+    "useCase": "Use on the Gemini Mastery Course program whenever you have a real task and want a step-by-step AI workflow, the prompts to run, and the Responsible-AI checks for it.",
+    "originalPrompt": "Role: Act as a senior AI power user and AI enablement coach trained in Synottic's Learn -> Demonstrate -> Practice -> Apply method.\n\nObjective: Help me apply AI to gemini for my organisation.\n\nContext I will provide:\n- My role: [ROLE]\n- Team / organisation: [ORGANISATION] in the [INDUSTRY] industry\n- The task or decision in front of me: [TASK]\n- Constraints (tools available, data I can use, policy, tone): [CONSTRAINTS]\n\nWhat to do:\n1. Restate, in one line, the business outcome this task should move.\n2. Give me a step-by-step, AI-assisted workflow to get it done, organised around these stages: understand the goal, draft with AI, pressure-test the output, and finalise for use.\n3. For each step, give the exact prompt I should run next, with [placeholders] for my inputs.\n4. Call out the Responsible-AI checks I must not skip for this task (confidentiality, personal data, bias, and where a human must review before anything goes out).\n5. Finish with two concrete ways I can measure whether it worked.\n\nOutput format: a numbered workflow. For each step show: goal | prompt to run | what to watch out for. Keep it specific enough to use today.",
+    "promptType": "Workflow",
+    "role": "Individual Contributor",
+    "outcome": "A step-by-step AI-assisted workflow with ready-to-run prompts and Responsible-AI checks",
+    "aiTool": "General AI",
+    "variables": [
+      "ROLE",
+      "ORGANISATION",
+      "INDUSTRY",
+      "TASK",
+      "CONSTRAINTS"
+    ],
+    "variablesRaw": [
+      "[ROLE]",
+      "[ORGANISATION]",
+      "[INDUSTRY]",
+      "[TASK]",
+      "[CONSTRAINTS]"
+    ],
+    "isTemplate": true,
+    "tags": [
+      "Synottic",
+      "curriculum",
+      "AI Tools",
+      "Gemini",
+      "Mastery",
+      "Course"
+    ],
+    "qualityScore": 92,
+    "qualityBreakdown": {
+      "clarity": 92,
+      "context": 88,
+      "specificity": 84,
+      "outputDefinition": 95,
+      "reusability": 96
+    },
+    "strengths": [
+      "Explicit role and method",
+      "Asks for real context via placeholders",
+      "Defines the output shape precisely",
+      "Builds in Responsible-AI checks"
+    ],
+    "improvements": [],
+    "flags": {
+      "modelSpecific": false,
+      "containsWebSearch": false,
+      "containsInteractiveQuestioning": false,
+      "embeddedMetadata": false,
+      "incompleteTitle": false,
+      "hasOutputCue": true
+    },
+    "source": "Synottic Curriculum",
+    "programId": "prog-syn-gemini-mastery",
+    "track": "AI Tools",
+    "version": "1.0",
+    "sensitiveCategory": false,
+    "duplicateGroup": null,
+    "healthStatus": "Excellent",
+    "healthReasons": [],
+    "difficulty": "Intermediate",
+    "skill": null,
+    "lifecycle": "Recommended"
+  },
+  {
+    "id": "crs-copilot-mastery",
+    "sourceNumber": null,
+    "title": "Copilot Mastery Course \u2014 Course Companion Prompt",
+    "originalTitle": "Copilot Mastery Course \u2014 Course Companion Prompt",
+    "category": "Productivity & Automation",
+    "description": "A reusable prompt for learners on the Copilot Mastery Course program: turns any task in scope into an AI-assisted, governed workflow with the exact prompts to run.",
+    "useCase": "Use on the Copilot Mastery Course program whenever you have a real task and want a step-by-step AI workflow, the prompts to run, and the Responsible-AI checks for it.",
+    "originalPrompt": "Role: Act as a senior AI power user and AI enablement coach trained in Synottic's Learn -> Demonstrate -> Practice -> Apply method.\n\nObjective: Help me apply AI to copilot for my organisation.\n\nContext I will provide:\n- My role: [ROLE]\n- Team / organisation: [ORGANISATION] in the [INDUSTRY] industry\n- The task or decision in front of me: [TASK]\n- Constraints (tools available, data I can use, policy, tone): [CONSTRAINTS]\n\nWhat to do:\n1. Restate, in one line, the business outcome this task should move.\n2. Give me a step-by-step, AI-assisted workflow to get it done, organised around these stages: understand the goal, draft with AI, pressure-test the output, and finalise for use.\n3. For each step, give the exact prompt I should run next, with [placeholders] for my inputs.\n4. Call out the Responsible-AI checks I must not skip for this task (confidentiality, personal data, bias, and where a human must review before anything goes out).\n5. Finish with two concrete ways I can measure whether it worked.\n\nOutput format: a numbered workflow. For each step show: goal | prompt to run | what to watch out for. Keep it specific enough to use today.",
+    "promptType": "Workflow",
+    "role": "Individual Contributor",
+    "outcome": "A step-by-step AI-assisted workflow with ready-to-run prompts and Responsible-AI checks",
+    "aiTool": "General AI",
+    "variables": [
+      "ROLE",
+      "ORGANISATION",
+      "INDUSTRY",
+      "TASK",
+      "CONSTRAINTS"
+    ],
+    "variablesRaw": [
+      "[ROLE]",
+      "[ORGANISATION]",
+      "[INDUSTRY]",
+      "[TASK]",
+      "[CONSTRAINTS]"
+    ],
+    "isTemplate": true,
+    "tags": [
+      "Synottic",
+      "curriculum",
+      "AI Tools",
+      "Copilot",
+      "Mastery",
+      "Course"
+    ],
+    "qualityScore": 92,
+    "qualityBreakdown": {
+      "clarity": 92,
+      "context": 88,
+      "specificity": 84,
+      "outputDefinition": 95,
+      "reusability": 96
+    },
+    "strengths": [
+      "Explicit role and method",
+      "Asks for real context via placeholders",
+      "Defines the output shape precisely",
+      "Builds in Responsible-AI checks"
+    ],
+    "improvements": [],
+    "flags": {
+      "modelSpecific": false,
+      "containsWebSearch": false,
+      "containsInteractiveQuestioning": false,
+      "embeddedMetadata": false,
+      "incompleteTitle": false,
+      "hasOutputCue": true
+    },
+    "source": "Synottic Curriculum",
+    "programId": "prog-syn-copilot-mastery",
+    "track": "AI Tools",
+    "version": "1.0",
+    "sensitiveCategory": false,
+    "duplicateGroup": null,
+    "healthStatus": "Excellent",
+    "healthReasons": [],
+    "difficulty": "Intermediate",
+    "skill": null,
+    "lifecycle": "Recommended"
+  },
+  {
+    "id": "crs-perplexity-mastery",
+    "sourceNumber": null,
+    "title": "Perplexity Mastery Course \u2014 Course Companion Prompt",
+    "originalTitle": "Perplexity Mastery Course \u2014 Course Companion Prompt",
+    "category": "Research & Data Analysis",
+    "description": "A reusable prompt for learners on the Perplexity Mastery Course program: turns any task in scope into an AI-assisted, governed workflow with the exact prompts to run.",
+    "useCase": "Use on the Perplexity Mastery Course program whenever you have a real task and want a step-by-step AI workflow, the prompts to run, and the Responsible-AI checks for it.",
+    "originalPrompt": "Role: Act as a senior AI power user and AI enablement coach trained in Synottic's Learn -> Demonstrate -> Practice -> Apply method.\n\nObjective: Help me apply AI to perplexity for my organisation.\n\nContext I will provide:\n- My role: [ROLE]\n- Team / organisation: [ORGANISATION] in the [INDUSTRY] industry\n- The task or decision in front of me: [TASK]\n- Constraints (tools available, data I can use, policy, tone): [CONSTRAINTS]\n\nWhat to do:\n1. Restate, in one line, the business outcome this task should move.\n2. Give me a step-by-step, AI-assisted workflow to get it done, organised around these stages: understand the goal, draft with AI, pressure-test the output, and finalise for use.\n3. For each step, give the exact prompt I should run next, with [placeholders] for my inputs.\n4. Call out the Responsible-AI checks I must not skip for this task (confidentiality, personal data, bias, and where a human must review before anything goes out).\n5. Finish with two concrete ways I can measure whether it worked.\n\nOutput format: a numbered workflow. For each step show: goal | prompt to run | what to watch out for. Keep it specific enough to use today.",
+    "promptType": "Workflow",
+    "role": "Individual Contributor",
+    "outcome": "A step-by-step AI-assisted workflow with ready-to-run prompts and Responsible-AI checks",
+    "aiTool": "General AI",
+    "variables": [
+      "ROLE",
+      "ORGANISATION",
+      "INDUSTRY",
+      "TASK",
+      "CONSTRAINTS"
+    ],
+    "variablesRaw": [
+      "[ROLE]",
+      "[ORGANISATION]",
+      "[INDUSTRY]",
+      "[TASK]",
+      "[CONSTRAINTS]"
+    ],
+    "isTemplate": true,
+    "tags": [
+      "Synottic",
+      "curriculum",
+      "AI Tools",
+      "Perplexity",
+      "Mastery",
+      "Course"
+    ],
+    "qualityScore": 92,
+    "qualityBreakdown": {
+      "clarity": 92,
+      "context": 88,
+      "specificity": 84,
+      "outputDefinition": 95,
+      "reusability": 96
+    },
+    "strengths": [
+      "Explicit role and method",
+      "Asks for real context via placeholders",
+      "Defines the output shape precisely",
+      "Builds in Responsible-AI checks"
+    ],
+    "improvements": [],
+    "flags": {
+      "modelSpecific": false,
+      "containsWebSearch": false,
+      "containsInteractiveQuestioning": false,
+      "embeddedMetadata": false,
+      "incompleteTitle": false,
+      "hasOutputCue": true
+    },
+    "source": "Synottic Curriculum",
+    "programId": "prog-syn-perplexity-mastery",
+    "track": "AI Tools",
+    "version": "1.0",
+    "sensitiveCategory": false,
+    "duplicateGroup": null,
+    "healthStatus": "Excellent",
+    "healthReasons": [],
+    "difficulty": "Intermediate",
+    "skill": null,
+    "lifecycle": "Recommended"
+  },
+  {
+    "id": "crs-notebooklm-mastery",
+    "sourceNumber": null,
+    "title": "NotebookLM Mastery \u2014 Course Companion Prompt",
+    "originalTitle": "NotebookLM Mastery \u2014 Course Companion Prompt",
+    "category": "Research & Data Analysis",
+    "description": "A reusable prompt for learners on the NotebookLM Mastery program: turns any task in scope into an AI-assisted, governed workflow with the exact prompts to run.",
+    "useCase": "Use on the NotebookLM Mastery program whenever you have a real task and want a step-by-step AI workflow, the prompts to run, and the Responsible-AI checks for it.",
+    "originalPrompt": "Role: Act as a senior AI power user and AI enablement coach trained in Synottic's Learn -> Demonstrate -> Practice -> Apply method.\n\nObjective: Help me apply AI to notebooklm for my organisation.\n\nContext I will provide:\n- My role: [ROLE]\n- Team / organisation: [ORGANISATION] in the [INDUSTRY] industry\n- The task or decision in front of me: [TASK]\n- Constraints (tools available, data I can use, policy, tone): [CONSTRAINTS]\n\nWhat to do:\n1. Restate, in one line, the business outcome this task should move.\n2. Give me a step-by-step, AI-assisted workflow to get it done, organised around these stages: understand the goal, draft with AI, pressure-test the output, and finalise for use.\n3. For each step, give the exact prompt I should run next, with [placeholders] for my inputs.\n4. Call out the Responsible-AI checks I must not skip for this task (confidentiality, personal data, bias, and where a human must review before anything goes out).\n5. Finish with two concrete ways I can measure whether it worked.\n\nOutput format: a numbered workflow. For each step show: goal | prompt to run | what to watch out for. Keep it specific enough to use today.",
+    "promptType": "Workflow",
+    "role": "Individual Contributor",
+    "outcome": "A step-by-step AI-assisted workflow with ready-to-run prompts and Responsible-AI checks",
+    "aiTool": "General AI",
+    "variables": [
+      "ROLE",
+      "ORGANISATION",
+      "INDUSTRY",
+      "TASK",
+      "CONSTRAINTS"
+    ],
+    "variablesRaw": [
+      "[ROLE]",
+      "[ORGANISATION]",
+      "[INDUSTRY]",
+      "[TASK]",
+      "[CONSTRAINTS]"
+    ],
+    "isTemplate": true,
+    "tags": [
+      "Synottic",
+      "curriculum",
+      "AI Tools",
+      "NotebookLM",
+      "Mastery"
+    ],
+    "qualityScore": 92,
+    "qualityBreakdown": {
+      "clarity": 92,
+      "context": 88,
+      "specificity": 84,
+      "outputDefinition": 95,
+      "reusability": 96
+    },
+    "strengths": [
+      "Explicit role and method",
+      "Asks for real context via placeholders",
+      "Defines the output shape precisely",
+      "Builds in Responsible-AI checks"
+    ],
+    "improvements": [],
+    "flags": {
+      "modelSpecific": false,
+      "containsWebSearch": false,
+      "containsInteractiveQuestioning": false,
+      "embeddedMetadata": false,
+      "incompleteTitle": false,
+      "hasOutputCue": true
+    },
+    "source": "Synottic Curriculum",
+    "programId": "prog-syn-notebooklm-mastery",
+    "track": "AI Tools",
+    "version": "1.0",
+    "sensitiveCategory": false,
+    "duplicateGroup": null,
+    "healthStatus": "Excellent",
+    "healthReasons": [],
+    "difficulty": "Intermediate",
+    "skill": null,
+    "lifecycle": "Recommended"
+  },
+  {
+    "id": "crs-grok-mastery",
+    "sourceNumber": null,
+    "title": "Grok Mastery Course \u2014 Course Companion Prompt",
+    "originalTitle": "Grok Mastery Course \u2014 Course Companion Prompt",
+    "category": "AI & Prompt Engineering",
+    "description": "A reusable prompt for learners on the Grok Mastery Course program: turns any task in scope into an AI-assisted, governed workflow with the exact prompts to run.",
+    "useCase": "Use on the Grok Mastery Course program whenever you have a real task and want a step-by-step AI workflow, the prompts to run, and the Responsible-AI checks for it.",
+    "originalPrompt": "Role: Act as a senior AI power user and AI enablement coach trained in Synottic's Learn -> Demonstrate -> Practice -> Apply method.\n\nObjective: Help me apply AI to grok for my organisation.\n\nContext I will provide:\n- My role: [ROLE]\n- Team / organisation: [ORGANISATION] in the [INDUSTRY] industry\n- The task or decision in front of me: [TASK]\n- Constraints (tools available, data I can use, policy, tone): [CONSTRAINTS]\n\nWhat to do:\n1. Restate, in one line, the business outcome this task should move.\n2. Give me a step-by-step, AI-assisted workflow to get it done, organised around these stages: understand the goal, draft with AI, pressure-test the output, and finalise for use.\n3. For each step, give the exact prompt I should run next, with [placeholders] for my inputs.\n4. Call out the Responsible-AI checks I must not skip for this task (confidentiality, personal data, bias, and where a human must review before anything goes out).\n5. Finish with two concrete ways I can measure whether it worked.\n\nOutput format: a numbered workflow. For each step show: goal | prompt to run | what to watch out for. Keep it specific enough to use today.",
+    "promptType": "Workflow",
+    "role": "Individual Contributor",
+    "outcome": "A step-by-step AI-assisted workflow with ready-to-run prompts and Responsible-AI checks",
+    "aiTool": "General AI",
+    "variables": [
+      "ROLE",
+      "ORGANISATION",
+      "INDUSTRY",
+      "TASK",
+      "CONSTRAINTS"
+    ],
+    "variablesRaw": [
+      "[ROLE]",
+      "[ORGANISATION]",
+      "[INDUSTRY]",
+      "[TASK]",
+      "[CONSTRAINTS]"
+    ],
+    "isTemplate": true,
+    "tags": [
+      "Synottic",
+      "curriculum",
+      "AI Tools",
+      "Grok",
+      "Mastery",
+      "Course"
+    ],
+    "qualityScore": 92,
+    "qualityBreakdown": {
+      "clarity": 92,
+      "context": 88,
+      "specificity": 84,
+      "outputDefinition": 95,
+      "reusability": 96
+    },
+    "strengths": [
+      "Explicit role and method",
+      "Asks for real context via placeholders",
+      "Defines the output shape precisely",
+      "Builds in Responsible-AI checks"
+    ],
+    "improvements": [],
+    "flags": {
+      "modelSpecific": false,
+      "containsWebSearch": false,
+      "containsInteractiveQuestioning": false,
+      "embeddedMetadata": false,
+      "incompleteTitle": false,
+      "hasOutputCue": true
+    },
+    "source": "Synottic Curriculum",
+    "programId": "prog-syn-grok-mastery",
+    "track": "AI Tools",
+    "version": "1.0",
+    "sensitiveCategory": false,
+    "duplicateGroup": null,
+    "healthStatus": "Excellent",
+    "healthReasons": [],
+    "difficulty": "Intermediate",
+    "skill": null,
+    "lifecycle": "Recommended"
+  },
+  {
+    "id": "crs-deepseek-mastery",
+    "sourceNumber": null,
+    "title": "DeepSeek Mastery \u2014 Course Companion Prompt",
+    "originalTitle": "DeepSeek Mastery \u2014 Course Companion Prompt",
+    "category": "AI & Prompt Engineering",
+    "description": "A reusable prompt for learners on the DeepSeek Mastery program: turns any task in scope into an AI-assisted, governed workflow with the exact prompts to run.",
+    "useCase": "Use on the DeepSeek Mastery program whenever you have a real task and want a step-by-step AI workflow, the prompts to run, and the Responsible-AI checks for it.",
+    "originalPrompt": "Role: Act as a senior AI power user and AI enablement coach trained in Synottic's Learn -> Demonstrate -> Practice -> Apply method.\n\nObjective: Help me apply AI to deepseek for my organisation.\n\nContext I will provide:\n- My role: [ROLE]\n- Team / organisation: [ORGANISATION] in the [INDUSTRY] industry\n- The task or decision in front of me: [TASK]\n- Constraints (tools available, data I can use, policy, tone): [CONSTRAINTS]\n\nWhat to do:\n1. Restate, in one line, the business outcome this task should move.\n2. Give me a step-by-step, AI-assisted workflow to get it done, organised around these stages: understand the goal, draft with AI, pressure-test the output, and finalise for use.\n3. For each step, give the exact prompt I should run next, with [placeholders] for my inputs.\n4. Call out the Responsible-AI checks I must not skip for this task (confidentiality, personal data, bias, and where a human must review before anything goes out).\n5. Finish with two concrete ways I can measure whether it worked.\n\nOutput format: a numbered workflow. For each step show: goal | prompt to run | what to watch out for. Keep it specific enough to use today.",
+    "promptType": "Workflow",
+    "role": "Individual Contributor",
+    "outcome": "A step-by-step AI-assisted workflow with ready-to-run prompts and Responsible-AI checks",
+    "aiTool": "General AI",
+    "variables": [
+      "ROLE",
+      "ORGANISATION",
+      "INDUSTRY",
+      "TASK",
+      "CONSTRAINTS"
+    ],
+    "variablesRaw": [
+      "[ROLE]",
+      "[ORGANISATION]",
+      "[INDUSTRY]",
+      "[TASK]",
+      "[CONSTRAINTS]"
+    ],
+    "isTemplate": true,
+    "tags": [
+      "Synottic",
+      "curriculum",
+      "AI Tools",
+      "DeepSeek",
+      "Mastery"
+    ],
+    "qualityScore": 92,
+    "qualityBreakdown": {
+      "clarity": 92,
+      "context": 88,
+      "specificity": 84,
+      "outputDefinition": 95,
+      "reusability": 96
+    },
+    "strengths": [
+      "Explicit role and method",
+      "Asks for real context via placeholders",
+      "Defines the output shape precisely",
+      "Builds in Responsible-AI checks"
+    ],
+    "improvements": [],
+    "flags": {
+      "modelSpecific": false,
+      "containsWebSearch": false,
+      "containsInteractiveQuestioning": false,
+      "embeddedMetadata": false,
+      "incompleteTitle": false,
+      "hasOutputCue": true
+    },
+    "source": "Synottic Curriculum",
+    "programId": "prog-syn-deepseek-mastery",
+    "track": "AI Tools",
+    "version": "1.0",
+    "sensitiveCategory": false,
+    "duplicateGroup": null,
+    "healthStatus": "Excellent",
+    "healthReasons": [],
+    "difficulty": "Intermediate",
+    "skill": null,
+    "lifecycle": "Recommended"
+  },
+  {
+    "id": "crs-ai-productivity-stack",
+    "sourceNumber": null,
+    "title": "AI Productivity Stack \u2014 Course Companion Prompt",
+    "originalTitle": "AI Productivity Stack \u2014 Course Companion Prompt",
+    "category": "Productivity & Automation",
+    "description": "A reusable prompt for learners on the AI Productivity Stack program: turns any task in scope into an AI-assisted, governed workflow with the exact prompts to run.",
+    "useCase": "Use on the AI Productivity Stack program whenever you have a real task and want a step-by-step AI workflow, the prompts to run, and the Responsible-AI checks for it.",
+    "originalPrompt": "Role: Act as a senior AI power user and AI enablement coach trained in Synottic's Learn -> Demonstrate -> Practice -> Apply method.\n\nObjective: Help me apply AI to ai productivity stack for my organisation.\n\nContext I will provide:\n- My role: [ROLE]\n- Team / organisation: [ORGANISATION] in the [INDUSTRY] industry\n- The task or decision in front of me: [TASK]\n- Constraints (tools available, data I can use, policy, tone): [CONSTRAINTS]\n\nWhat to do:\n1. Restate, in one line, the business outcome this task should move.\n2. Give me a step-by-step, AI-assisted workflow to get it done, organised around these stages: understand the goal, draft with AI, pressure-test the output, and finalise for use.\n3. For each step, give the exact prompt I should run next, with [placeholders] for my inputs.\n4. Call out the Responsible-AI checks I must not skip for this task (confidentiality, personal data, bias, and where a human must review before anything goes out).\n5. Finish with two concrete ways I can measure whether it worked.\n\nOutput format: a numbered workflow. For each step show: goal | prompt to run | what to watch out for. Keep it specific enough to use today.",
+    "promptType": "Workflow",
+    "role": "Individual Contributor",
+    "outcome": "A step-by-step AI-assisted workflow with ready-to-run prompts and Responsible-AI checks",
+    "aiTool": "General AI",
+    "variables": [
+      "ROLE",
+      "ORGANISATION",
+      "INDUSTRY",
+      "TASK",
+      "CONSTRAINTS"
+    ],
+    "variablesRaw": [
+      "[ROLE]",
+      "[ORGANISATION]",
+      "[INDUSTRY]",
+      "[TASK]",
+      "[CONSTRAINTS]"
+    ],
+    "isTemplate": true,
+    "tags": [
+      "Synottic",
+      "curriculum",
+      "AI Tools",
+      "Productivity",
+      "Stack"
+    ],
+    "qualityScore": 92,
+    "qualityBreakdown": {
+      "clarity": 92,
+      "context": 88,
+      "specificity": 84,
+      "outputDefinition": 95,
+      "reusability": 96
+    },
+    "strengths": [
+      "Explicit role and method",
+      "Asks for real context via placeholders",
+      "Defines the output shape precisely",
+      "Builds in Responsible-AI checks"
+    ],
+    "improvements": [],
+    "flags": {
+      "modelSpecific": false,
+      "containsWebSearch": false,
+      "containsInteractiveQuestioning": false,
+      "embeddedMetadata": false,
+      "incompleteTitle": false,
+      "hasOutputCue": true
+    },
+    "source": "Synottic Curriculum",
+    "programId": "prog-syn-ai-productivity-stack",
+    "track": "AI Tools",
+    "version": "1.0",
+    "sensitiveCategory": false,
+    "duplicateGroup": null,
+    "healthStatus": "Excellent",
+    "healthReasons": [],
+    "difficulty": "Intermediate",
+    "skill": null,
+    "lifecycle": "Recommended"
+  },
+  {
+    "id": "crs-business-leaders",
+    "sourceNumber": null,
+    "title": "AI for Business Leaders \u2014 Course Companion Prompt",
+    "originalTitle": "AI for Business Leaders \u2014 Course Companion Prompt",
+    "category": "Business Strategy",
+    "description": "A reusable prompt for learners on the AI for Business Leaders program: turns any task in scope into an AI-assisted, governed workflow with the exact prompts to run.",
+    "useCase": "Use on the AI for Business Leaders program whenever you have a real task and want a step-by-step AI workflow, the prompts to run, and the Responsible-AI checks for it.",
+    "originalPrompt": "Role: Act as a senior business leader and AI enablement coach trained in Synottic's Learn -> Demonstrate -> Practice -> Apply method.\n\nObjective: Help me apply AI to business leaders for my organisation.\n\nContext I will provide:\n- My role: [ROLE]\n- Team / organisation: [ORGANISATION] in the [INDUSTRY] industry\n- The task or decision in front of me: [TASK]\n- Constraints (tools available, data I can use, policy, tone): [CONSTRAINTS]\n\nWhat to do:\n1. Restate, in one line, the business outcome this task should move.\n2. Give me a step-by-step, AI-assisted workflow to get it done, organised around these stages: understand the goal, draft with AI, pressure-test the output, and finalise for use.\n3. For each step, give the exact prompt I should run next, with [placeholders] for my inputs.\n4. Call out the Responsible-AI checks I must not skip for this task (confidentiality, personal data, bias, and where a human must review before anything goes out).\n5. Finish with two concrete ways I can measure whether it worked.\n\nOutput format: a numbered workflow. For each step show: goal | prompt to run | what to watch out for. Keep it specific enough to use today.",
+    "promptType": "Workflow",
+    "role": "Founder / CEO",
+    "outcome": "A step-by-step AI-assisted workflow with ready-to-run prompts and Responsible-AI checks",
+    "aiTool": "General AI",
+    "variables": [
+      "ROLE",
+      "ORGANISATION",
+      "INDUSTRY",
+      "TASK",
+      "CONSTRAINTS"
+    ],
+    "variablesRaw": [
+      "[ROLE]",
+      "[ORGANISATION]",
+      "[INDUSTRY]",
+      "[TASK]",
+      "[CONSTRAINTS]"
+    ],
+    "isTemplate": true,
+    "tags": [
+      "Synottic",
+      "curriculum",
+      "Leaders",
+      "Business"
+    ],
+    "qualityScore": 92,
+    "qualityBreakdown": {
+      "clarity": 92,
+      "context": 88,
+      "specificity": 84,
+      "outputDefinition": 95,
+      "reusability": 96
+    },
+    "strengths": [
+      "Explicit role and method",
+      "Asks for real context via placeholders",
+      "Defines the output shape precisely",
+      "Builds in Responsible-AI checks"
+    ],
+    "improvements": [],
+    "flags": {
+      "modelSpecific": false,
+      "containsWebSearch": false,
+      "containsInteractiveQuestioning": false,
+      "embeddedMetadata": false,
+      "incompleteTitle": false,
+      "hasOutputCue": true
+    },
+    "source": "Synottic Curriculum",
+    "programId": "prog-syn-business-leaders",
+    "track": "AI for Leaders",
+    "version": "1.0",
+    "sensitiveCategory": false,
+    "duplicateGroup": null,
+    "healthStatus": "Excellent",
+    "healthReasons": [],
+    "difficulty": "Intermediate",
+    "skill": null,
+    "lifecycle": "Recommended"
+  },
+  {
+    "id": "crs-executives-mastery",
+    "sourceNumber": null,
+    "title": "AI for Executives Mastery Program \u2014 Course Companion Prompt",
+    "originalTitle": "AI for Executives Mastery Program \u2014 Course Companion Prompt",
+    "category": "Business Strategy",
+    "description": "A reusable prompt for learners on the AI for Executives Mastery Program program: turns any task in scope into an AI-assisted, governed workflow with the exact prompts to run.",
+    "useCase": "Use on the AI for Executives Mastery Program program whenever you have a real task and want a step-by-step AI workflow, the prompts to run, and the Responsible-AI checks for it.",
+    "originalPrompt": "Role: Act as a senior business leader and AI enablement coach trained in Synottic's Learn -> Demonstrate -> Practice -> Apply method.\n\nObjective: Help me apply AI to executives for my organisation.\n\nContext I will provide:\n- My role: [ROLE]\n- Team / organisation: [ORGANISATION] in the [INDUSTRY] industry\n- The task or decision in front of me: [TASK]\n- Constraints (tools available, data I can use, policy, tone): [CONSTRAINTS]\n\nWhat to do:\n1. Restate, in one line, the business outcome this task should move.\n2. Give me a step-by-step, AI-assisted workflow to get it done, organised around these stages: understand the goal, draft with AI, pressure-test the output, and finalise for use.\n3. For each step, give the exact prompt I should run next, with [placeholders] for my inputs.\n4. Call out the Responsible-AI checks I must not skip for this task (confidentiality, personal data, bias, and where a human must review before anything goes out).\n5. Finish with two concrete ways I can measure whether it worked.\n\nOutput format: a numbered workflow. For each step show: goal | prompt to run | what to watch out for. Keep it specific enough to use today.",
+    "promptType": "Workflow",
+    "role": "CEO",
+    "outcome": "A step-by-step AI-assisted workflow with ready-to-run prompts and Responsible-AI checks",
+    "aiTool": "General AI",
+    "variables": [
+      "ROLE",
+      "ORGANISATION",
+      "INDUSTRY",
+      "TASK",
+      "CONSTRAINTS"
+    ],
+    "variablesRaw": [
+      "[ROLE]",
+      "[ORGANISATION]",
+      "[INDUSTRY]",
+      "[TASK]",
+      "[CONSTRAINTS]"
+    ],
+    "isTemplate": true,
+    "tags": [
+      "Synottic",
+      "curriculum",
+      "Leaders",
+      "Executives",
+      "Mastery",
+      "Program"
+    ],
+    "qualityScore": 92,
+    "qualityBreakdown": {
+      "clarity": 92,
+      "context": 88,
+      "specificity": 84,
+      "outputDefinition": 95,
+      "reusability": 96
+    },
+    "strengths": [
+      "Explicit role and method",
+      "Asks for real context via placeholders",
+      "Defines the output shape precisely",
+      "Builds in Responsible-AI checks"
+    ],
+    "improvements": [],
+    "flags": {
+      "modelSpecific": false,
+      "containsWebSearch": false,
+      "containsInteractiveQuestioning": false,
+      "embeddedMetadata": false,
+      "incompleteTitle": false,
+      "hasOutputCue": true
+    },
+    "source": "Synottic Curriculum",
+    "programId": "prog-syn-executives-mastery",
+    "track": "AI for Leaders",
+    "version": "1.0",
+    "sensitiveCategory": false,
+    "duplicateGroup": null,
+    "healthStatus": "Excellent",
+    "healthReasons": [],
+    "difficulty": "Intermediate",
+    "skill": null,
+    "lifecycle": "Recommended"
+  },
+  {
+    "id": "crs-leaders",
+    "sourceNumber": null,
+    "title": "AI for Leaders \u2014 Course Companion Prompt",
+    "originalTitle": "AI for Leaders \u2014 Course Companion Prompt",
+    "category": "Communication & Leadership",
+    "description": "A reusable prompt for learners on the AI for Leaders program: turns any task in scope into an AI-assisted, governed workflow with the exact prompts to run.",
+    "useCase": "Use on the AI for Leaders program whenever you have a real task and want a step-by-step AI workflow, the prompts to run, and the Responsible-AI checks for it.",
+    "originalPrompt": "Role: Act as a senior business leader and AI enablement coach trained in Synottic's Learn -> Demonstrate -> Practice -> Apply method.\n\nObjective: Help me apply AI to leaders for my organisation.\n\nContext I will provide:\n- My role: [ROLE]\n- Team / organisation: [ORGANISATION] in the [INDUSTRY] industry\n- The task or decision in front of me: [TASK]\n- Constraints (tools available, data I can use, policy, tone): [CONSTRAINTS]\n\nWhat to do:\n1. Restate, in one line, the business outcome this task should move.\n2. Give me a step-by-step, AI-assisted workflow to get it done, organised around these stages: understand the goal, draft with AI, pressure-test the output, and finalise for use.\n3. For each step, give the exact prompt I should run next, with [placeholders] for my inputs.\n4. Call out the Responsible-AI checks I must not skip for this task (confidentiality, personal data, bias, and where a human must review before anything goes out).\n5. Finish with two concrete ways I can measure whether it worked.\n\nOutput format: a numbered workflow. For each step show: goal | prompt to run | what to watch out for. Keep it specific enough to use today.",
+    "promptType": "Workflow",
+    "role": "Senior Manager",
+    "outcome": "A step-by-step AI-assisted workflow with ready-to-run prompts and Responsible-AI checks",
+    "aiTool": "General AI",
+    "variables": [
+      "ROLE",
+      "ORGANISATION",
+      "INDUSTRY",
+      "TASK",
+      "CONSTRAINTS"
+    ],
+    "variablesRaw": [
+      "[ROLE]",
+      "[ORGANISATION]",
+      "[INDUSTRY]",
+      "[TASK]",
+      "[CONSTRAINTS]"
+    ],
+    "isTemplate": true,
+    "tags": [
+      "Synottic",
+      "curriculum",
+      "Leaders"
+    ],
+    "qualityScore": 92,
+    "qualityBreakdown": {
+      "clarity": 92,
+      "context": 88,
+      "specificity": 84,
+      "outputDefinition": 95,
+      "reusability": 96
+    },
+    "strengths": [
+      "Explicit role and method",
+      "Asks for real context via placeholders",
+      "Defines the output shape precisely",
+      "Builds in Responsible-AI checks"
+    ],
+    "improvements": [],
+    "flags": {
+      "modelSpecific": false,
+      "containsWebSearch": false,
+      "containsInteractiveQuestioning": false,
+      "embeddedMetadata": false,
+      "incompleteTitle": false,
+      "hasOutputCue": true
+    },
+    "source": "Synottic Curriculum",
+    "programId": "prog-syn-leaders",
+    "track": "AI for Leaders",
+    "version": "1.0",
+    "sensitiveCategory": false,
+    "duplicateGroup": null,
+    "healthStatus": "Excellent",
+    "healthReasons": [],
+    "difficulty": "Intermediate",
+    "skill": null,
+    "lifecycle": "Recommended"
+  },
+  {
+    "id": "crs-people-managers",
+    "sourceNumber": null,
+    "title": "AI for People Managers \u2014 Course Companion Prompt",
+    "originalTitle": "AI for People Managers \u2014 Course Companion Prompt",
+    "category": "Communication & Leadership",
+    "description": "A reusable prompt for learners on the AI for People Managers program: turns any task in scope into an AI-assisted, governed workflow with the exact prompts to run.",
+    "useCase": "Use on the AI for People Managers program whenever you have a real task and want a step-by-step AI workflow, the prompts to run, and the Responsible-AI checks for it.",
+    "originalPrompt": "Role: Act as a senior business leader and AI enablement coach trained in Synottic's Learn -> Demonstrate -> Practice -> Apply method.\n\nObjective: Help me apply AI to people managers for my organisation.\n\nContext I will provide:\n- My role: [ROLE]\n- Team / organisation: [ORGANISATION] in the [INDUSTRY] industry\n- The task or decision in front of me: [TASK]\n- Constraints (tools available, data I can use, policy, tone): [CONSTRAINTS]\n\nWhat to do:\n1. Restate, in one line, the business outcome this task should move.\n2. Give me a step-by-step, AI-assisted workflow to get it done, organised around these stages: understand the goal, draft with AI, pressure-test the output, and finalise for use.\n3. For each step, give the exact prompt I should run next, with [placeholders] for my inputs.\n4. Call out the Responsible-AI checks I must not skip for this task (confidentiality, personal data, bias, and where a human must review before anything goes out).\n5. Finish with two concrete ways I can measure whether it worked.\n\nOutput format: a numbered workflow. For each step show: goal | prompt to run | what to watch out for. Keep it specific enough to use today.",
+    "promptType": "Workflow",
+    "role": "People Manager",
+    "outcome": "A step-by-step AI-assisted workflow with ready-to-run prompts and Responsible-AI checks",
+    "aiTool": "General AI",
+    "variables": [
+      "ROLE",
+      "ORGANISATION",
+      "INDUSTRY",
+      "TASK",
+      "CONSTRAINTS"
+    ],
+    "variablesRaw": [
+      "[ROLE]",
+      "[ORGANISATION]",
+      "[INDUSTRY]",
+      "[TASK]",
+      "[CONSTRAINTS]"
+    ],
+    "isTemplate": true,
+    "tags": [
+      "Synottic",
+      "curriculum",
+      "Leaders",
+      "People",
+      "Managers"
+    ],
+    "qualityScore": 92,
+    "qualityBreakdown": {
+      "clarity": 92,
+      "context": 88,
+      "specificity": 84,
+      "outputDefinition": 95,
+      "reusability": 96
+    },
+    "strengths": [
+      "Explicit role and method",
+      "Asks for real context via placeholders",
+      "Defines the output shape precisely",
+      "Builds in Responsible-AI checks"
+    ],
+    "improvements": [],
+    "flags": {
+      "modelSpecific": false,
+      "containsWebSearch": false,
+      "containsInteractiveQuestioning": false,
+      "embeddedMetadata": false,
+      "incompleteTitle": false,
+      "hasOutputCue": true
+    },
+    "source": "Synottic Curriculum",
+    "programId": "prog-syn-people-managers",
+    "track": "AI for Leaders",
+    "version": "1.0",
+    "sensitiveCategory": false,
+    "duplicateGroup": null,
+    "healthStatus": "Excellent",
+    "healthReasons": [],
+    "difficulty": "Intermediate",
+    "skill": null,
+    "lifecycle": "Recommended"
+  },
+  {
+    "id": "crs-sales",
+    "sourceNumber": null,
+    "title": "AI for Sales \u2014 Course Companion Prompt",
+    "originalTitle": "AI for Sales \u2014 Course Companion Prompt",
+    "category": "Sales & Lead Generation",
+    "description": "A reusable prompt for learners on the AI for Sales program: turns any task in scope into an AI-assisted, governed workflow with the exact prompts to run.",
+    "useCase": "Use on the AI for Sales program whenever you have a real task and want a step-by-step AI workflow, the prompts to run, and the Responsible-AI checks for it.",
+    "originalPrompt": "Role: Act as a senior Sales practitioner and AI enablement coach trained in Synottic's Learn -> Demonstrate -> Practice -> Apply method.\n\nObjective: Help me apply AI to sales for my organisation.\n\nContext I will provide:\n- My role: [ROLE]\n- Team / organisation: [ORGANISATION] in the [INDUSTRY] industry\n- The task or decision in front of me: [TASK]\n- Constraints (tools available, data I can use, policy, tone): [CONSTRAINTS]\n\nWhat to do:\n1. Restate, in one line, the business outcome this task should move.\n2. Give me a step-by-step, AI-assisted workflow to get it done, organised around these stages: Prospecting & Lead Generation, Customer Engagement & Conversations, Proposal Development & Enablement.\n3. For each step, give the exact prompt I should run next, with [placeholders] for my inputs.\n4. Call out the Responsible-AI checks I must not skip for this task (confidentiality, personal data, bias, and where a human must review before anything goes out).\n5. Finish with two concrete ways I can measure whether it worked.\n\nOutput format: a numbered workflow. For each step show: goal | prompt to run | what to watch out for. Keep it specific enough to use today.",
+    "promptType": "Workflow",
+    "role": "Chief Sales Officer",
+    "outcome": "A step-by-step AI-assisted workflow with ready-to-run prompts and Responsible-AI checks",
+    "aiTool": "General AI",
+    "variables": [
+      "ROLE",
+      "ORGANISATION",
+      "INDUSTRY",
+      "TASK",
+      "CONSTRAINTS"
+    ],
+    "variablesRaw": [
+      "[ROLE]",
+      "[ORGANISATION]",
+      "[INDUSTRY]",
+      "[TASK]",
+      "[CONSTRAINTS]"
+    ],
+    "isTemplate": true,
+    "tags": [
+      "Synottic",
+      "curriculum",
+      "Functions",
+      "Sales"
+    ],
+    "qualityScore": 92,
+    "qualityBreakdown": {
+      "clarity": 92,
+      "context": 88,
+      "specificity": 84,
+      "outputDefinition": 95,
+      "reusability": 96
+    },
+    "strengths": [
+      "Explicit role and method",
+      "Asks for real context via placeholders",
+      "Defines the output shape precisely",
+      "Builds in Responsible-AI checks"
+    ],
+    "improvements": [],
+    "flags": {
+      "modelSpecific": false,
+      "containsWebSearch": false,
+      "containsInteractiveQuestioning": false,
+      "embeddedMetadata": false,
+      "incompleteTitle": false,
+      "hasOutputCue": true
+    },
+    "source": "Synottic Curriculum",
+    "programId": "prog-syn-sales",
+    "track": "AI for Functions",
+    "version": "1.0",
+    "sensitiveCategory": false,
+    "duplicateGroup": null,
+    "healthStatus": "Excellent",
+    "healthReasons": [],
+    "difficulty": "Intermediate",
+    "skill": null,
+    "lifecycle": "Recommended"
+  },
+  {
+    "id": "crs-marketing",
+    "sourceNumber": null,
+    "title": "AI for Marketing \u2014 Course Companion Prompt",
+    "originalTitle": "AI for Marketing \u2014 Course Companion Prompt",
+    "category": "Marketing & Branding",
+    "description": "A reusable prompt for learners on the AI for Marketing program: turns any task in scope into an AI-assisted, governed workflow with the exact prompts to run.",
+    "useCase": "Use on the AI for Marketing program whenever you have a real task and want a step-by-step AI workflow, the prompts to run, and the Responsible-AI checks for it.",
+    "originalPrompt": "Role: Act as a senior Marketing practitioner and AI enablement coach trained in Synottic's Learn -> Demonstrate -> Practice -> Apply method.\n\nObjective: Help me apply AI to marketing for my organisation.\n\nContext I will provide:\n- My role: [ROLE]\n- Team / organisation: [ORGANISATION] in the [INDUSTRY] industry\n- The task or decision in front of me: [TASK]\n- Constraints (tools available, data I can use, policy, tone): [CONSTRAINTS]\n\nWhat to do:\n1. Restate, in one line, the business outcome this task should move.\n2. Give me a step-by-step, AI-assisted workflow to get it done, organised around these stages: Content & Campaign Creation, Brand, Positioning & Messaging, SEO & Marketing Analytics.\n3. For each step, give the exact prompt I should run next, with [placeholders] for my inputs.\n4. Call out the Responsible-AI checks I must not skip for this task (confidentiality, personal data, bias, and where a human must review before anything goes out).\n5. Finish with two concrete ways I can measure whether it worked.\n\nOutput format: a numbered workflow. For each step show: goal | prompt to run | what to watch out for. Keep it specific enough to use today.",
+    "promptType": "Workflow",
+    "role": "CMO",
+    "outcome": "A step-by-step AI-assisted workflow with ready-to-run prompts and Responsible-AI checks",
+    "aiTool": "General AI",
+    "variables": [
+      "ROLE",
+      "ORGANISATION",
+      "INDUSTRY",
+      "TASK",
+      "CONSTRAINTS"
+    ],
+    "variablesRaw": [
+      "[ROLE]",
+      "[ORGANISATION]",
+      "[INDUSTRY]",
+      "[TASK]",
+      "[CONSTRAINTS]"
+    ],
+    "isTemplate": true,
+    "tags": [
+      "Synottic",
+      "curriculum",
+      "Functions",
+      "Marketing"
+    ],
+    "qualityScore": 92,
+    "qualityBreakdown": {
+      "clarity": 92,
+      "context": 88,
+      "specificity": 84,
+      "outputDefinition": 95,
+      "reusability": 96
+    },
+    "strengths": [
+      "Explicit role and method",
+      "Asks for real context via placeholders",
+      "Defines the output shape precisely",
+      "Builds in Responsible-AI checks"
+    ],
+    "improvements": [],
+    "flags": {
+      "modelSpecific": false,
+      "containsWebSearch": false,
+      "containsInteractiveQuestioning": false,
+      "embeddedMetadata": false,
+      "incompleteTitle": false,
+      "hasOutputCue": true
+    },
+    "source": "Synottic Curriculum",
+    "programId": "prog-syn-marketing",
+    "track": "AI for Functions",
+    "version": "1.0",
+    "sensitiveCategory": false,
+    "duplicateGroup": null,
+    "healthStatus": "Excellent",
+    "healthReasons": [],
+    "difficulty": "Intermediate",
+    "skill": null,
+    "lifecycle": "Recommended"
+  },
+  {
+    "id": "crs-hr",
+    "sourceNumber": null,
+    "title": "AI for HR \u2014 Course Companion Prompt",
+    "originalTitle": "AI for HR \u2014 Course Companion Prompt",
+    "category": "HR & Recruiting",
+    "description": "A reusable prompt for learners on the AI for HR program: turns any task in scope into an AI-assisted, governed workflow with the exact prompts to run.",
+    "useCase": "Use on the AI for HR program whenever you have a real task and want a step-by-step AI workflow, the prompts to run, and the Responsible-AI checks for it.",
+    "originalPrompt": "Role: Act as a senior HR practitioner and AI enablement coach trained in Synottic's Learn -> Demonstrate -> Practice -> Apply method.\n\nObjective: Help me apply AI to hr for my organisation.\n\nContext I will provide:\n- My role: [ROLE]\n- Team / organisation: [ORGANISATION] in the [INDUSTRY] industry\n- The task or decision in front of me: [TASK]\n- Constraints (tools available, data I can use, policy, tone): [CONSTRAINTS]\n\nWhat to do:\n1. Restate, in one line, the business outcome this task should move.\n2. Give me a step-by-step, AI-assisted workflow to get it done, organised around these stages: Talent Acquisition & Recruitment, Skills Intelligence & Workforce Planning, Employee Experience & HR Analytics.\n3. For each step, give the exact prompt I should run next, with [placeholders] for my inputs.\n4. Call out the Responsible-AI checks I must not skip for this task (confidentiality, personal data, bias, and where a human must review before anything goes out).\n5. Finish with two concrete ways I can measure whether it worked.\n\nOutput format: a numbered workflow. For each step show: goal | prompt to run | what to watch out for. Keep it specific enough to use today.",
+    "promptType": "Workflow",
+    "role": "HR Director",
+    "outcome": "A step-by-step AI-assisted workflow with ready-to-run prompts and Responsible-AI checks",
+    "aiTool": "General AI",
+    "variables": [
+      "ROLE",
+      "ORGANISATION",
+      "INDUSTRY",
+      "TASK",
+      "CONSTRAINTS"
+    ],
+    "variablesRaw": [
+      "[ROLE]",
+      "[ORGANISATION]",
+      "[INDUSTRY]",
+      "[TASK]",
+      "[CONSTRAINTS]"
+    ],
+    "isTemplate": true,
+    "tags": [
+      "Synottic",
+      "curriculum",
+      "Functions"
+    ],
+    "qualityScore": 92,
+    "qualityBreakdown": {
+      "clarity": 92,
+      "context": 88,
+      "specificity": 84,
+      "outputDefinition": 95,
+      "reusability": 96
+    },
+    "strengths": [
+      "Explicit role and method",
+      "Asks for real context via placeholders",
+      "Defines the output shape precisely",
+      "Builds in Responsible-AI checks"
+    ],
+    "improvements": [],
+    "flags": {
+      "modelSpecific": false,
+      "containsWebSearch": false,
+      "containsInteractiveQuestioning": false,
+      "embeddedMetadata": false,
+      "incompleteTitle": false,
+      "hasOutputCue": true
+    },
+    "source": "Synottic Curriculum",
+    "programId": "prog-syn-hr",
+    "track": "AI for Functions",
+    "version": "1.0",
+    "sensitiveCategory": false,
+    "duplicateGroup": null,
+    "healthStatus": "Excellent",
+    "healthReasons": [],
+    "difficulty": "Intermediate",
+    "skill": null,
+    "lifecycle": "Recommended"
+  },
+  {
+    "id": "crs-ld",
+    "sourceNumber": null,
+    "title": "AI for L&D \u2014 Course Companion Prompt",
+    "originalTitle": "AI for L&D \u2014 Course Companion Prompt",
+    "category": "Education & Learning",
+    "description": "A reusable prompt for learners on the AI for L&D program: turns any task in scope into an AI-assisted, governed workflow with the exact prompts to run.",
+    "useCase": "Use on the AI for L&D program whenever you have a real task and want a step-by-step AI workflow, the prompts to run, and the Responsible-AI checks for it.",
+    "originalPrompt": "Role: Act as a senior L&D practitioner and AI enablement coach trained in Synottic's Learn -> Demonstrate -> Practice -> Apply method.\n\nObjective: Help me apply AI to l&d for my organisation.\n\nContext I will provide:\n- My role: [ROLE]\n- Team / organisation: [ORGANISATION] in the [INDUSTRY] industry\n- The task or decision in front of me: [TASK]\n- Constraints (tools available, data I can use, policy, tone): [CONSTRAINTS]\n\nWhat to do:\n1. Restate, in one line, the business outcome this task should move.\n2. Give me a step-by-step, AI-assisted workflow to get it done, organised around these stages: Learning Design & Content, Personalised Pathways & Coaching, Learning Analytics & ROI.\n3. For each step, give the exact prompt I should run next, with [placeholders] for my inputs.\n4. Call out the Responsible-AI checks I must not skip for this task (confidentiality, personal data, bias, and where a human must review before anything goes out).\n5. Finish with two concrete ways I can measure whether it worked.\n\nOutput format: a numbered workflow. For each step show: goal | prompt to run | what to watch out for. Keep it specific enough to use today.",
+    "promptType": "Workflow",
+    "role": "L&D Director",
+    "outcome": "A step-by-step AI-assisted workflow with ready-to-run prompts and Responsible-AI checks",
+    "aiTool": "General AI",
+    "variables": [
+      "ROLE",
+      "ORGANISATION",
+      "INDUSTRY",
+      "TASK",
+      "CONSTRAINTS"
+    ],
+    "variablesRaw": [
+      "[ROLE]",
+      "[ORGANISATION]",
+      "[INDUSTRY]",
+      "[TASK]",
+      "[CONSTRAINTS]"
+    ],
+    "isTemplate": true,
+    "tags": [
+      "Synottic",
+      "curriculum",
+      "Functions"
+    ],
+    "qualityScore": 92,
+    "qualityBreakdown": {
+      "clarity": 92,
+      "context": 88,
+      "specificity": 84,
+      "outputDefinition": 95,
+      "reusability": 96
+    },
+    "strengths": [
+      "Explicit role and method",
+      "Asks for real context via placeholders",
+      "Defines the output shape precisely",
+      "Builds in Responsible-AI checks"
+    ],
+    "improvements": [],
+    "flags": {
+      "modelSpecific": false,
+      "containsWebSearch": false,
+      "containsInteractiveQuestioning": false,
+      "embeddedMetadata": false,
+      "incompleteTitle": false,
+      "hasOutputCue": true
+    },
+    "source": "Synottic Curriculum",
+    "programId": "prog-syn-ld",
+    "track": "AI for Functions",
+    "version": "1.0",
+    "sensitiveCategory": false,
+    "duplicateGroup": null,
+    "healthStatus": "Excellent",
+    "healthReasons": [],
+    "difficulty": "Intermediate",
+    "skill": null,
+    "lifecycle": "Recommended"
+  },
+  {
+    "id": "crs-finance",
+    "sourceNumber": null,
+    "title": "AI for Finance & Accounting \u2014 Course Companion Prompt",
+    "originalTitle": "AI for Finance & Accounting \u2014 Course Companion Prompt",
+    "category": "Finance & Accounting",
+    "description": "A reusable prompt for learners on the AI for Finance & Accounting program: turns any task in scope into an AI-assisted, governed workflow with the exact prompts to run.",
+    "useCase": "Use on the AI for Finance & Accounting program whenever you have a real task and want a step-by-step AI workflow, the prompts to run, and the Responsible-AI checks for it.",
+    "originalPrompt": "Role: Act as a senior Finance & Accounting practitioner and AI enablement coach trained in Synottic's Learn -> Demonstrate -> Practice -> Apply method.\n\nObjective: Help me apply AI to finance & accounting for my organisation.\n\nContext I will provide:\n- My role: [ROLE]\n- Team / organisation: [ORGANISATION] in the [INDUSTRY] industry\n- The task or decision in front of me: [TASK]\n- Constraints (tools available, data I can use, policy, tone): [CONSTRAINTS]\n\nWhat to do:\n1. Restate, in one line, the business outcome this task should move.\n2. Give me a step-by-step, AI-assisted workflow to get it done, organised around these stages: Financial Planning & Analysis, Reporting & Month-end Close, Forecasting & Scenario Modelling.\n3. For each step, give the exact prompt I should run next, with [placeholders] for my inputs.\n4. Call out the Responsible-AI checks I must not skip for this task (confidentiality, personal data, bias, and where a human must review before anything goes out).\n5. Finish with two concrete ways I can measure whether it worked.\n\nOutput format: a numbered workflow. For each step show: goal | prompt to run | what to watch out for. Keep it specific enough to use today.",
+    "promptType": "Workflow",
+    "role": "CFO",
+    "outcome": "A step-by-step AI-assisted workflow with ready-to-run prompts and Responsible-AI checks",
+    "aiTool": "General AI",
+    "variables": [
+      "ROLE",
+      "ORGANISATION",
+      "INDUSTRY",
+      "TASK",
+      "CONSTRAINTS"
+    ],
+    "variablesRaw": [
+      "[ROLE]",
+      "[ORGANISATION]",
+      "[INDUSTRY]",
+      "[TASK]",
+      "[CONSTRAINTS]"
+    ],
+    "isTemplate": true,
+    "tags": [
+      "Synottic",
+      "curriculum",
+      "Functions",
+      "Finance",
+      "Accounting"
+    ],
+    "qualityScore": 92,
+    "qualityBreakdown": {
+      "clarity": 92,
+      "context": 88,
+      "specificity": 84,
+      "outputDefinition": 95,
+      "reusability": 96
+    },
+    "strengths": [
+      "Explicit role and method",
+      "Asks for real context via placeholders",
+      "Defines the output shape precisely",
+      "Builds in Responsible-AI checks"
+    ],
+    "improvements": [],
+    "flags": {
+      "modelSpecific": false,
+      "containsWebSearch": false,
+      "containsInteractiveQuestioning": false,
+      "embeddedMetadata": false,
+      "incompleteTitle": false,
+      "hasOutputCue": true
+    },
+    "source": "Synottic Curriculum",
+    "programId": "prog-syn-finance",
+    "track": "AI for Functions",
+    "version": "1.0",
+    "sensitiveCategory": true,
+    "duplicateGroup": null,
+    "healthStatus": "Excellent",
+    "healthReasons": [],
+    "difficulty": "Intermediate",
+    "skill": null,
+    "lifecycle": "Recommended"
+  },
+  {
+    "id": "crs-legal",
+    "sourceNumber": null,
+    "title": "AI for Legal & Compliance \u2014 Course Companion Prompt",
+    "originalTitle": "AI for Legal & Compliance \u2014 Course Companion Prompt",
+    "category": "Legal & Compliance",
+    "description": "A reusable prompt for learners on the AI for Legal & Compliance program: turns any task in scope into an AI-assisted, governed workflow with the exact prompts to run.",
+    "useCase": "Use on the AI for Legal & Compliance program whenever you have a real task and want a step-by-step AI workflow, the prompts to run, and the Responsible-AI checks for it.",
+    "originalPrompt": "Role: Act as a senior Legal & Compliance practitioner and AI enablement coach trained in Synottic's Learn -> Demonstrate -> Practice -> Apply method.\n\nObjective: Help me apply AI to legal & compliance for my organisation.\n\nContext I will provide:\n- My role: [ROLE]\n- Team / organisation: [ORGANISATION] in the [INDUSTRY] industry\n- The task or decision in front of me: [TASK]\n- Constraints (tools available, data I can use, policy, tone): [CONSTRAINTS]\n\nWhat to do:\n1. Restate, in one line, the business outcome this task should move.\n2. Give me a step-by-step, AI-assisted workflow to get it done, organised around these stages: Contract Drafting & Review, Legal Research & Memos, Compliance, Policy & Risk.\n3. For each step, give the exact prompt I should run next, with [placeholders] for my inputs.\n4. Call out the Responsible-AI checks I must not skip for this task (confidentiality, personal data, bias, and where a human must review before anything goes out).\n5. Finish with two concrete ways I can measure whether it worked.\n\nOutput format: a numbered workflow. For each step show: goal | prompt to run | what to watch out for. Keep it specific enough to use today.",
+    "promptType": "Workflow",
+    "role": "General Counsel",
+    "outcome": "A step-by-step AI-assisted workflow with ready-to-run prompts and Responsible-AI checks",
+    "aiTool": "General AI",
+    "variables": [
+      "ROLE",
+      "ORGANISATION",
+      "INDUSTRY",
+      "TASK",
+      "CONSTRAINTS"
+    ],
+    "variablesRaw": [
+      "[ROLE]",
+      "[ORGANISATION]",
+      "[INDUSTRY]",
+      "[TASK]",
+      "[CONSTRAINTS]"
+    ],
+    "isTemplate": true,
+    "tags": [
+      "Synottic",
+      "curriculum",
+      "Functions",
+      "Legal",
+      "Compliance"
+    ],
+    "qualityScore": 92,
+    "qualityBreakdown": {
+      "clarity": 92,
+      "context": 88,
+      "specificity": 84,
+      "outputDefinition": 95,
+      "reusability": 96
+    },
+    "strengths": [
+      "Explicit role and method",
+      "Asks for real context via placeholders",
+      "Defines the output shape precisely",
+      "Builds in Responsible-AI checks"
+    ],
+    "improvements": [],
+    "flags": {
+      "modelSpecific": false,
+      "containsWebSearch": false,
+      "containsInteractiveQuestioning": false,
+      "embeddedMetadata": false,
+      "incompleteTitle": false,
+      "hasOutputCue": true
+    },
+    "source": "Synottic Curriculum",
+    "programId": "prog-syn-legal",
+    "track": "AI for Functions",
+    "version": "1.0",
+    "sensitiveCategory": true,
+    "duplicateGroup": null,
+    "healthStatus": "Excellent",
+    "healthReasons": [],
+    "difficulty": "Intermediate",
+    "skill": null,
+    "lifecycle": "Recommended"
+  },
+  {
+    "id": "crs-it-eng",
+    "sourceNumber": null,
+    "title": "AI for IT & Engineering \u2014 Course Companion Prompt",
+    "originalTitle": "AI for IT & Engineering \u2014 Course Companion Prompt",
+    "category": "Coding & Tech",
+    "description": "A reusable prompt for learners on the AI for IT & Engineering program: turns any task in scope into an AI-assisted, governed workflow with the exact prompts to run.",
+    "useCase": "Use on the AI for IT & Engineering program whenever you have a real task and want a step-by-step AI workflow, the prompts to run, and the Responsible-AI checks for it.",
+    "originalPrompt": "Role: Act as a senior IT & Engineering practitioner and AI enablement coach trained in Synottic's Learn -> Demonstrate -> Practice -> Apply method.\n\nObjective: Help me apply AI to it & engineering for my organisation.\n\nContext I will provide:\n- My role: [ROLE]\n- Team / organisation: [ORGANISATION] in the [INDUSTRY] industry\n- The task or decision in front of me: [TASK]\n- Constraints (tools available, data I can use, policy, tone): [CONSTRAINTS]\n\nWhat to do:\n1. Restate, in one line, the business outcome this task should move.\n2. Give me a step-by-step, AI-assisted workflow to get it done, organised around these stages: Code & Development, System Design & Architecture, DevOps, Docs & Support.\n3. For each step, give the exact prompt I should run next, with [placeholders] for my inputs.\n4. Call out the Responsible-AI checks I must not skip for this task (confidentiality, personal data, bias, and where a human must review before anything goes out).\n5. Finish with two concrete ways I can measure whether it worked.\n\nOutput format: a numbered workflow. For each step show: goal | prompt to run | what to watch out for. Keep it specific enough to use today.",
+    "promptType": "Workflow",
+    "role": "CTO",
+    "outcome": "A step-by-step AI-assisted workflow with ready-to-run prompts and Responsible-AI checks",
+    "aiTool": "General AI",
+    "variables": [
+      "ROLE",
+      "ORGANISATION",
+      "INDUSTRY",
+      "TASK",
+      "CONSTRAINTS"
+    ],
+    "variablesRaw": [
+      "[ROLE]",
+      "[ORGANISATION]",
+      "[INDUSTRY]",
+      "[TASK]",
+      "[CONSTRAINTS]"
+    ],
+    "isTemplate": true,
+    "tags": [
+      "Synottic",
+      "curriculum",
+      "Functions",
+      "Engineering"
+    ],
+    "qualityScore": 92,
+    "qualityBreakdown": {
+      "clarity": 92,
+      "context": 88,
+      "specificity": 84,
+      "outputDefinition": 95,
+      "reusability": 96
+    },
+    "strengths": [
+      "Explicit role and method",
+      "Asks for real context via placeholders",
+      "Defines the output shape precisely",
+      "Builds in Responsible-AI checks"
+    ],
+    "improvements": [],
+    "flags": {
+      "modelSpecific": false,
+      "containsWebSearch": false,
+      "containsInteractiveQuestioning": false,
+      "embeddedMetadata": false,
+      "incompleteTitle": false,
+      "hasOutputCue": true
+    },
+    "source": "Synottic Curriculum",
+    "programId": "prog-syn-it-eng",
+    "track": "AI for Functions",
+    "version": "1.0",
+    "sensitiveCategory": false,
+    "duplicateGroup": null,
+    "healthStatus": "Excellent",
+    "healthReasons": [],
+    "difficulty": "Intermediate",
+    "skill": null,
+    "lifecycle": "Recommended"
+  },
+  {
+    "id": "crs-product",
+    "sourceNumber": null,
+    "title": "AI for Product Management \u2014 Course Companion Prompt",
+    "originalTitle": "AI for Product Management \u2014 Course Companion Prompt",
+    "category": "Product Management",
+    "description": "A reusable prompt for learners on the AI for Product Management program: turns any task in scope into an AI-assisted, governed workflow with the exact prompts to run.",
+    "useCase": "Use on the AI for Product Management program whenever you have a real task and want a step-by-step AI workflow, the prompts to run, and the Responsible-AI checks for it.",
+    "originalPrompt": "Role: Act as a senior Product Management practitioner and AI enablement coach trained in Synottic's Learn -> Demonstrate -> Practice -> Apply method.\n\nObjective: Help me apply AI to product management for my organisation.\n\nContext I will provide:\n- My role: [ROLE]\n- Team / organisation: [ORGANISATION] in the [INDUSTRY] industry\n- The task or decision in front of me: [TASK]\n- Constraints (tools available, data I can use, policy, tone): [CONSTRAINTS]\n\nWhat to do:\n1. Restate, in one line, the business outcome this task should move.\n2. Give me a step-by-step, AI-assisted workflow to get it done, organised around these stages: Discovery & Research, Specs & Requirements, Roadmap, Prioritisation & Analytics.\n3. For each step, give the exact prompt I should run next, with [placeholders] for my inputs.\n4. Call out the Responsible-AI checks I must not skip for this task (confidentiality, personal data, bias, and where a human must review before anything goes out).\n5. Finish with two concrete ways I can measure whether it worked.\n\nOutput format: a numbered workflow. For each step show: goal | prompt to run | what to watch out for. Keep it specific enough to use today.",
+    "promptType": "Workflow",
+    "role": "Head of Product",
+    "outcome": "A step-by-step AI-assisted workflow with ready-to-run prompts and Responsible-AI checks",
+    "aiTool": "General AI",
+    "variables": [
+      "ROLE",
+      "ORGANISATION",
+      "INDUSTRY",
+      "TASK",
+      "CONSTRAINTS"
+    ],
+    "variablesRaw": [
+      "[ROLE]",
+      "[ORGANISATION]",
+      "[INDUSTRY]",
+      "[TASK]",
+      "[CONSTRAINTS]"
+    ],
+    "isTemplate": true,
+    "tags": [
+      "Synottic",
+      "curriculum",
+      "Functions",
+      "Product",
+      "Management"
+    ],
+    "qualityScore": 92,
+    "qualityBreakdown": {
+      "clarity": 92,
+      "context": 88,
+      "specificity": 84,
+      "outputDefinition": 95,
+      "reusability": 96
+    },
+    "strengths": [
+      "Explicit role and method",
+      "Asks for real context via placeholders",
+      "Defines the output shape precisely",
+      "Builds in Responsible-AI checks"
+    ],
+    "improvements": [],
+    "flags": {
+      "modelSpecific": false,
+      "containsWebSearch": false,
+      "containsInteractiveQuestioning": false,
+      "embeddedMetadata": false,
+      "incompleteTitle": false,
+      "hasOutputCue": true
+    },
+    "source": "Synottic Curriculum",
+    "programId": "prog-syn-product",
+    "track": "AI for Functions",
+    "version": "1.0",
+    "sensitiveCategory": false,
+    "duplicateGroup": null,
+    "healthStatus": "Excellent",
+    "healthReasons": [],
+    "difficulty": "Intermediate",
+    "skill": null,
+    "lifecycle": "Recommended"
+  },
+  {
+    "id": "crs-ppm",
+    "sourceNumber": null,
+    "title": "AI for Project & Program Management \u2014 Course Companion Prompt",
+    "originalTitle": "AI for Project & Program Management \u2014 Course Companion Prompt",
+    "category": "Business Strategy",
+    "description": "A reusable prompt for learners on the AI for Project & Program Management program: turns any task in scope into an AI-assisted, governed workflow with the exact prompts to run.",
+    "useCase": "Use on the AI for Project & Program Management program whenever you have a real task and want a step-by-step AI workflow, the prompts to run, and the Responsible-AI checks for it.",
+    "originalPrompt": "Role: Act as a senior Project & Program Management practitioner and AI enablement coach trained in Synottic's Learn -> Demonstrate -> Practice -> Apply method.\n\nObjective: Help me apply AI to project & program management for my organisation.\n\nContext I will provide:\n- My role: [ROLE]\n- Team / organisation: [ORGANISATION] in the [INDUSTRY] industry\n- The task or decision in front of me: [TASK]\n- Constraints (tools available, data I can use, policy, tone): [CONSTRAINTS]\n\nWhat to do:\n1. Restate, in one line, the business outcome this task should move.\n2. Give me a step-by-step, AI-assisted workflow to get it done, organised around these stages: Planning & Estimation, Risk & Dependency Management, Status Reporting & Retrospectives.\n3. For each step, give the exact prompt I should run next, with [placeholders] for my inputs.\n4. Call out the Responsible-AI checks I must not skip for this task (confidentiality, personal data, bias, and where a human must review before anything goes out).\n5. Finish with two concrete ways I can measure whether it worked.\n\nOutput format: a numbered workflow. For each step show: goal | prompt to run | what to watch out for. Keep it specific enough to use today.",
+    "promptType": "Workflow",
+    "role": "Programme Director",
+    "outcome": "A step-by-step AI-assisted workflow with ready-to-run prompts and Responsible-AI checks",
+    "aiTool": "General AI",
+    "variables": [
+      "ROLE",
+      "ORGANISATION",
+      "INDUSTRY",
+      "TASK",
+      "CONSTRAINTS"
+    ],
+    "variablesRaw": [
+      "[ROLE]",
+      "[ORGANISATION]",
+      "[INDUSTRY]",
+      "[TASK]",
+      "[CONSTRAINTS]"
+    ],
+    "isTemplate": true,
+    "tags": [
+      "Synottic",
+      "curriculum",
+      "Functions",
+      "Project",
+      "Program",
+      "Management"
+    ],
+    "qualityScore": 92,
+    "qualityBreakdown": {
+      "clarity": 92,
+      "context": 88,
+      "specificity": 84,
+      "outputDefinition": 95,
+      "reusability": 96
+    },
+    "strengths": [
+      "Explicit role and method",
+      "Asks for real context via placeholders",
+      "Defines the output shape precisely",
+      "Builds in Responsible-AI checks"
+    ],
+    "improvements": [],
+    "flags": {
+      "modelSpecific": false,
+      "containsWebSearch": false,
+      "containsInteractiveQuestioning": false,
+      "embeddedMetadata": false,
+      "incompleteTitle": false,
+      "hasOutputCue": true
+    },
+    "source": "Synottic Curriculum",
+    "programId": "prog-syn-ppm",
+    "track": "AI for Functions",
+    "version": "1.0",
+    "sensitiveCategory": false,
+    "duplicateGroup": null,
+    "healthStatus": "Excellent",
+    "healthReasons": [],
+    "difficulty": "Intermediate",
+    "skill": null,
+    "lifecycle": "Recommended"
+  },
+  {
+    "id": "crs-customer-service",
+    "sourceNumber": null,
+    "title": "AI for Customer Service \u2014 Course Companion Prompt",
+    "originalTitle": "AI for Customer Service \u2014 Course Companion Prompt",
+    "category": "Customer Support",
+    "description": "A reusable prompt for learners on the AI for Customer Service program: turns any task in scope into an AI-assisted, governed workflow with the exact prompts to run.",
+    "useCase": "Use on the AI for Customer Service program whenever you have a real task and want a step-by-step AI workflow, the prompts to run, and the Responsible-AI checks for it.",
+    "originalPrompt": "Role: Act as a senior Customer Service practitioner and AI enablement coach trained in Synottic's Learn -> Demonstrate -> Practice -> Apply method.\n\nObjective: Help me apply AI to customer service for my organisation.\n\nContext I will provide:\n- My role: [ROLE]\n- Team / organisation: [ORGANISATION] in the [INDUSTRY] industry\n- The task or decision in front of me: [TASK]\n- Constraints (tools available, data I can use, policy, tone): [CONSTRAINTS]\n\nWhat to do:\n1. Restate, in one line, the business outcome this task should move.\n2. Give me a step-by-step, AI-assisted workflow to get it done, organised around these stages: Response Drafting & Macros, Knowledge Base & Self-Service, Escalation, Complaints & QA.\n3. For each step, give the exact prompt I should run next, with [placeholders] for my inputs.\n4. Call out the Responsible-AI checks I must not skip for this task (confidentiality, personal data, bias, and where a human must review before anything goes out).\n5. Finish with two concrete ways I can measure whether it worked.\n\nOutput format: a numbered workflow. For each step show: goal | prompt to run | what to watch out for. Keep it specific enough to use today.",
+    "promptType": "Workflow",
+    "role": "Head of Customer Support",
+    "outcome": "A step-by-step AI-assisted workflow with ready-to-run prompts and Responsible-AI checks",
+    "aiTool": "General AI",
+    "variables": [
+      "ROLE",
+      "ORGANISATION",
+      "INDUSTRY",
+      "TASK",
+      "CONSTRAINTS"
+    ],
+    "variablesRaw": [
+      "[ROLE]",
+      "[ORGANISATION]",
+      "[INDUSTRY]",
+      "[TASK]",
+      "[CONSTRAINTS]"
+    ],
+    "isTemplate": true,
+    "tags": [
+      "Synottic",
+      "curriculum",
+      "Functions",
+      "Customer",
+      "Service"
+    ],
+    "qualityScore": 92,
+    "qualityBreakdown": {
+      "clarity": 92,
+      "context": 88,
+      "specificity": 84,
+      "outputDefinition": 95,
+      "reusability": 96
+    },
+    "strengths": [
+      "Explicit role and method",
+      "Asks for real context via placeholders",
+      "Defines the output shape precisely",
+      "Builds in Responsible-AI checks"
+    ],
+    "improvements": [],
+    "flags": {
+      "modelSpecific": false,
+      "containsWebSearch": false,
+      "containsInteractiveQuestioning": false,
+      "embeddedMetadata": false,
+      "incompleteTitle": false,
+      "hasOutputCue": true
+    },
+    "source": "Synottic Curriculum",
+    "programId": "prog-syn-customer-service",
+    "track": "AI for Functions",
+    "version": "1.0",
+    "sensitiveCategory": false,
+    "duplicateGroup": null,
+    "healthStatus": "Excellent",
+    "healthReasons": [],
+    "difficulty": "Intermediate",
+    "skill": null,
+    "lifecycle": "Recommended"
+  },
+  {
+    "id": "crs-data-analyst",
+    "sourceNumber": null,
+    "title": "AI for Data & Business Analysts \u2014 Course Companion Prompt",
+    "originalTitle": "AI for Data & Business Analysts \u2014 Course Companion Prompt",
+    "category": "Research & Data Analysis",
+    "description": "A reusable prompt for learners on the AI for Data & Business Analysts program: turns any task in scope into an AI-assisted, governed workflow with the exact prompts to run.",
+    "useCase": "Use on the AI for Data & Business Analysts program whenever you have a real task and want a step-by-step AI workflow, the prompts to run, and the Responsible-AI checks for it.",
+    "originalPrompt": "Role: Act as a senior Data & Business Analysts practitioner and AI enablement coach trained in Synottic's Learn -> Demonstrate -> Practice -> Apply method.\n\nObjective: Help me apply AI to data & business analysts for my organisation.\n\nContext I will provide:\n- My role: [ROLE]\n- Team / organisation: [ORGANISATION] in the [INDUSTRY] industry\n- The task or decision in front of me: [TASK]\n- Constraints (tools available, data I can use, policy, tone): [CONSTRAINTS]\n\nWhat to do:\n1. Restate, in one line, the business outcome this task should move.\n2. Give me a step-by-step, AI-assisted workflow to get it done, organised around these stages: Data Exploration & Analysis, Dashboards & Reporting, Insight & Storytelling.\n3. For each step, give the exact prompt I should run next, with [placeholders] for my inputs.\n4. Call out the Responsible-AI checks I must not skip for this task (confidentiality, personal data, bias, and where a human must review before anything goes out).\n5. Finish with two concrete ways I can measure whether it worked.\n\nOutput format: a numbered workflow. For each step show: goal | prompt to run | what to watch out for. Keep it specific enough to use today.",
+    "promptType": "Workflow",
+    "role": "Head of Analytics",
+    "outcome": "A step-by-step AI-assisted workflow with ready-to-run prompts and Responsible-AI checks",
+    "aiTool": "General AI",
+    "variables": [
+      "ROLE",
+      "ORGANISATION",
+      "INDUSTRY",
+      "TASK",
+      "CONSTRAINTS"
+    ],
+    "variablesRaw": [
+      "[ROLE]",
+      "[ORGANISATION]",
+      "[INDUSTRY]",
+      "[TASK]",
+      "[CONSTRAINTS]"
+    ],
+    "isTemplate": true,
+    "tags": [
+      "Synottic",
+      "curriculum",
+      "Functions",
+      "Data",
+      "Business",
+      "Analysts"
+    ],
+    "qualityScore": 92,
+    "qualityBreakdown": {
+      "clarity": 92,
+      "context": 88,
+      "specificity": 84,
+      "outputDefinition": 95,
+      "reusability": 96
+    },
+    "strengths": [
+      "Explicit role and method",
+      "Asks for real context via placeholders",
+      "Defines the output shape precisely",
+      "Builds in Responsible-AI checks"
+    ],
+    "improvements": [],
+    "flags": {
+      "modelSpecific": false,
+      "containsWebSearch": false,
+      "containsInteractiveQuestioning": false,
+      "embeddedMetadata": false,
+      "incompleteTitle": false,
+      "hasOutputCue": true
+    },
+    "source": "Synottic Curriculum",
+    "programId": "prog-syn-data-analyst",
+    "track": "AI for Functions",
+    "version": "1.0",
+    "sensitiveCategory": false,
+    "duplicateGroup": null,
+    "healthStatus": "Excellent",
+    "healthReasons": [],
+    "difficulty": "Intermediate",
+    "skill": null,
+    "lifecycle": "Recommended"
+  },
+  {
+    "id": "crs-operations",
+    "sourceNumber": null,
+    "title": "AI for Operations & Supply Chain \u2014 Course Companion Prompt",
+    "originalTitle": "AI for Operations & Supply Chain \u2014 Course Companion Prompt",
+    "category": "Productivity & Automation",
+    "description": "A reusable prompt for learners on the AI for Operations & Supply Chain program: turns any task in scope into an AI-assisted, governed workflow with the exact prompts to run.",
+    "useCase": "Use on the AI for Operations & Supply Chain program whenever you have a real task and want a step-by-step AI workflow, the prompts to run, and the Responsible-AI checks for it.",
+    "originalPrompt": "Role: Act as a senior Operations & Supply Chain practitioner and AI enablement coach trained in Synottic's Learn -> Demonstrate -> Practice -> Apply method.\n\nObjective: Help me apply AI to operations & supply chain for my organisation.\n\nContext I will provide:\n- My role: [ROLE]\n- Team / organisation: [ORGANISATION] in the [INDUSTRY] industry\n- The task or decision in front of me: [TASK]\n- Constraints (tools available, data I can use, policy, tone): [CONSTRAINTS]\n\nWhat to do:\n1. Restate, in one line, the business outcome this task should move.\n2. Give me a step-by-step, AI-assisted workflow to get it done, organised around these stages: Process Docs & SOPs, Planning & Automation, Operations Analytics.\n3. For each step, give the exact prompt I should run next, with [placeholders] for my inputs.\n4. Call out the Responsible-AI checks I must not skip for this task (confidentiality, personal data, bias, and where a human must review before anything goes out).\n5. Finish with two concrete ways I can measure whether it worked.\n\nOutput format: a numbered workflow. For each step show: goal | prompt to run | what to watch out for. Keep it specific enough to use today.",
+    "promptType": "Workflow",
+    "role": "COO",
+    "outcome": "A step-by-step AI-assisted workflow with ready-to-run prompts and Responsible-AI checks",
+    "aiTool": "General AI",
+    "variables": [
+      "ROLE",
+      "ORGANISATION",
+      "INDUSTRY",
+      "TASK",
+      "CONSTRAINTS"
+    ],
+    "variablesRaw": [
+      "[ROLE]",
+      "[ORGANISATION]",
+      "[INDUSTRY]",
+      "[TASK]",
+      "[CONSTRAINTS]"
+    ],
+    "isTemplate": true,
+    "tags": [
+      "Synottic",
+      "curriculum",
+      "Functions",
+      "Operations",
+      "Supply",
+      "Chain"
+    ],
+    "qualityScore": 92,
+    "qualityBreakdown": {
+      "clarity": 92,
+      "context": 88,
+      "specificity": 84,
+      "outputDefinition": 95,
+      "reusability": 96
+    },
+    "strengths": [
+      "Explicit role and method",
+      "Asks for real context via placeholders",
+      "Defines the output shape precisely",
+      "Builds in Responsible-AI checks"
+    ],
+    "improvements": [],
+    "flags": {
+      "modelSpecific": false,
+      "containsWebSearch": false,
+      "containsInteractiveQuestioning": false,
+      "embeddedMetadata": false,
+      "incompleteTitle": false,
+      "hasOutputCue": true
+    },
+    "source": "Synottic Curriculum",
+    "programId": "prog-syn-operations",
+    "track": "AI for Functions",
+    "version": "1.0",
+    "sensitiveCategory": false,
+    "duplicateGroup": null,
+    "healthStatus": "Excellent",
+    "healthReasons": [],
+    "difficulty": "Intermediate",
+    "skill": null,
+    "lifecycle": "Recommended"
+  },
+  {
+    "id": "crs-procurement",
+    "sourceNumber": null,
+    "title": "AI for Procurement \u2014 Course Companion Prompt",
+    "originalTitle": "AI for Procurement \u2014 Course Companion Prompt",
+    "category": "Finance & Accounting",
+    "description": "A reusable prompt for learners on the AI for Procurement program: turns any task in scope into an AI-assisted, governed workflow with the exact prompts to run.",
+    "useCase": "Use on the AI for Procurement program whenever you have a real task and want a step-by-step AI workflow, the prompts to run, and the Responsible-AI checks for it.",
+    "originalPrompt": "Role: Act as a senior Procurement practitioner and AI enablement coach trained in Synottic's Learn -> Demonstrate -> Practice -> Apply method.\n\nObjective: Help me apply AI to procurement for my organisation.\n\nContext I will provide:\n- My role: [ROLE]\n- Team / organisation: [ORGANISATION] in the [INDUSTRY] industry\n- The task or decision in front of me: [TASK]\n- Constraints (tools available, data I can use, policy, tone): [CONSTRAINTS]\n\nWhat to do:\n1. Restate, in one line, the business outcome this task should move.\n2. Give me a step-by-step, AI-assisted workflow to get it done, organised around these stages: Sourcing & Supplier Research, RFx & Contracts, Spend Analysis & Compliance.\n3. For each step, give the exact prompt I should run next, with [placeholders] for my inputs.\n4. Call out the Responsible-AI checks I must not skip for this task (confidentiality, personal data, bias, and where a human must review before anything goes out).\n5. Finish with two concrete ways I can measure whether it worked.\n\nOutput format: a numbered workflow. For each step show: goal | prompt to run | what to watch out for. Keep it specific enough to use today.",
+    "promptType": "Workflow",
+    "role": "CPO",
+    "outcome": "A step-by-step AI-assisted workflow with ready-to-run prompts and Responsible-AI checks",
+    "aiTool": "General AI",
+    "variables": [
+      "ROLE",
+      "ORGANISATION",
+      "INDUSTRY",
+      "TASK",
+      "CONSTRAINTS"
+    ],
+    "variablesRaw": [
+      "[ROLE]",
+      "[ORGANISATION]",
+      "[INDUSTRY]",
+      "[TASK]",
+      "[CONSTRAINTS]"
+    ],
+    "isTemplate": true,
+    "tags": [
+      "Synottic",
+      "curriculum",
+      "Functions",
+      "Procurement"
+    ],
+    "qualityScore": 92,
+    "qualityBreakdown": {
+      "clarity": 92,
+      "context": 88,
+      "specificity": 84,
+      "outputDefinition": 95,
+      "reusability": 96
+    },
+    "strengths": [
+      "Explicit role and method",
+      "Asks for real context via placeholders",
+      "Defines the output shape precisely",
+      "Builds in Responsible-AI checks"
+    ],
+    "improvements": [],
+    "flags": {
+      "modelSpecific": false,
+      "containsWebSearch": false,
+      "containsInteractiveQuestioning": false,
+      "embeddedMetadata": false,
+      "incompleteTitle": false,
+      "hasOutputCue": true
+    },
+    "source": "Synottic Curriculum",
+    "programId": "prog-syn-procurement",
+    "track": "AI for Functions",
+    "version": "1.0",
+    "sensitiveCategory": true,
+    "duplicateGroup": null,
+    "healthStatus": "Excellent",
+    "healthReasons": [],
+    "difficulty": "Intermediate",
+    "skill": null,
+    "lifecycle": "Recommended"
+  },
+  {
+    "id": "crs-responsible-ai-essentials",
+    "sourceNumber": null,
+    "title": "Responsible AI Essentials \u2014 Course Companion Prompt",
+    "originalTitle": "Responsible AI Essentials \u2014 Course Companion Prompt",
+    "category": "Legal & Compliance",
+    "description": "A reusable prompt for learners on the Responsible AI Essentials program: turns any task in scope into an AI-assisted, governed workflow with the exact prompts to run.",
+    "useCase": "Use on the Responsible AI Essentials program whenever you have a real task and want a step-by-step AI workflow, the prompts to run, and the Responsible-AI checks for it.",
+    "originalPrompt": "Role: Act as a senior AI governance practitioner and AI enablement coach trained in Synottic's Learn -> Demonstrate -> Practice -> Apply method.\n\nObjective: Help me apply AI to responsible ai essentials for my organisation.\n\nContext I will provide:\n- My role: [ROLE]\n- Team / organisation: [ORGANISATION] in the [INDUSTRY] industry\n- The task or decision in front of me: [TASK]\n- Constraints (tools available, data I can use, policy, tone): [CONSTRAINTS]\n\nWhat to do:\n1. Restate, in one line, the business outcome this task should move.\n2. Give me a step-by-step, AI-assisted workflow to get it done, organised around these stages: understand the goal, draft with AI, pressure-test the output, and finalise for use.\n3. For each step, give the exact prompt I should run next, with [placeholders] for my inputs.\n4. Call out the Responsible-AI checks I must not skip for this task (confidentiality, personal data, bias, and where a human must review before anything goes out).\n5. Finish with two concrete ways I can measure whether it worked.\n\nOutput format: a numbered workflow. For each step show: goal | prompt to run | what to watch out for. Keep it specific enough to use today.",
+    "promptType": "Workflow",
+    "role": "Individual Contributor",
+    "outcome": "A step-by-step AI-assisted workflow with ready-to-run prompts and Responsible-AI checks",
+    "aiTool": "General AI",
+    "variables": [
+      "ROLE",
+      "ORGANISATION",
+      "INDUSTRY",
+      "TASK",
+      "CONSTRAINTS"
+    ],
+    "variablesRaw": [
+      "[ROLE]",
+      "[ORGANISATION]",
+      "[INDUSTRY]",
+      "[TASK]",
+      "[CONSTRAINTS]"
+    ],
+    "isTemplate": true,
+    "tags": [
+      "Synottic",
+      "curriculum",
+      "Responsible AI",
+      "Responsible",
+      "Essentials"
+    ],
+    "qualityScore": 92,
+    "qualityBreakdown": {
+      "clarity": 92,
+      "context": 88,
+      "specificity": 84,
+      "outputDefinition": 95,
+      "reusability": 96
+    },
+    "strengths": [
+      "Explicit role and method",
+      "Asks for real context via placeholders",
+      "Defines the output shape precisely",
+      "Builds in Responsible-AI checks"
+    ],
+    "improvements": [],
+    "flags": {
+      "modelSpecific": false,
+      "containsWebSearch": false,
+      "containsInteractiveQuestioning": false,
+      "embeddedMetadata": false,
+      "incompleteTitle": false,
+      "hasOutputCue": true
+    },
+    "source": "Synottic Curriculum",
+    "programId": "prog-syn-responsible-ai-essentials",
+    "track": "Responsible AI & Governance",
+    "version": "1.0",
+    "sensitiveCategory": true,
+    "duplicateGroup": null,
+    "healthStatus": "Excellent",
+    "healthReasons": [],
+    "difficulty": "Intermediate",
+    "skill": null,
+    "lifecycle": "Recommended"
+  },
+  {
+    "id": "crs-ai-risk-governance-leaders",
+    "sourceNumber": null,
+    "title": "AI Risk & Governance for Leaders \u2014 Course Companion Prompt",
+    "originalTitle": "AI Risk & Governance for Leaders \u2014 Course Companion Prompt",
+    "category": "Legal & Compliance",
+    "description": "A reusable prompt for learners on the AI Risk & Governance for Leaders program: turns any task in scope into an AI-assisted, governed workflow with the exact prompts to run.",
+    "useCase": "Use on the AI Risk & Governance for Leaders program whenever you have a real task and want a step-by-step AI workflow, the prompts to run, and the Responsible-AI checks for it.",
+    "originalPrompt": "Role: Act as a senior AI governance practitioner and AI enablement coach trained in Synottic's Learn -> Demonstrate -> Practice -> Apply method.\n\nObjective: Help me apply AI to ai risk & governance for leaders for my organisation.\n\nContext I will provide:\n- My role: [ROLE]\n- Team / organisation: [ORGANISATION] in the [INDUSTRY] industry\n- The task or decision in front of me: [TASK]\n- Constraints (tools available, data I can use, policy, tone): [CONSTRAINTS]\n\nWhat to do:\n1. Restate, in one line, the business outcome this task should move.\n2. Give me a step-by-step, AI-assisted workflow to get it done, organised around these stages: understand the goal, draft with AI, pressure-test the output, and finalise for use.\n3. For each step, give the exact prompt I should run next, with [placeholders] for my inputs.\n4. Call out the Responsible-AI checks I must not skip for this task (confidentiality, personal data, bias, and where a human must review before anything goes out).\n5. Finish with two concrete ways I can measure whether it worked.\n\nOutput format: a numbered workflow. For each step show: goal | prompt to run | what to watch out for. Keep it specific enough to use today.",
+    "promptType": "Workflow",
+    "role": "Executive Sponsor",
+    "outcome": "A step-by-step AI-assisted workflow with ready-to-run prompts and Responsible-AI checks",
+    "aiTool": "General AI",
+    "variables": [
+      "ROLE",
+      "ORGANISATION",
+      "INDUSTRY",
+      "TASK",
+      "CONSTRAINTS"
+    ],
+    "variablesRaw": [
+      "[ROLE]",
+      "[ORGANISATION]",
+      "[INDUSTRY]",
+      "[TASK]",
+      "[CONSTRAINTS]"
+    ],
+    "isTemplate": true,
+    "tags": [
+      "Synottic",
+      "curriculum",
+      "Responsible AI",
+      "Risk",
+      "Governance",
+      "Leaders"
+    ],
+    "qualityScore": 92,
+    "qualityBreakdown": {
+      "clarity": 92,
+      "context": 88,
+      "specificity": 84,
+      "outputDefinition": 95,
+      "reusability": 96
+    },
+    "strengths": [
+      "Explicit role and method",
+      "Asks for real context via placeholders",
+      "Defines the output shape precisely",
+      "Builds in Responsible-AI checks"
+    ],
+    "improvements": [],
+    "flags": {
+      "modelSpecific": false,
+      "containsWebSearch": false,
+      "containsInteractiveQuestioning": false,
+      "embeddedMetadata": false,
+      "incompleteTitle": false,
+      "hasOutputCue": true
+    },
+    "source": "Synottic Curriculum",
+    "programId": "prog-syn-ai-risk-governance-leaders",
+    "track": "Responsible AI & Governance",
+    "version": "1.0",
+    "sensitiveCategory": true,
+    "duplicateGroup": null,
+    "healthStatus": "Excellent",
+    "healthReasons": [],
+    "difficulty": "Intermediate",
+    "skill": null,
+    "lifecycle": "Recommended"
+  },
+  {
+    "id": "crs-ai-governance-practitioner",
+    "sourceNumber": null,
+    "title": "AI Governance Practitioner \u2014 Course Companion Prompt",
+    "originalTitle": "AI Governance Practitioner \u2014 Course Companion Prompt",
+    "category": "Legal & Compliance",
+    "description": "A reusable prompt for learners on the AI Governance Practitioner program: turns any task in scope into an AI-assisted, governed workflow with the exact prompts to run.",
+    "useCase": "Use on the AI Governance Practitioner program whenever you have a real task and want a step-by-step AI workflow, the prompts to run, and the Responsible-AI checks for it.",
+    "originalPrompt": "Role: Act as a senior AI governance practitioner and AI enablement coach trained in Synottic's Learn -> Demonstrate -> Practice -> Apply method.\n\nObjective: Help me apply AI to ai governance practitioner for my organisation.\n\nContext I will provide:\n- My role: [ROLE]\n- Team / organisation: [ORGANISATION] in the [INDUSTRY] industry\n- The task or decision in front of me: [TASK]\n- Constraints (tools available, data I can use, policy, tone): [CONSTRAINTS]\n\nWhat to do:\n1. Restate, in one line, the business outcome this task should move.\n2. Give me a step-by-step, AI-assisted workflow to get it done, organised around these stages: understand the goal, draft with AI, pressure-test the output, and finalise for use.\n3. For each step, give the exact prompt I should run next, with [placeholders] for my inputs.\n4. Call out the Responsible-AI checks I must not skip for this task (confidentiality, personal data, bias, and where a human must review before anything goes out).\n5. Finish with two concrete ways I can measure whether it worked.\n\nOutput format: a numbered workflow. For each step show: goal | prompt to run | what to watch out for. Keep it specific enough to use today.",
+    "promptType": "Workflow",
+    "role": "AI Governance Lead",
+    "outcome": "A step-by-step AI-assisted workflow with ready-to-run prompts and Responsible-AI checks",
+    "aiTool": "General AI",
+    "variables": [
+      "ROLE",
+      "ORGANISATION",
+      "INDUSTRY",
+      "TASK",
+      "CONSTRAINTS"
+    ],
+    "variablesRaw": [
+      "[ROLE]",
+      "[ORGANISATION]",
+      "[INDUSTRY]",
+      "[TASK]",
+      "[CONSTRAINTS]"
+    ],
+    "isTemplate": true,
+    "tags": [
+      "Synottic",
+      "curriculum",
+      "Responsible AI",
+      "Governance",
+      "Practitioner"
+    ],
+    "qualityScore": 92,
+    "qualityBreakdown": {
+      "clarity": 92,
+      "context": 88,
+      "specificity": 84,
+      "outputDefinition": 95,
+      "reusability": 96
+    },
+    "strengths": [
+      "Explicit role and method",
+      "Asks for real context via placeholders",
+      "Defines the output shape precisely",
+      "Builds in Responsible-AI checks"
+    ],
+    "improvements": [],
+    "flags": {
+      "modelSpecific": false,
+      "containsWebSearch": false,
+      "containsInteractiveQuestioning": false,
+      "embeddedMetadata": false,
+      "incompleteTitle": false,
+      "hasOutputCue": true
+    },
+    "source": "Synottic Curriculum",
+    "programId": "prog-syn-ai-governance-practitioner",
+    "track": "Responsible AI & Governance",
+    "version": "1.0",
+    "sensitiveCategory": true,
+    "duplicateGroup": null,
+    "healthStatus": "Excellent",
+    "healthReasons": [],
+    "difficulty": "Intermediate",
+    "skill": null,
+    "lifecycle": "Recommended"
+  },
+  {
+    "id": "crs-enterprise-ai-governance",
+    "sourceNumber": null,
+    "title": "Enterprise AI Governance Academy \u2014 Course Companion Prompt",
+    "originalTitle": "Enterprise AI Governance Academy \u2014 Course Companion Prompt",
+    "category": "Legal & Compliance",
+    "description": "A reusable prompt for learners on the Enterprise AI Governance Academy program: turns any task in scope into an AI-assisted, governed workflow with the exact prompts to run.",
+    "useCase": "Use on the Enterprise AI Governance Academy program whenever you have a real task and want a step-by-step AI workflow, the prompts to run, and the Responsible-AI checks for it.",
+    "originalPrompt": "Role: Act as a senior AI governance practitioner and AI enablement coach trained in Synottic's Learn -> Demonstrate -> Practice -> Apply method.\n\nObjective: Help me apply AI to enterprise ai governance academy for my organisation.\n\nContext I will provide:\n- My role: [ROLE]\n- Team / organisation: [ORGANISATION] in the [INDUSTRY] industry\n- The task or decision in front of me: [TASK]\n- Constraints (tools available, data I can use, policy, tone): [CONSTRAINTS]\n\nWhat to do:\n1. Restate, in one line, the business outcome this task should move.\n2. Give me a step-by-step, AI-assisted workflow to get it done, organised around these stages: understand the goal, draft with AI, pressure-test the output, and finalise for use.\n3. For each step, give the exact prompt I should run next, with [placeholders] for my inputs.\n4. Call out the Responsible-AI checks I must not skip for this task (confidentiality, personal data, bias, and where a human must review before anything goes out).\n5. Finish with two concrete ways I can measure whether it worked.\n\nOutput format: a numbered workflow. For each step show: goal | prompt to run | what to watch out for. Keep it specific enough to use today.",
+    "promptType": "Workflow",
+    "role": "Chief AI Officer",
+    "outcome": "A step-by-step AI-assisted workflow with ready-to-run prompts and Responsible-AI checks",
+    "aiTool": "General AI",
+    "variables": [
+      "ROLE",
+      "ORGANISATION",
+      "INDUSTRY",
+      "TASK",
+      "CONSTRAINTS"
+    ],
+    "variablesRaw": [
+      "[ROLE]",
+      "[ORGANISATION]",
+      "[INDUSTRY]",
+      "[TASK]",
+      "[CONSTRAINTS]"
+    ],
+    "isTemplate": true,
+    "tags": [
+      "Synottic",
+      "curriculum",
+      "Responsible AI",
+      "Enterprise",
+      "Governance",
+      "Academy"
+    ],
+    "qualityScore": 92,
+    "qualityBreakdown": {
+      "clarity": 92,
+      "context": 88,
+      "specificity": 84,
+      "outputDefinition": 95,
+      "reusability": 96
+    },
+    "strengths": [
+      "Explicit role and method",
+      "Asks for real context via placeholders",
+      "Defines the output shape precisely",
+      "Builds in Responsible-AI checks"
+    ],
+    "improvements": [],
+    "flags": {
+      "modelSpecific": false,
+      "containsWebSearch": false,
+      "containsInteractiveQuestioning": false,
+      "embeddedMetadata": false,
+      "incompleteTitle": false,
+      "hasOutputCue": true
+    },
+    "source": "Synottic Curriculum",
+    "programId": "prog-syn-enterprise-ai-governance",
+    "track": "Responsible AI & Governance",
+    "version": "1.0",
+    "sensitiveCategory": true,
+    "duplicateGroup": null,
+    "healthStatus": "Excellent",
+    "healthReasons": [],
+    "difficulty": "Intermediate",
+    "skill": null,
+    "lifecycle": "Recommended"
+  },
+  {
+    "id": "crs-ai-agents-essentials",
+    "sourceNumber": null,
+    "title": "AI Agents Essentials \u2014 Course Companion Prompt",
+    "originalTitle": "AI Agents Essentials \u2014 Course Companion Prompt",
+    "category": "AI & Prompt Engineering",
+    "description": "A reusable prompt for learners on the AI Agents Essentials program: turns any task in scope into an AI-assisted, governed workflow with the exact prompts to run.",
+    "useCase": "Use on the AI Agents Essentials program whenever you have a real task and want a step-by-step AI workflow, the prompts to run, and the Responsible-AI checks for it.",
+    "originalPrompt": "Role: Act as a senior AI automation architect and AI enablement coach trained in Synottic's Learn -> Demonstrate -> Practice -> Apply method.\n\nObjective: Help me apply AI to ai agents essentials for my organisation.\n\nContext I will provide:\n- My role: [ROLE]\n- Team / organisation: [ORGANISATION] in the [INDUSTRY] industry\n- The task or decision in front of me: [TASK]\n- Constraints (tools available, data I can use, policy, tone): [CONSTRAINTS]\n\nWhat to do:\n1. Restate, in one line, the business outcome this task should move.\n2. Give me a step-by-step, AI-assisted workflow to get it done, organised around these stages: understand the goal, draft with AI, pressure-test the output, and finalise for use.\n3. For each step, give the exact prompt I should run next, with [placeholders] for my inputs.\n4. Call out the Responsible-AI checks I must not skip for this task (confidentiality, personal data, bias, and where a human must review before anything goes out).\n5. Finish with two concrete ways I can measure whether it worked.\n\nOutput format: a numbered workflow. For each step show: goal | prompt to run | what to watch out for. Keep it specific enough to use today.",
+    "promptType": "Workflow",
+    "role": "Individual Contributor",
+    "outcome": "A step-by-step AI-assisted workflow with ready-to-run prompts and Responsible-AI checks",
+    "aiTool": "General AI",
+    "variables": [
+      "ROLE",
+      "ORGANISATION",
+      "INDUSTRY",
+      "TASK",
+      "CONSTRAINTS"
+    ],
+    "variablesRaw": [
+      "[ROLE]",
+      "[ORGANISATION]",
+      "[INDUSTRY]",
+      "[TASK]",
+      "[CONSTRAINTS]"
+    ],
+    "isTemplate": true,
+    "tags": [
+      "Synottic",
+      "curriculum",
+      "Agentic AI",
+      "Agents",
+      "Essentials"
+    ],
+    "qualityScore": 92,
+    "qualityBreakdown": {
+      "clarity": 92,
+      "context": 88,
+      "specificity": 84,
+      "outputDefinition": 95,
+      "reusability": 96
+    },
+    "strengths": [
+      "Explicit role and method",
+      "Asks for real context via placeholders",
+      "Defines the output shape precisely",
+      "Builds in Responsible-AI checks"
+    ],
+    "improvements": [],
+    "flags": {
+      "modelSpecific": false,
+      "containsWebSearch": false,
+      "containsInteractiveQuestioning": false,
+      "embeddedMetadata": false,
+      "incompleteTitle": false,
+      "hasOutputCue": true
+    },
+    "source": "Synottic Curriculum",
+    "programId": "prog-syn-ai-agents-essentials",
+    "track": "Agentic AI",
+    "version": "1.0",
+    "sensitiveCategory": false,
+    "duplicateGroup": null,
+    "healthStatus": "Excellent",
+    "healthReasons": [],
+    "difficulty": "Intermediate",
+    "skill": null,
+    "lifecycle": "Recommended"
+  },
+  {
+    "id": "crs-ai-agent-builder",
+    "sourceNumber": null,
+    "title": "AI Agent Builder \u2014 Course Companion Prompt",
+    "originalTitle": "AI Agent Builder \u2014 Course Companion Prompt",
+    "category": "Coding & Tech",
+    "description": "A reusable prompt for learners on the AI Agent Builder program: turns any task in scope into an AI-assisted, governed workflow with the exact prompts to run.",
+    "useCase": "Use on the AI Agent Builder program whenever you have a real task and want a step-by-step AI workflow, the prompts to run, and the Responsible-AI checks for it.",
+    "originalPrompt": "Role: Act as a senior AI automation architect and AI enablement coach trained in Synottic's Learn -> Demonstrate -> Practice -> Apply method.\n\nObjective: Help me apply AI to ai agent builder for my organisation.\n\nContext I will provide:\n- My role: [ROLE]\n- Team / organisation: [ORGANISATION] in the [INDUSTRY] industry\n- The task or decision in front of me: [TASK]\n- Constraints (tools available, data I can use, policy, tone): [CONSTRAINTS]\n\nWhat to do:\n1. Restate, in one line, the business outcome this task should move.\n2. Give me a step-by-step, AI-assisted workflow to get it done, organised around these stages: understand the goal, draft with AI, pressure-test the output, and finalise for use.\n3. For each step, give the exact prompt I should run next, with [placeholders] for my inputs.\n4. Call out the Responsible-AI checks I must not skip for this task (confidentiality, personal data, bias, and where a human must review before anything goes out).\n5. Finish with two concrete ways I can measure whether it worked.\n\nOutput format: a numbered workflow. For each step show: goal | prompt to run | what to watch out for. Keep it specific enough to use today.",
+    "promptType": "Workflow",
+    "role": "Software Engineer",
+    "outcome": "A step-by-step AI-assisted workflow with ready-to-run prompts and Responsible-AI checks",
+    "aiTool": "General AI",
+    "variables": [
+      "ROLE",
+      "ORGANISATION",
+      "INDUSTRY",
+      "TASK",
+      "CONSTRAINTS"
+    ],
+    "variablesRaw": [
+      "[ROLE]",
+      "[ORGANISATION]",
+      "[INDUSTRY]",
+      "[TASK]",
+      "[CONSTRAINTS]"
+    ],
+    "isTemplate": true,
+    "tags": [
+      "Synottic",
+      "curriculum",
+      "Agentic AI",
+      "Agent",
+      "Builder"
+    ],
+    "qualityScore": 92,
+    "qualityBreakdown": {
+      "clarity": 92,
+      "context": 88,
+      "specificity": 84,
+      "outputDefinition": 95,
+      "reusability": 96
+    },
+    "strengths": [
+      "Explicit role and method",
+      "Asks for real context via placeholders",
+      "Defines the output shape precisely",
+      "Builds in Responsible-AI checks"
+    ],
+    "improvements": [],
+    "flags": {
+      "modelSpecific": false,
+      "containsWebSearch": false,
+      "containsInteractiveQuestioning": false,
+      "embeddedMetadata": false,
+      "incompleteTitle": false,
+      "hasOutputCue": true
+    },
+    "source": "Synottic Curriculum",
+    "programId": "prog-syn-ai-agent-builder",
+    "track": "Agentic AI",
+    "version": "1.0",
+    "sensitiveCategory": false,
+    "duplicateGroup": null,
+    "healthStatus": "Excellent",
+    "healthReasons": [],
+    "difficulty": "Intermediate",
+    "skill": null,
+    "lifecycle": "Recommended"
+  },
+  {
+    "id": "crs-advanced-agentic-ai",
+    "sourceNumber": null,
+    "title": "Advanced Agentic AI \u2014 Course Companion Prompt",
+    "originalTitle": "Advanced Agentic AI \u2014 Course Companion Prompt",
+    "category": "AI & Prompt Engineering",
+    "description": "A reusable prompt for learners on the Advanced Agentic AI program: turns any task in scope into an AI-assisted, governed workflow with the exact prompts to run.",
+    "useCase": "Use on the Advanced Agentic AI program whenever you have a real task and want a step-by-step AI workflow, the prompts to run, and the Responsible-AI checks for it.",
+    "originalPrompt": "Role: Act as a senior AI automation architect and AI enablement coach trained in Synottic's Learn -> Demonstrate -> Practice -> Apply method.\n\nObjective: Help me apply AI to advanced agentic ai for my organisation.\n\nContext I will provide:\n- My role: [ROLE]\n- Team / organisation: [ORGANISATION] in the [INDUSTRY] industry\n- The task or decision in front of me: [TASK]\n- Constraints (tools available, data I can use, policy, tone): [CONSTRAINTS]\n\nWhat to do:\n1. Restate, in one line, the business outcome this task should move.\n2. Give me a step-by-step, AI-assisted workflow to get it done, organised around these stages: understand the goal, draft with AI, pressure-test the output, and finalise for use.\n3. For each step, give the exact prompt I should run next, with [placeholders] for my inputs.\n4. Call out the Responsible-AI checks I must not skip for this task (confidentiality, personal data, bias, and where a human must review before anything goes out).\n5. Finish with two concrete ways I can measure whether it worked.\n\nOutput format: a numbered workflow. For each step show: goal | prompt to run | what to watch out for. Keep it specific enough to use today.",
+    "promptType": "Workflow",
+    "role": "Individual Contributor",
+    "outcome": "A step-by-step AI-assisted workflow with ready-to-run prompts and Responsible-AI checks",
+    "aiTool": "General AI",
+    "variables": [
+      "ROLE",
+      "ORGANISATION",
+      "INDUSTRY",
+      "TASK",
+      "CONSTRAINTS"
+    ],
+    "variablesRaw": [
+      "[ROLE]",
+      "[ORGANISATION]",
+      "[INDUSTRY]",
+      "[TASK]",
+      "[CONSTRAINTS]"
+    ],
+    "isTemplate": true,
+    "tags": [
+      "Synottic",
+      "curriculum",
+      "Agentic AI",
+      "Advanced",
+      "Agentic"
+    ],
+    "qualityScore": 92,
+    "qualityBreakdown": {
+      "clarity": 92,
+      "context": 88,
+      "specificity": 84,
+      "outputDefinition": 95,
+      "reusability": 96
+    },
+    "strengths": [
+      "Explicit role and method",
+      "Asks for real context via placeholders",
+      "Defines the output shape precisely",
+      "Builds in Responsible-AI checks"
+    ],
+    "improvements": [],
+    "flags": {
+      "modelSpecific": false,
+      "containsWebSearch": false,
+      "containsInteractiveQuestioning": false,
+      "embeddedMetadata": false,
+      "incompleteTitle": false,
+      "hasOutputCue": true
+    },
+    "source": "Synottic Curriculum",
+    "programId": "prog-syn-advanced-agentic-ai",
+    "track": "Agentic AI",
+    "version": "1.0",
+    "sensitiveCategory": false,
+    "duplicateGroup": null,
+    "healthStatus": "Excellent",
+    "healthReasons": [],
+    "difficulty": "Intermediate",
+    "skill": null,
+    "lifecycle": "Recommended"
+  },
+  {
+    "id": "crs-enterprise-agentic-ai",
+    "sourceNumber": null,
+    "title": "Enterprise Agentic AI \u2014 Course Companion Prompt",
+    "originalTitle": "Enterprise Agentic AI \u2014 Course Companion Prompt",
+    "category": "Business Strategy",
+    "description": "A reusable prompt for learners on the Enterprise Agentic AI program: turns any task in scope into an AI-assisted, governed workflow with the exact prompts to run.",
+    "useCase": "Use on the Enterprise Agentic AI program whenever you have a real task and want a step-by-step AI workflow, the prompts to run, and the Responsible-AI checks for it.",
+    "originalPrompt": "Role: Act as a senior AI automation architect and AI enablement coach trained in Synottic's Learn -> Demonstrate -> Practice -> Apply method.\n\nObjective: Help me apply AI to enterprise agentic ai for my organisation.\n\nContext I will provide:\n- My role: [ROLE]\n- Team / organisation: [ORGANISATION] in the [INDUSTRY] industry\n- The task or decision in front of me: [TASK]\n- Constraints (tools available, data I can use, policy, tone): [CONSTRAINTS]\n\nWhat to do:\n1. Restate, in one line, the business outcome this task should move.\n2. Give me a step-by-step, AI-assisted workflow to get it done, organised around these stages: understand the goal, draft with AI, pressure-test the output, and finalise for use.\n3. For each step, give the exact prompt I should run next, with [placeholders] for my inputs.\n4. Call out the Responsible-AI checks I must not skip for this task (confidentiality, personal data, bias, and where a human must review before anything goes out).\n5. Finish with two concrete ways I can measure whether it worked.\n\nOutput format: a numbered workflow. For each step show: goal | prompt to run | what to watch out for. Keep it specific enough to use today.",
+    "promptType": "Workflow",
+    "role": "Transformation Lead",
+    "outcome": "A step-by-step AI-assisted workflow with ready-to-run prompts and Responsible-AI checks",
+    "aiTool": "General AI",
+    "variables": [
+      "ROLE",
+      "ORGANISATION",
+      "INDUSTRY",
+      "TASK",
+      "CONSTRAINTS"
+    ],
+    "variablesRaw": [
+      "[ROLE]",
+      "[ORGANISATION]",
+      "[INDUSTRY]",
+      "[TASK]",
+      "[CONSTRAINTS]"
+    ],
+    "isTemplate": true,
+    "tags": [
+      "Synottic",
+      "curriculum",
+      "Agentic AI",
+      "Enterprise",
+      "Agentic"
+    ],
+    "qualityScore": 92,
+    "qualityBreakdown": {
+      "clarity": 92,
+      "context": 88,
+      "specificity": 84,
+      "outputDefinition": 95,
+      "reusability": 96
+    },
+    "strengths": [
+      "Explicit role and method",
+      "Asks for real context via placeholders",
+      "Defines the output shape precisely",
+      "Builds in Responsible-AI checks"
+    ],
+    "improvements": [],
+    "flags": {
+      "modelSpecific": false,
+      "containsWebSearch": false,
+      "containsInteractiveQuestioning": false,
+      "embeddedMetadata": false,
+      "incompleteTitle": false,
+      "hasOutputCue": true
+    },
+    "source": "Synottic Curriculum",
+    "programId": "prog-syn-enterprise-agentic-ai",
+    "track": "Agentic AI",
+    "version": "1.0",
+    "sensitiveCategory": false,
+    "duplicateGroup": null,
+    "healthStatus": "Excellent",
+    "healthReasons": [],
+    "difficulty": "Intermediate",
+    "skill": null,
+    "lifecycle": "Recommended"
+  }
+]

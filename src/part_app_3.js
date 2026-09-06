@@ -347,6 +347,15 @@ function renderProgramView(container) {
       <div class="progress-track"><i style="width:${pct}%"></i></div>
       <div style="font-size:11.5px;color:var(--text-faint);margin-top:6px;">${touched} of ${mods.length} modules opened${pct ? " · " + pct + "%" : ""} — progress reflects only modules you've actually viewed.</div>
     </div>
+    ${(typeof PROGRAM_FLAGSHIP !== "undefined" && PROGRAM_FLAGSHIP[prog.id] && findPromptById(PROGRAM_FLAGSHIP[prog.id])) ? (function () {
+      const fp = findPromptById(PROGRAM_FLAGSHIP[prog.id]);
+      return `<div class="potd" data-id="${fp.id}" role="button" tabindex="0" style="background:linear-gradient(150deg,var(--good-blue-soft),var(--surface) 70%);">
+        <div><div class="potd-badge" style="color:var(--good-blue);">Course companion prompt</div>
+        <h3>${escapeHtml(fp.title.replace(" — Course Companion Prompt", ""))}</h3>
+        <p>${escapeHtml(fp.description)}</p>
+        <div style="margin-top:8px;">${renderDifficulty(fp.difficulty)} &nbsp; ${renderQualityPill(fp.qualityScore)} &nbsp; <span class="chip chip-blue">${escapeHtml(fp.source)}</span></div></div>
+      </div>`;
+    })() : ""}
     <div class="section-title"><h2>Modules</h2><span style="font-size:12px;color:var(--text-faint)">Prompts recommended for this program</span></div>
     <div id="module-list"></div>`;
 
@@ -372,6 +381,11 @@ function renderProgramView(container) {
 
   const backBtn = container.querySelector("#prog-back");
   if (backBtn) backBtn.addEventListener("click", () => { STATE.activeProgramId = null; renderProgramView(container); });
+  const fpCard = container.querySelector(".potd[data-id]");
+  if (fpCard) {
+    fpCard.addEventListener("click", () => openDetail(fpCard.dataset.id));
+    fpCard.addEventListener("keydown", (e) => { if (e.key === "Enter") openDetail(fpCard.dataset.id); });
+  }
   list.querySelectorAll("[data-mod]").forEach((head) => head.addEventListener("click", () => {
     const id = head.dataset.mod;
     openMods[id] = !openMods[id];
