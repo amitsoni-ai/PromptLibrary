@@ -1,0 +1,85 @@
+{
+  "_note": "Normalized multi-tenant seed data. Access codes resolve Organization -> Program -> Cohort -> Learner scope. Module prompt lists are resolved at load time from rules (category + keyword + limit) against the central library, so the model stays small and scales to 50k+ prompts without duplicating any central prompt per learner.",
+  "organizations": [
+    { "id": "org-synottic", "name": "Synottic AI Institute", "shortName": "Synottic" },
+    { "id": "org-acme", "name": "Acme Corporation", "shortName": "Acme" },
+    { "id": "org-northwind", "name": "Northwind Institute", "shortName": "Northwind" }
+  ],
+  "programs": [
+    {
+      "id": "prog-ai-leaders", "orgId": "org-synottic", "name": "AI Fluency for Leaders",
+      "description": "A 4-module program that takes leaders from first prompts to running an AI adoption plan for their function.",
+      "scope": "full",
+      "skillFocus": ["AI Strategy", "Communication & Leadership", "Business Strategy", "Change Management"],
+      "categories": ["AI & Prompt Engineering", "Business Strategy", "Communication & Leadership", "Productivity & Automation", "Research & Data Analysis"],
+      "modules": [
+        { "id": "m-ail-1", "name": "Prompting Foundations", "summary": "How a good prompt is built and why structure matters.", "rules": { "categories": ["AI & Prompt Engineering"], "keywords": [], "difficulty": "Beginner", "limit": 12 } },
+        { "id": "m-ail-2", "name": "Leading Communication with AI", "summary": "Draft executive updates, briefings and difficult messages.", "rules": { "categories": ["Communication & Leadership"], "keywords": ["email", "message", "leadership", "team", "stakeholder"], "limit": 12 } },
+        { "id": "m-ail-3", "name": "Strategy & Analysis", "summary": "Use AI to pressure-test strategy, markets and decisions.", "rules": { "categories": ["Business Strategy", "Research & Data Analysis"], "keywords": ["strategy", "analysis", "market", "swot", "decision"], "limit": 14 } },
+        { "id": "m-ail-4", "name": "Building an AI Adoption Plan", "summary": "Turn everything into a rollout plan for your team.", "rules": { "categories": ["Business Strategy", "Productivity & Automation", "AI & Prompt Engineering"], "keywords": ["transformation", "adoption", "roadmap", "plan", "workflow", "automation"], "limit": 12 } }
+      ]
+    },
+    {
+      "id": "prog-ai-pm", "orgId": "org-synottic", "name": "AI for Product Managers",
+      "description": "Applied prompting for discovery, specs, roadmaps and stakeholder communication.",
+      "scope": "full",
+      "skillFocus": ["Product Management", "Research & Data Analysis", "Communication & Leadership"],
+      "categories": ["Product Management", "Research & Data Analysis", "UX/UI Design", "Communication & Leadership", "AI & Prompt Engineering"],
+      "modules": [
+        { "id": "m-pm-1", "name": "Discovery & Research", "summary": "Customer interviews, synthesis and problem framing.", "rules": { "categories": ["Research & Data Analysis", "Product Management"], "keywords": ["research", "interview", "customer", "user", "insight"], "limit": 12 } },
+        { "id": "m-pm-2", "name": "Specs & Requirements", "summary": "PRDs, user stories and acceptance criteria.", "rules": { "categories": ["Product Management"], "keywords": ["requirement", "spec", "user story", "prd", "feature"], "limit": 12 } },
+        { "id": "m-pm-3", "name": "Roadmap & Prioritization", "summary": "Prioritization frameworks and roadmap narratives.", "rules": { "categories": ["Product Management", "Business Strategy"], "keywords": ["roadmap", "prioriti", "backlog", "okr", "strategy"], "limit": 12 } },
+        { "id": "m-pm-4", "name": "Stakeholder Communication", "summary": "Updates, launch notes and executive summaries.", "rules": { "categories": ["Communication & Leadership", "Product Management"], "keywords": ["update", "launch", "summary", "stakeholder", "announcement"], "limit": 10 } }
+      ]
+    },
+    {
+      "id": "prog-acme-sales", "orgId": "org-acme", "name": "AI-Assisted Sales Enablement",
+      "description": "Prospecting, discovery, objection handling and follow-up with AI in the loop.",
+      "scope": "program",
+      "skillFocus": ["Sales & Lead Generation", "Email Marketing", "Communication & Leadership"],
+      "categories": ["Sales & Lead Generation", "Email Marketing", "Customer Support", "Communication & Leadership", "Marketing & Branding"],
+      "modules": [
+        { "id": "m-as-1", "name": "Prospecting & Outreach", "summary": "Research accounts and write first-touch outreach.", "rules": { "categories": ["Sales & Lead Generation"], "keywords": ["prospect", "outreach", "cold", "lead", "research"], "limit": 12 } },
+        { "id": "m-as-2", "name": "Discovery & Qualification", "summary": "Question banks and qualification frameworks.", "rules": { "categories": ["Sales & Lead Generation", "Communication & Leadership"], "keywords": ["discovery", "qualif", "question", "need", "pain"], "limit": 10 } },
+        { "id": "m-as-3", "name": "Objections & Negotiation", "summary": "Handle pushback and hold value in negotiation.", "rules": { "categories": ["Sales & Lead Generation", "Communication & Leadership"], "keywords": ["objection", "negotiat", "pricing", "discount", "close"], "limit": 10 } },
+        { "id": "m-as-4", "name": "Follow-up & Nurture", "summary": "Follow-up sequences and re-engagement emails.", "rules": { "categories": ["Email Marketing", "Sales & Lead Generation"], "keywords": ["follow-up", "follow up", "nurture", "sequence", "re-engage"], "limit": 10 } }
+      ]
+    },
+    {
+      "id": "prog-northwind-writing", "orgId": "org-northwind", "name": "Professional Writing with AI",
+      "description": "Content, copy and long-form writing craft, using AI as a drafting partner.",
+      "scope": "program",
+      "skillFocus": ["Content Writing & Copywriting", "Book & Ebook Writing", "SEO & Analytics"],
+      "categories": ["Content Writing & Copywriting", "Book & Ebook Writing", "SEO & Analytics", "Social Media", "Email Marketing"],
+      "modules": [
+        { "id": "m-nw-1", "name": "Copywriting Fundamentals", "summary": "Headlines, hooks and short-form copy.", "rules": { "categories": ["Content Writing & Copywriting"], "keywords": ["headline", "copy", "hook", "cta", "landing"], "limit": 12 } },
+        { "id": "m-nw-2", "name": "Long-form & Structure", "summary": "Outlines, drafts and editing at length.", "rules": { "categories": ["Book & Ebook Writing", "Content Writing & Copywriting"], "keywords": ["outline", "chapter", "draft", "article", "structure"], "limit": 12 } },
+        { "id": "m-nw-3", "name": "SEO & Distribution", "summary": "Search-aware writing and repurposing.", "rules": { "categories": ["SEO & Analytics", "Social Media"], "keywords": ["seo", "keyword", "repurpose", "meta", "rank"], "limit": 10 } }
+      ]
+    }
+  ],
+  "cohorts": [
+    { "id": "coh-ail-autumn-a", "programId": "prog-ai-leaders", "name": "Autumn 2026 · Cohort A", "startsOn": "2026-09-01" },
+    { "id": "coh-ail-autumn-b", "programId": "prog-ai-leaders", "name": "Autumn 2026 · Cohort B", "startsOn": "2026-09-15" },
+    { "id": "coh-pm-q3", "programId": "prog-ai-pm", "name": "Q3 2026 Product Cohort", "startsOn": "2026-07-06" },
+    { "id": "coh-acme-emea", "programId": "prog-acme-sales", "name": "EMEA Sales · 2026", "startsOn": "2026-05-04" },
+    { "id": "coh-acme-amer", "programId": "prog-acme-sales", "name": "AMER Sales · 2026", "startsOn": "2026-05-04" },
+    { "id": "coh-nw-fall", "programId": "prog-northwind-writing", "name": "Fall Writers 2026", "startsOn": "2026-09-08" },
+    { "id": "coh-demo", "programId": "prog-ai-leaders", "name": "Demo / Evaluation", "startsOn": "2026-01-01" }
+  ],
+  "learners": [
+    { "id": "lrn-amit", "cohortId": "coh-ail-autumn-a", "name": "Amit Soni", "email": "amitsoni.id@gmail.com" },
+    { "id": "lrn-priya", "cohortId": "coh-ail-autumn-a", "name": "Priya Nair" },
+    { "id": "lrn-sam", "cohortId": "coh-pm-q3", "name": "Sam Reyes" }
+  ],
+  "accessCodes": [
+    { "code": "SYNOTTIC-AI-01", "cohortId": "coh-ail-autumn-a", "kind": "cohort" },
+    { "code": "SYNOTTIC-AI-02", "cohortId": "coh-ail-autumn-b", "kind": "cohort" },
+    { "code": "SYNOTTIC-PM-01", "cohortId": "coh-pm-q3", "kind": "cohort" },
+    { "code": "ACME-SALES-EMEA", "cohortId": "coh-acme-emea", "kind": "cohort" },
+    { "code": "ACME-SALES-AMER", "cohortId": "coh-acme-amer", "kind": "cohort" },
+    { "code": "NORTHWIND-WRITE", "cohortId": "coh-nw-fall", "kind": "cohort" },
+    { "code": "AMIT-AIL-2026", "cohortId": "coh-ail-autumn-a", "learnerId": "lrn-amit", "kind": "learner" },
+    { "code": "DEMO-2026", "cohortId": "coh-demo", "kind": "cohort" }
+  ]
+}
