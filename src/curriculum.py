@@ -274,6 +274,46 @@ def generic_modules(c, track):
     ]
 
 
+ADMIN_KEY = "SYNOTTIC-ADMIN"
+
+# One memorable access code per course. Pattern: SYNOTTIC-<TOPIC>.
+COURSE_CODE = {
+    # AI for Functions
+    "sales": "SYNOTTIC-SALES", "marketing": "SYNOTTIC-MARKETING", "hr": "SYNOTTIC-HR",
+    "ld": "SYNOTTIC-LD", "finance": "SYNOTTIC-FINANCE", "legal": "SYNOTTIC-LEGAL",
+    "it-eng": "SYNOTTIC-IT", "product": "SYNOTTIC-PRODUCT", "ppm": "SYNOTTIC-PROJECTS",
+    "customer-service": "SYNOTTIC-SUPPORT", "data-analyst": "SYNOTTIC-DATA",
+    "operations": "SYNOTTIC-OPS", "procurement": "SYNOTTIC-PROCUREMENT",
+    # AI for Leaders
+    "business-leaders": "SYNOTTIC-BIZLEADERS", "executives-mastery": "SYNOTTIC-EXECUTIVES",
+    "leaders": "SYNOTTIC-LEADER", "people-managers": "SYNOTTIC-MANAGERS",
+    # AI at Work
+    "advanced-prompt-context": "SYNOTTIC-CONTEXT", "data-analysis-decision": "SYNOTTIC-DECISIONS",
+    "productivity-at-work": "SYNOTTIC-PRODUCTIVITY", "deep-research": "SYNOTTIC-RESEARCH",
+    "genai-tools-mastery": "SYNOTTIC-GENAI-TOOLS", "prompt-engineering-mastery": "SYNOTTIC-PROMPTING",
+    # AI Essentials
+    "ai-literacy-essentials": "SYNOTTIC-LITERACY", "advance-ai-literacy": "SYNOTTIC-LITERACY-ADV",
+    "genai-essentials": "SYNOTTIC-GENAI", "ai-security-responsible-use": "SYNOTTIC-SECURITY",
+    # AI Tools
+    "chatgpt-mastery": "SYNOTTIC-CHATGPT", "claude-mastery": "SYNOTTIC-CLAUDE",
+    "gemini-mastery": "SYNOTTIC-GEMINI", "copilot-mastery": "SYNOTTIC-COPILOT",
+    "perplexity-mastery": "SYNOTTIC-PERPLEXITY", "notebooklm-mastery": "SYNOTTIC-NOTEBOOKLM",
+    "grok-mastery": "SYNOTTIC-GROK", "deepseek-mastery": "SYNOTTIC-DEEPSEEK",
+    "ai-productivity-stack": "SYNOTTIC-STACK",
+    # Responsible AI & Governance
+    "responsible-ai-essentials": "SYNOTTIC-RESPONSIBLE", "ai-risk-governance-leaders": "SYNOTTIC-RISK",
+    "ai-governance-practitioner": "SYNOTTIC-GOV-PRACTITIONER", "enterprise-ai-governance": "SYNOTTIC-GOV-ENTERPRISE",
+    # Agentic AI
+    "ai-agents-essentials": "SYNOTTIC-AGENTS", "ai-agent-builder": "SYNOTTIC-AGENT-BUILDER",
+    "advanced-agentic-ai": "SYNOTTIC-AGENTIC-ADV", "enterprise-agentic-ai": "SYNOTTIC-AGENTIC-ENT",
+}
+TRACK_CODE = {
+    "AI for Functions": "SYNOTTIC-FUNCTIONS", "AI for Leaders": "SYNOTTIC-LEADERS",
+    "AI at Work": "SYNOTTIC-WORK", "AI Essentials": "SYNOTTIC-ESSENTIALS",
+    "AI Tools": "SYNOTTIC-TOOLS", "Responsible AI & Governance": "SYNOTTIC-GOVERNANCE",
+    "Agentic AI": "SYNOTTIC-AGENTIC",
+}
+
 TRACK_ORDER = ["AI Essentials", "AI at Work", "AI Tools", "AI for Leaders", "AI for Functions", "Responsible AI & Governance", "Agentic AI"]
 TRACK_SKILL = {
     "AI for Functions": "Applied AI by function",
@@ -300,6 +340,7 @@ def build_programs():
             progs.append({
                 "id": pid, "orgId": "org-synottic", "name": c["name"], "track": track,
                 "description": c["desc"], "scope": "full",
+                "accessCode": COURSE_CODE.get(c["slug"]),
                 "skillFocus": [TRACK_SKILL[track], c["cat"]],
                 "audienceRoles": roles,
                 "categories": cats,
@@ -413,25 +454,79 @@ def main():
             curriculum.append(flagship_prompt(c, track))
     open(os.path.join(HERE, "part_curriculum.json"), "w", encoding="utf-8").write(json.dumps(curriculum, indent=2))
 
-    # admin-console seed: one editable org code per track, mapped to every
-    # course in that track + full library. Merged by AdminStore on first run.
+    # admin-console seed: one editable code per TRACK (all courses in it) plus
+    # one per COURSE. All full-library; the per-course code pins that course as
+    # the learner's program. Merged by AdminStore on first run.
     seed = []
-    tcode = {"AI for Functions": "SYNOTTIC-FUNCTIONS", "AI for Leaders": "SYNOTTIC-LEADERS",
-             "AI at Work": "SYNOTTIC-WORK", "AI Essentials": "SYNOTTIC-ESSENTIALS",
-             "AI Tools": "SYNOTTIC-TOOLS", "Responsible AI & Governance": "SYNOTTIC-GOVERNANCE",
-             "Agentic AI": "SYNOTTIC-AGENTIC"}
     for track in TRACK_ORDER:
         seed.append({
             "id": "seed-" + re.sub(r"[^a-z0-9]+", "-", track.lower()).strip("-"),
-            "code": tcode[track], "orgName": "Synottic AI Institute", "domain": "synottic.com",
+            "code": TRACK_CODE[track], "orgName": "Synottic AI Institute", "domain": "synottic.com",
             "industry": "Education", "functions": [], "roles": [],
             "programIds": track_program_ids(track), "fullLibrary": True, "enabled": True,
             "note": track + " track — all courses", "createdAt": "2026-09-01T00:00:00.000Z",
         })
+    for track in TRACK_ORDER:
+        for c in CATALOGUE[track]["courses"]:
+            seed.append({
+                "id": "seed-" + c["slug"],
+                "code": COURSE_CODE[c["slug"]], "orgName": "Synottic AI Institute", "domain": "synottic.com",
+                "industry": "Education", "functions": [], "roles": c.get("roles") or [],
+                "programIds": ["prog-syn-" + c["slug"]], "fullLibrary": True, "enabled": True,
+                "note": track + " · " + c["name"], "createdAt": "2026-09-01T00:00:00.000Z",
+            })
     open(os.path.join(HERE, "part_admin_seed.json"), "w", encoding="utf-8").write(json.dumps(seed, indent=2))
 
+    # --- human reference sheet -------------------------------------------------
+    lines = [
+        "# Synottic Prompt Library — access codes",
+        "",
+        "_Generated from the course catalogue. Codes are case-insensitive; spaces are ignored._",
+        "",
+        "## Admin",
+        "",
+        "| Purpose | Code |",
+        "|---|---|",
+        "| Admin console (sign-in screen → \"Admin console →\") | `" + ADMIN_KEY + "` |",
+        "",
+        "## Whole-track codes (every course in the track + full library)",
+        "",
+        "| Track | Code | Courses |",
+        "|---|---|---|",
+    ]
+    for track in TRACK_ORDER:
+        lines.append("| " + track + " | `" + TRACK_CODE[track] + "` | " + str(len(CATALOGUE[track]["courses"])) + " |")
+    lines += ["", "## Per-course codes", ""]
+    for track in TRACK_ORDER:
+        lines += ["### " + track, "", "| Course | Access code |", "|---|---|"]
+        for c in CATALOGUE[track]["courses"]:
+            lines.append("| " + c["name"] + " | `" + COURSE_CODE[c["slug"]] + "` |")
+        lines.append("")
+    lines += [
+        "## Demo / client codes (built-in)",
+        "",
+        "| Code | Scope |",
+        "|---|---|",
+        "| `DEMO-2026` | Full library (evaluation) |",
+        "| `SYNOTTIC-PM-01` | Full library, AI for Sales program |",
+        "| `ACME-SALES-EMEA` / `ACME-SALES-AMER` | Acme Corp — program-scoped sales enablement |",
+        "| `NORTHWIND-WRITE` | Northwind — program-scoped writing |",
+        "",
+        "> All `SYNOTTIC-*` course/track codes are editable in the Admin console (rename, disable, "
+        "re-scope, add domain/industry/functions/roles). Changes there override this sheet.",
+        "",
+    ]
+    sheet = "\n".join(lines) + "\n"
+    for path in [os.path.join(HERE, "..", "..", "ACCESS-CODES.md"),
+                 os.path.join(HERE, "..", "..", "promptlibrary-push-package", "ACCESS-CODES.md")]:
+        try:
+            open(os.path.normpath(path), "w", encoding="utf-8").write(sheet)
+        except OSError:
+            pass
+
     print("programs:", len(org_model["programs"]), "| cohorts:", len(org_model["cohorts"]),
-          "| codes:", len(org_model["accessCodes"]), "| curriculum:", len(curriculum), "| admin seed:", len(seed))
+          "| codes:", len(org_model["accessCodes"]), "| curriculum:", len(curriculum),
+          "| admin seed:", len(seed), "| wrote ACCESS-CODES.md")
 
 
 if __name__ == "__main__":

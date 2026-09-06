@@ -200,6 +200,7 @@
       "track": "AI Essentials",
       "description": "What AI is, what it can and can't do, and how to use it safely and well at work.",
       "scope": "full",
+      "accessCode": "SYNOTTIC-LITERACY",
       "skillFocus": [
         "AI literacy",
         "AI & Prompt Engineering"
@@ -310,6 +311,7 @@
       "track": "AI Essentials",
       "description": "Deeper AI literacy: how models work, their limits, evaluation and responsible use.",
       "scope": "full",
+      "accessCode": "SYNOTTIC-LITERACY-ADV",
       "skillFocus": [
         "AI literacy",
         "AI & Prompt Engineering"
@@ -420,6 +422,7 @@
       "track": "AI Essentials",
       "description": "Hands-on foundations of generative AI for everyday professional tasks.",
       "scope": "full",
+      "accessCode": "SYNOTTIC-GENAI",
       "skillFocus": [
         "AI literacy",
         "AI & Prompt Engineering"
@@ -530,6 +533,7 @@
       "track": "AI Essentials",
       "description": "Data protection, confidentiality, prompt hygiene and safe AI use for every employee.",
       "scope": "full",
+      "accessCode": "SYNOTTIC-SECURITY",
       "skillFocus": [
         "AI literacy",
         "Legal & Compliance"
@@ -642,6 +646,7 @@
       "track": "AI at Work",
       "description": "Structured prompting, context engineering, evaluation and reusable prompt systems.",
       "scope": "full",
+      "accessCode": "SYNOTTIC-CONTEXT",
       "skillFocus": [
         "AI productivity",
         "AI & Prompt Engineering"
@@ -756,6 +761,7 @@
       "track": "AI at Work",
       "description": "Use AI to explore data, run analysis, and build decision-support recommendations.",
       "scope": "full",
+      "accessCode": "SYNOTTIC-DECISIONS",
       "skillFocus": [
         "AI productivity",
         "Research & Data Analysis"
@@ -871,6 +877,7 @@
       "track": "AI at Work",
       "description": "Redesign daily work with AI \u2014 email, docs, meetings, research and personal workflows.",
       "scope": "full",
+      "accessCode": "SYNOTTIC-PRODUCTIVITY",
       "skillFocus": [
         "AI productivity",
         "Productivity & Automation"
@@ -984,6 +991,7 @@
       "track": "AI at Work",
       "description": "Run rigorous AI-assisted research: sourcing, synthesis, verification and briefing.",
       "scope": "full",
+      "accessCode": "SYNOTTIC-RESEARCH",
       "skillFocus": [
         "AI productivity",
         "Research & Data Analysis"
@@ -1097,6 +1105,7 @@
       "track": "AI at Work",
       "description": "Get fluent across the major AI assistants and pick the right tool for each job.",
       "scope": "full",
+      "accessCode": "SYNOTTIC-GENAI-TOOLS",
       "skillFocus": [
         "AI productivity",
         "AI & Prompt Engineering"
@@ -1212,6 +1221,7 @@
       "track": "AI at Work",
       "description": "From first prompts to advanced techniques, context engineering and prompt libraries.",
       "scope": "full",
+      "accessCode": "SYNOTTIC-PROMPTING",
       "skillFocus": [
         "AI productivity",
         "AI & Prompt Engineering"
@@ -1327,6 +1337,7 @@
       "track": "AI Tools",
       "description": "Master ChatGPT for professional productivity, analysis, writing and workflows.",
       "scope": "full",
+      "accessCode": "SYNOTTIC-CHATGPT",
       "skillFocus": [
         "AI tools",
         "AI & Prompt Engineering"
@@ -1440,6 +1451,7 @@
       "track": "AI Tools",
       "description": "Master Claude for enterprise productivity, context engineering, long documents and agentic work.",
       "scope": "full",
+      "accessCode": "SYNOTTIC-CLAUDE",
       "skillFocus": [
         "AI tools",
         "AI & Prompt Engineering"
@@ -1553,6 +1565,7 @@
       "track": "AI Tools",
       "description": "Master Google Gemini for content, research, data and Workspace productivity.",
       "scope": "full",
+      "accessCode": "SYNOTTIC-GEMINI",
       "skillFocus": [
         "AI tools",
         "AI & Prompt Engineering"
@@ -1666,6 +1679,7 @@
       "track": "AI Tools",
       "description": "Master Microsoft 365 Copilot across Outlook, Word, Excel, PowerPoint and Teams.",
       "scope": "full",
+      "accessCode": "SYNOTTIC-COPILOT",
       "skillFocus": [
         "AI tools",
         "Productivity & Automation"
@@ -1779,6 +1793,7 @@
       "track": "AI Tools",
       "description": "Master Perplexity for sourced research, comparisons and up-to-date answers.",
       "scope": "full",
+      "accessCode": "SYNOTTIC-PERPLEXITY",
       "skillFocus": [
         "AI tools",
         "Research & Data Analysis"
@@ -1892,6 +1907,7 @@
       "track": "AI Tools",
       "description": "Master NotebookLM to turn your own documents into briefings, summaries and Q&A.",
       "scope": "full",
+      "accessCode": "SYNOTTIC-NOTEBOOKLM",
       "skillFocus": [
         "AI tools",
         "Research & Data Analysis"
@@ -2005,6 +2021,7 @@
       "track": "AI Tools",
       "description": "Master Grok for real-time information, analysis and content.",
       "scope": "full",
+      "accessCode": "SYNOTTIC-GROK",
       "skillFocus": [
         "AI tools",
         "AI & Prompt Engineering"
@@ -2118,6 +2135,7 @@
       "track": "AI Tools",
       "description": "Master DeepSeek for reasoning, coding and cost-efficient AI workflows.",
       "scope": "full",
+      "accessCode": "SYNOTTIC-DEEPSEEK",
       "skillFocus": [
         "AI tools",
         "AI & Prompt Engineering"
@@ -2231,6 +2249,7 @@
       "track": "AI Tools",
       "description": "Assemble a personal AI tool stack and connect it into repeatable workflows.",
       "scope": "full",
+      "accessCode": "SYNOTTIC-STACK",
       "skillFocus": [
         "AI tools",
         "Productivity & Automation"
@@ -2344,6 +2363,7 @@
       "track": "AI for Leaders",
       "description": "How to set AI direction, spot high-value use cases, and lead responsible adoption across a business.",
       "scope": "full",
+      "accessCode": "SYNOTTIC-BIZLEADERS",
       "skillFocus": [
         "AI leadership",
         "Business Strategy"
@@ -2458,6 +2478,7 @@
       "track": "AI for Leaders",
       "description": "An executive intensive: AI strategy, portfolio bets, operating model and governance for the C-suite.",
       "scope": "full",
+      "accessCode": "SYNOTTIC-EXECUTIVES",
       "skillFocus": [
         "AI leadership",
         "Business Strategy"
@@ -2573,6 +2594,7 @@
       "track": "AI for Leaders",
       "description": "Practical AI fluency for leaders \u2014 decisions, communication, team enablement and change.",
       "scope": "full",
+      "accessCode": "SYNOTTIC-LEADER",
       "skillFocus": [
         "AI leadership",
         "Communication & Leadership"
@@ -2684,6 +2706,7 @@
       "track": "AI for Leaders",
       "description": "AI for the manager's job: 1:1s, feedback, hiring, planning, and coaching a team through AI adoption.",
       "scope": "full",
+      "accessCode": "SYNOTTIC-MANAGERS",
       "skillFocus": [
         "AI leadership",
         "Communication & Leadership"
@@ -2798,6 +2821,7 @@
       "track": "AI for Functions",
       "description": "Apply AI across the full sales lifecycle \u2014 prospecting, engagement, proposals, CRM intelligence and forecasting.",
       "scope": "full",
+      "accessCode": "SYNOTTIC-SALES",
       "skillFocus": [
         "Applied AI by function",
         "Sales & Lead Generation"
@@ -2939,6 +2963,7 @@
       "track": "AI for Functions",
       "description": "Use AI for campaign creation, brand and positioning, SEO and organic growth, and marketing analytics.",
       "scope": "full",
+      "accessCode": "SYNOTTIC-MARKETING",
       "skillFocus": [
         "Applied AI by function",
         "Marketing & Branding"
@@ -3078,6 +3103,7 @@
       "track": "AI for Functions",
       "description": "Bring AI to recruitment, workforce planning, employee experience and HR analytics \u2014 responsibly.",
       "scope": "full",
+      "accessCode": "SYNOTTIC-HR",
       "skillFocus": [
         "Applied AI by function",
         "HR & Recruiting"
@@ -3218,6 +3244,7 @@
       "track": "AI for Functions",
       "description": "Design personalised learning, AI coaching, competency frameworks and learning analytics.",
       "scope": "full",
+      "accessCode": "SYNOTTIC-LD",
       "skillFocus": [
         "Applied AI by function",
         "Education & Learning"
@@ -3355,6 +3382,7 @@
       "track": "AI for Functions",
       "description": "Apply AI to FP&A, reporting and close, forecasting and scenario modelling, and controls.",
       "scope": "full",
+      "accessCode": "SYNOTTIC-FINANCE",
       "skillFocus": [
         "Applied AI by function",
         "Finance & Accounting"
@@ -3492,6 +3520,7 @@
       "track": "AI for Functions",
       "description": "Contract drafting and review, legal research and memos, compliance, policy, and AI risk governance.",
       "scope": "full",
+      "accessCode": "SYNOTTIC-LEGAL",
       "skillFocus": [
         "Applied AI by function",
         "Legal & Compliance"
@@ -3630,6 +3659,7 @@
       "track": "AI for Functions",
       "description": "AI for code and development, system design, DevOps and automation, and technical documentation.",
       "scope": "full",
+      "accessCode": "SYNOTTIC-IT",
       "skillFocus": [
         "Applied AI by function",
         "Coding & Tech"
@@ -3768,6 +3798,7 @@
       "track": "AI for Functions",
       "description": "Discovery and research, specs and requirements, roadmap and prioritisation, product analytics.",
       "scope": "full",
+      "accessCode": "SYNOTTIC-PRODUCT",
       "skillFocus": [
         "Applied AI by function",
         "Product Management"
@@ -3907,6 +3938,7 @@
       "track": "AI for Functions",
       "description": "Planning and estimation, risk and dependency management, status reporting, and delivery retrospectives.",
       "scope": "full",
+      "accessCode": "SYNOTTIC-PROJECTS",
       "skillFocus": [
         "Applied AI by function",
         "Business Strategy"
@@ -4045,6 +4077,7 @@
       "track": "AI for Functions",
       "description": "Response drafting and macros, knowledge base and self-service, escalation handling, and support QA.",
       "scope": "full",
+      "accessCode": "SYNOTTIC-SUPPORT",
       "skillFocus": [
         "Applied AI by function",
         "Customer Support"
@@ -4182,6 +4215,7 @@
       "track": "AI for Functions",
       "description": "Data exploration and cleaning, analysis and insight, dashboards and reporting, and data storytelling.",
       "scope": "full",
+      "accessCode": "SYNOTTIC-DATA",
       "skillFocus": [
         "Applied AI by function",
         "Research & Data Analysis"
@@ -4318,6 +4352,7 @@
       "track": "AI for Functions",
       "description": "Process documentation and SOPs, demand and inventory planning, workflow automation, and ops analytics.",
       "scope": "full",
+      "accessCode": "SYNOTTIC-OPS",
       "skillFocus": [
         "Applied AI by function",
         "Productivity & Automation"
@@ -4455,6 +4490,7 @@
       "track": "AI for Functions",
       "description": "Sourcing and supplier research, RFx and tender documents, contract and negotiation support, spend analysis.",
       "scope": "full",
+      "accessCode": "SYNOTTIC-PROCUREMENT",
       "skillFocus": [
         "Applied AI by function",
         "Finance & Accounting"
@@ -4593,6 +4629,7 @@
       "track": "Responsible AI & Governance",
       "description": "Core principles of fairness, transparency, privacy and human oversight for everyone using AI.",
       "scope": "full",
+      "accessCode": "SYNOTTIC-RESPONSIBLE",
       "skillFocus": [
         "AI governance",
         "Legal & Compliance"
@@ -4702,6 +4739,7 @@
       "track": "Responsible AI & Governance",
       "description": "Set risk appetite, controls and governance for AI at the leadership level.",
       "scope": "full",
+      "accessCode": "SYNOTTIC-RISK",
       "skillFocus": [
         "AI governance",
         "Legal & Compliance"
@@ -4814,6 +4852,7 @@
       "track": "Responsible AI & Governance",
       "description": "Operate an AI governance program: policy, model inventory, assessments and audits.",
       "scope": "full",
+      "accessCode": "SYNOTTIC-GOV-PRACTITIONER",
       "skillFocus": [
         "AI governance",
         "Legal & Compliance"
@@ -4924,6 +4963,7 @@
       "track": "Responsible AI & Governance",
       "description": "Stand up an enterprise-wide governance operating model aligned to NIST AI RMF and ISO/IEC 42001.",
       "scope": "full",
+      "accessCode": "SYNOTTIC-GOV-ENTERPRISE",
       "skillFocus": [
         "AI governance",
         "Legal & Compliance"
@@ -5034,6 +5074,7 @@
       "track": "Agentic AI",
       "description": "What AI agents are, where they help, and how to brief and supervise them safely.",
       "scope": "full",
+      "accessCode": "SYNOTTIC-AGENTS",
       "skillFocus": [
         "Agentic AI",
         "AI & Prompt Engineering"
@@ -5147,6 +5188,7 @@
       "track": "Agentic AI",
       "description": "Design, build and evaluate task agents with tools, memory and guardrails.",
       "scope": "full",
+      "accessCode": "SYNOTTIC-AGENT-BUILDER",
       "skillFocus": [
         "Agentic AI",
         "Coding & Tech"
@@ -5260,6 +5302,7 @@
       "track": "Agentic AI",
       "description": "Multi-agent systems, planning, tool orchestration and evaluation at depth.",
       "scope": "full",
+      "accessCode": "SYNOTTIC-AGENTIC-ADV",
       "skillFocus": [
         "Agentic AI",
         "AI & Prompt Engineering"
@@ -5372,6 +5415,7 @@
       "track": "Agentic AI",
       "description": "Adopt agentic AI across an enterprise: use-case selection, operating model, risk and ROI.",
       "scope": "full",
+      "accessCode": "SYNOTTIC-AGENTIC-ENT",
       "skillFocus": [
         "Agentic AI",
         "Business Strategy"

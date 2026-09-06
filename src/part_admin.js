@@ -369,6 +369,7 @@ function renderAdminCodes(body) {
     <div style="display:flex;align-items:center;gap:10px;margin:6px 0 14px;">
       <div class="result-count" style="padding:0;">${admin.length} organisation code${admin.length === 1 ? "" : "s"} · ${staticCodes.length} built-in</div>
       <div style="flex:1;"></div>
+      <button class="btn btn-sm" id="admin-copyall">${icon("copy")} Copy all codes</button>
       <button class="btn btn-primary btn-sm" id="admin-new">${icon("plus")} New access code</button>
     </div>
     <div style="overflow-x:auto;">
@@ -395,6 +396,16 @@ function renderAdminCodes(body) {
     </div>`;
 
   body.querySelector("#admin-new").addEventListener("click", () => { ADMIN_STATE.editing = newCodeDraft(); ADMIN_STATE.tab = "edit"; renderAdminConsole(); });
+  body.querySelector("#admin-copyall").addEventListener("click", async () => {
+    const lines = ["Synottic Prompt Library — access codes", "", "Admin console: " + AdminStore.key(), ""];
+    rows.forEach((r) => {
+      lines.push(r.code + "  —  " + (r.orgName || "") +
+        (r.programs && r.programs.length ? "  (" + r.programs.slice(0, 3).join(", ") + (r.programs.length > 3 ? ", +" + (r.programs.length - 3) : "") + ")" : "") +
+        (r.builtIn ? "  [built-in]" : r.enabled ? "" : "  [disabled]"));
+    });
+    const ok = await copyText(lines.join("\n"));
+    showToast(ok ? rows.length + " codes copied" : "Couldn't copy");
+  });
   body.querySelectorAll("[data-toggle]").forEach((b) => b.addEventListener("click", () => {
     const c = AdminStore.getById(b.dataset.toggle);
     AdminStore.setEnabled(b.dataset.toggle, !(c && c.enabled !== false) ? true : false);

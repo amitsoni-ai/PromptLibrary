@@ -147,5 +147,898 @@
     "enabled": true,
     "note": "Agentic AI track \u2014 all courses",
     "createdAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "id": "seed-ai-literacy-essentials",
+    "code": "SYNOTTIC-LITERACY",
+    "orgName": "Synottic AI Institute",
+    "domain": "synottic.com",
+    "industry": "Education",
+    "functions": [],
+    "roles": [],
+    "programIds": [
+      "prog-syn-ai-literacy-essentials"
+    ],
+    "fullLibrary": true,
+    "enabled": true,
+    "note": "AI Essentials \u00b7 AI Literacy Essentials",
+    "createdAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "id": "seed-advance-ai-literacy",
+    "code": "SYNOTTIC-LITERACY-ADV",
+    "orgName": "Synottic AI Institute",
+    "domain": "synottic.com",
+    "industry": "Education",
+    "functions": [],
+    "roles": [],
+    "programIds": [
+      "prog-syn-advance-ai-literacy"
+    ],
+    "fullLibrary": true,
+    "enabled": true,
+    "note": "AI Essentials \u00b7 Advance AI Literacy",
+    "createdAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "id": "seed-genai-essentials",
+    "code": "SYNOTTIC-GENAI",
+    "orgName": "Synottic AI Institute",
+    "domain": "synottic.com",
+    "industry": "Education",
+    "functions": [],
+    "roles": [],
+    "programIds": [
+      "prog-syn-genai-essentials"
+    ],
+    "fullLibrary": true,
+    "enabled": true,
+    "note": "AI Essentials \u00b7 Generative AI Essentials",
+    "createdAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "id": "seed-ai-security-responsible-use",
+    "code": "SYNOTTIC-SECURITY",
+    "orgName": "Synottic AI Institute",
+    "domain": "synottic.com",
+    "industry": "Education",
+    "functions": [],
+    "roles": [],
+    "programIds": [
+      "prog-syn-ai-security-responsible-use"
+    ],
+    "fullLibrary": true,
+    "enabled": true,
+    "note": "AI Essentials \u00b7 AI Security and Responsible Use",
+    "createdAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "id": "seed-advanced-prompt-context",
+    "code": "SYNOTTIC-CONTEXT",
+    "orgName": "Synottic AI Institute",
+    "domain": "synottic.com",
+    "industry": "Education",
+    "functions": [],
+    "roles": [],
+    "programIds": [
+      "prog-syn-advanced-prompt-context"
+    ],
+    "fullLibrary": true,
+    "enabled": true,
+    "note": "AI at Work \u00b7 Advanced Prompt and Context Engineering",
+    "createdAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "id": "seed-data-analysis-decision",
+    "code": "SYNOTTIC-DECISIONS",
+    "orgName": "Synottic AI Institute",
+    "domain": "synottic.com",
+    "industry": "Education",
+    "functions": [],
+    "roles": [],
+    "programIds": [
+      "prog-syn-data-analysis-decision"
+    ],
+    "fullLibrary": true,
+    "enabled": true,
+    "note": "AI at Work \u00b7 AI for Data Analysis and Decision Support",
+    "createdAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "id": "seed-productivity-at-work",
+    "code": "SYNOTTIC-PRODUCTIVITY",
+    "orgName": "Synottic AI Institute",
+    "domain": "synottic.com",
+    "industry": "Education",
+    "functions": [],
+    "roles": [],
+    "programIds": [
+      "prog-syn-productivity-at-work"
+    ],
+    "fullLibrary": true,
+    "enabled": true,
+    "note": "AI at Work \u00b7 AI Productivity at Work",
+    "createdAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "id": "seed-deep-research",
+    "code": "SYNOTTIC-RESEARCH",
+    "orgName": "Synottic AI Institute",
+    "domain": "synottic.com",
+    "industry": "Education",
+    "functions": [],
+    "roles": [],
+    "programIds": [
+      "prog-syn-deep-research"
+    ],
+    "fullLibrary": true,
+    "enabled": true,
+    "note": "AI at Work \u00b7 AI Research and Deep Research",
+    "createdAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "id": "seed-genai-tools-mastery",
+    "code": "SYNOTTIC-GENAI-TOOLS",
+    "orgName": "Synottic AI Institute",
+    "domain": "synottic.com",
+    "industry": "Education",
+    "functions": [],
+    "roles": [],
+    "programIds": [
+      "prog-syn-genai-tools-mastery"
+    ],
+    "fullLibrary": true,
+    "enabled": true,
+    "note": "AI at Work \u00b7 Generative AI Tools Mastery",
+    "createdAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "id": "seed-prompt-engineering-mastery",
+    "code": "SYNOTTIC-PROMPTING",
+    "orgName": "Synottic AI Institute",
+    "domain": "synottic.com",
+    "industry": "Education",
+    "functions": [],
+    "roles": [],
+    "programIds": [
+      "prog-syn-prompt-engineering-mastery"
+    ],
+    "fullLibrary": true,
+    "enabled": true,
+    "note": "AI at Work \u00b7 Prompt Engineering Mastery Program",
+    "createdAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "id": "seed-chatgpt-mastery",
+    "code": "SYNOTTIC-CHATGPT",
+    "orgName": "Synottic AI Institute",
+    "domain": "synottic.com",
+    "industry": "Education",
+    "functions": [],
+    "roles": [],
+    "programIds": [
+      "prog-syn-chatgpt-mastery"
+    ],
+    "fullLibrary": true,
+    "enabled": true,
+    "note": "AI Tools \u00b7 ChatGPT Mastery Course",
+    "createdAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "id": "seed-claude-mastery",
+    "code": "SYNOTTIC-CLAUDE",
+    "orgName": "Synottic AI Institute",
+    "domain": "synottic.com",
+    "industry": "Education",
+    "functions": [],
+    "roles": [],
+    "programIds": [
+      "prog-syn-claude-mastery"
+    ],
+    "fullLibrary": true,
+    "enabled": true,
+    "note": "AI Tools \u00b7 Claude AI Mastery",
+    "createdAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "id": "seed-gemini-mastery",
+    "code": "SYNOTTIC-GEMINI",
+    "orgName": "Synottic AI Institute",
+    "domain": "synottic.com",
+    "industry": "Education",
+    "functions": [],
+    "roles": [],
+    "programIds": [
+      "prog-syn-gemini-mastery"
+    ],
+    "fullLibrary": true,
+    "enabled": true,
+    "note": "AI Tools \u00b7 Gemini Mastery Course",
+    "createdAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "id": "seed-copilot-mastery",
+    "code": "SYNOTTIC-COPILOT",
+    "orgName": "Synottic AI Institute",
+    "domain": "synottic.com",
+    "industry": "Education",
+    "functions": [],
+    "roles": [],
+    "programIds": [
+      "prog-syn-copilot-mastery"
+    ],
+    "fullLibrary": true,
+    "enabled": true,
+    "note": "AI Tools \u00b7 Copilot Mastery Course",
+    "createdAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "id": "seed-perplexity-mastery",
+    "code": "SYNOTTIC-PERPLEXITY",
+    "orgName": "Synottic AI Institute",
+    "domain": "synottic.com",
+    "industry": "Education",
+    "functions": [],
+    "roles": [],
+    "programIds": [
+      "prog-syn-perplexity-mastery"
+    ],
+    "fullLibrary": true,
+    "enabled": true,
+    "note": "AI Tools \u00b7 Perplexity Mastery Course",
+    "createdAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "id": "seed-notebooklm-mastery",
+    "code": "SYNOTTIC-NOTEBOOKLM",
+    "orgName": "Synottic AI Institute",
+    "domain": "synottic.com",
+    "industry": "Education",
+    "functions": [],
+    "roles": [],
+    "programIds": [
+      "prog-syn-notebooklm-mastery"
+    ],
+    "fullLibrary": true,
+    "enabled": true,
+    "note": "AI Tools \u00b7 NotebookLM Mastery",
+    "createdAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "id": "seed-grok-mastery",
+    "code": "SYNOTTIC-GROK",
+    "orgName": "Synottic AI Institute",
+    "domain": "synottic.com",
+    "industry": "Education",
+    "functions": [],
+    "roles": [],
+    "programIds": [
+      "prog-syn-grok-mastery"
+    ],
+    "fullLibrary": true,
+    "enabled": true,
+    "note": "AI Tools \u00b7 Grok Mastery Course",
+    "createdAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "id": "seed-deepseek-mastery",
+    "code": "SYNOTTIC-DEEPSEEK",
+    "orgName": "Synottic AI Institute",
+    "domain": "synottic.com",
+    "industry": "Education",
+    "functions": [],
+    "roles": [],
+    "programIds": [
+      "prog-syn-deepseek-mastery"
+    ],
+    "fullLibrary": true,
+    "enabled": true,
+    "note": "AI Tools \u00b7 DeepSeek Mastery",
+    "createdAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "id": "seed-ai-productivity-stack",
+    "code": "SYNOTTIC-STACK",
+    "orgName": "Synottic AI Institute",
+    "domain": "synottic.com",
+    "industry": "Education",
+    "functions": [],
+    "roles": [],
+    "programIds": [
+      "prog-syn-ai-productivity-stack"
+    ],
+    "fullLibrary": true,
+    "enabled": true,
+    "note": "AI Tools \u00b7 AI Productivity Stack",
+    "createdAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "id": "seed-business-leaders",
+    "code": "SYNOTTIC-BIZLEADERS",
+    "orgName": "Synottic AI Institute",
+    "domain": "synottic.com",
+    "industry": "Education",
+    "functions": [],
+    "roles": [
+      "Founder / CEO",
+      "Managing Director",
+      "Business Unit Head",
+      "VP / Director",
+      "General Manager",
+      "Board Member"
+    ],
+    "programIds": [
+      "prog-syn-business-leaders"
+    ],
+    "fullLibrary": true,
+    "enabled": true,
+    "note": "AI for Leaders \u00b7 AI for Business Leaders",
+    "createdAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "id": "seed-executives-mastery",
+    "code": "SYNOTTIC-EXECUTIVES",
+    "orgName": "Synottic AI Institute",
+    "domain": "synottic.com",
+    "industry": "Education",
+    "functions": [],
+    "roles": [
+      "CEO",
+      "COO",
+      "CFO",
+      "CHRO",
+      "CIO / CTO",
+      "Chief Strategy Officer",
+      "Chief of Staff"
+    ],
+    "programIds": [
+      "prog-syn-executives-mastery"
+    ],
+    "fullLibrary": true,
+    "enabled": true,
+    "note": "AI for Leaders \u00b7 AI for Executives Mastery Program",
+    "createdAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "id": "seed-leaders",
+    "code": "SYNOTTIC-LEADER",
+    "orgName": "Synottic AI Institute",
+    "domain": "synottic.com",
+    "industry": "Education",
+    "functions": [],
+    "roles": [
+      "Senior Manager",
+      "Head of Department",
+      "Director",
+      "Team Lead",
+      "Chief of Staff"
+    ],
+    "programIds": [
+      "prog-syn-leaders"
+    ],
+    "fullLibrary": true,
+    "enabled": true,
+    "note": "AI for Leaders \u00b7 AI for Leaders",
+    "createdAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "id": "seed-people-managers",
+    "code": "SYNOTTIC-MANAGERS",
+    "orgName": "Synottic AI Institute",
+    "domain": "synottic.com",
+    "industry": "Education",
+    "functions": [],
+    "roles": [
+      "People Manager",
+      "First-line Manager",
+      "Team Lead",
+      "Engineering Manager",
+      "Sales Manager",
+      "Support Team Lead"
+    ],
+    "programIds": [
+      "prog-syn-people-managers"
+    ],
+    "fullLibrary": true,
+    "enabled": true,
+    "note": "AI for Leaders \u00b7 AI for People Managers",
+    "createdAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "id": "seed-sales",
+    "code": "SYNOTTIC-SALES",
+    "orgName": "Synottic AI Institute",
+    "domain": "synottic.com",
+    "industry": "Education",
+    "functions": [],
+    "roles": [
+      "Chief Sales Officer",
+      "Sales Director",
+      "Sales Manager",
+      "Business Development Manager",
+      "Account Manager",
+      "Key Account Manager",
+      "Sales Executive",
+      "Inside Sales",
+      "Enterprise Sales",
+      "Customer Success Manager",
+      "Pre-Sales Consultant",
+      "Sales Operations",
+      "Revenue Operations (RevOps)"
+    ],
+    "programIds": [
+      "prog-syn-sales"
+    ],
+    "fullLibrary": true,
+    "enabled": true,
+    "note": "AI for Functions \u00b7 AI for Sales",
+    "createdAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "id": "seed-marketing",
+    "code": "SYNOTTIC-MARKETING",
+    "orgName": "Synottic AI Institute",
+    "domain": "synottic.com",
+    "industry": "Education",
+    "functions": [],
+    "roles": [
+      "CMO",
+      "Marketing Director",
+      "Brand Manager",
+      "Content Marketer",
+      "Growth Marketer",
+      "SEO Specialist",
+      "Social Media Manager",
+      "Lifecycle / Email Marketer",
+      "Marketing Operations",
+      "Product Marketer",
+      "PR & Communications"
+    ],
+    "programIds": [
+      "prog-syn-marketing"
+    ],
+    "fullLibrary": true,
+    "enabled": true,
+    "note": "AI for Functions \u00b7 AI for Marketing",
+    "createdAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "id": "seed-hr",
+    "code": "SYNOTTIC-HR",
+    "orgName": "Synottic AI Institute",
+    "domain": "synottic.com",
+    "industry": "Education",
+    "functions": [],
+    "roles": [
+      "HR Director",
+      "HR Manager",
+      "Talent Acquisition Specialist",
+      "Recruiter",
+      "L&D Team",
+      "HR Business Partner",
+      "Talent Management",
+      "Employee Experience Team",
+      "Organisational Development",
+      "People Analytics Specialist",
+      "HR Operations"
+    ],
+    "programIds": [
+      "prog-syn-hr"
+    ],
+    "fullLibrary": true,
+    "enabled": true,
+    "note": "AI for Functions \u00b7 AI for HR",
+    "createdAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "id": "seed-ld",
+    "code": "SYNOTTIC-LD",
+    "orgName": "Synottic AI Institute",
+    "domain": "synottic.com",
+    "industry": "Education",
+    "functions": [],
+    "roles": [
+      "L&D Director",
+      "L&D Manager",
+      "Instructional Designer",
+      "Learning Experience Designer",
+      "Corporate Trainer",
+      "Facilitator",
+      "Capability Building Lead",
+      "Talent Development Partner"
+    ],
+    "programIds": [
+      "prog-syn-ld"
+    ],
+    "fullLibrary": true,
+    "enabled": true,
+    "note": "AI for Functions \u00b7 AI for L&D",
+    "createdAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "id": "seed-finance",
+    "code": "SYNOTTIC-FINANCE",
+    "orgName": "Synottic AI Institute",
+    "domain": "synottic.com",
+    "industry": "Education",
+    "functions": [],
+    "roles": [
+      "CFO",
+      "Finance Director",
+      "Financial Controller",
+      "FP&A Analyst",
+      "Accountant",
+      "Management Accountant",
+      "Treasury",
+      "Finance Business Partner",
+      "Audit & Assurance"
+    ],
+    "programIds": [
+      "prog-syn-finance"
+    ],
+    "fullLibrary": true,
+    "enabled": true,
+    "note": "AI for Functions \u00b7 AI for Finance & Accounting",
+    "createdAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "id": "seed-legal",
+    "code": "SYNOTTIC-LEGAL",
+    "orgName": "Synottic AI Institute",
+    "domain": "synottic.com",
+    "industry": "Education",
+    "functions": [],
+    "roles": [
+      "General Counsel",
+      "Legal Counsel",
+      "Contracts Manager",
+      "Compliance Officer",
+      "Privacy / DPO",
+      "Company Secretary",
+      "Paralegal",
+      "Regulatory Affairs"
+    ],
+    "programIds": [
+      "prog-syn-legal"
+    ],
+    "fullLibrary": true,
+    "enabled": true,
+    "note": "AI for Functions \u00b7 AI for Legal & Compliance",
+    "createdAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "id": "seed-it-eng",
+    "code": "SYNOTTIC-IT",
+    "orgName": "Synottic AI Institute",
+    "domain": "synottic.com",
+    "industry": "Education",
+    "functions": [],
+    "roles": [
+      "CTO",
+      "Engineering Manager",
+      "Software Engineer",
+      "DevOps / SRE",
+      "QA Engineer",
+      "Solutions Architect",
+      "IT Support Lead",
+      "Platform Engineer",
+      "Security Engineer"
+    ],
+    "programIds": [
+      "prog-syn-it-eng"
+    ],
+    "fullLibrary": true,
+    "enabled": true,
+    "note": "AI for Functions \u00b7 AI for IT & Engineering",
+    "createdAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "id": "seed-product",
+    "code": "SYNOTTIC-PRODUCT",
+    "orgName": "Synottic AI Institute",
+    "domain": "synottic.com",
+    "industry": "Education",
+    "functions": [],
+    "roles": [
+      "Head of Product",
+      "Product Manager",
+      "Product Owner",
+      "Technical Product Manager",
+      "Product Marketing Manager",
+      "UX Researcher",
+      "Product Designer",
+      "Product Operations"
+    ],
+    "programIds": [
+      "prog-syn-product"
+    ],
+    "fullLibrary": true,
+    "enabled": true,
+    "note": "AI for Functions \u00b7 AI for Product Management",
+    "createdAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "id": "seed-ppm",
+    "code": "SYNOTTIC-PROJECTS",
+    "orgName": "Synottic AI Institute",
+    "domain": "synottic.com",
+    "industry": "Education",
+    "functions": [],
+    "roles": [
+      "Programme Director",
+      "Project Manager",
+      "Programme Manager",
+      "Scrum Master",
+      "Delivery Lead",
+      "PMO Analyst",
+      "Portfolio Manager",
+      "Agile Coach"
+    ],
+    "programIds": [
+      "prog-syn-ppm"
+    ],
+    "fullLibrary": true,
+    "enabled": true,
+    "note": "AI for Functions \u00b7 AI for Project & Program Management",
+    "createdAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "id": "seed-customer-service",
+    "code": "SYNOTTIC-SUPPORT",
+    "orgName": "Synottic AI Institute",
+    "domain": "synottic.com",
+    "industry": "Education",
+    "functions": [],
+    "roles": [
+      "Head of Customer Support",
+      "Support Team Lead",
+      "Support Agent",
+      "CX Manager",
+      "Knowledge Base Manager",
+      "Quality Analyst",
+      "Community Manager"
+    ],
+    "programIds": [
+      "prog-syn-customer-service"
+    ],
+    "fullLibrary": true,
+    "enabled": true,
+    "note": "AI for Functions \u00b7 AI for Customer Service",
+    "createdAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "id": "seed-data-analyst",
+    "code": "SYNOTTIC-DATA",
+    "orgName": "Synottic AI Institute",
+    "domain": "synottic.com",
+    "industry": "Education",
+    "functions": [],
+    "roles": [
+      "Head of Analytics",
+      "Data Analyst",
+      "Business Analyst",
+      "BI Analyst",
+      "Data Scientist",
+      "Insights Manager",
+      "Reporting Analyst"
+    ],
+    "programIds": [
+      "prog-syn-data-analyst"
+    ],
+    "fullLibrary": true,
+    "enabled": true,
+    "note": "AI for Functions \u00b7 AI for Data & Business Analysts",
+    "createdAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "id": "seed-operations",
+    "code": "SYNOTTIC-OPS",
+    "orgName": "Synottic AI Institute",
+    "domain": "synottic.com",
+    "industry": "Education",
+    "functions": [],
+    "roles": [
+      "COO",
+      "Operations Director",
+      "Operations Manager",
+      "Supply Chain Manager",
+      "Logistics Manager",
+      "Process Improvement Lead",
+      "S&OP Planner",
+      "Warehouse Manager"
+    ],
+    "programIds": [
+      "prog-syn-operations"
+    ],
+    "fullLibrary": true,
+    "enabled": true,
+    "note": "AI for Functions \u00b7 AI for Operations & Supply Chain",
+    "createdAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "id": "seed-procurement",
+    "code": "SYNOTTIC-PROCUREMENT",
+    "orgName": "Synottic AI Institute",
+    "domain": "synottic.com",
+    "industry": "Education",
+    "functions": [],
+    "roles": [
+      "CPO",
+      "Procurement Director",
+      "Procurement Manager",
+      "Category Manager",
+      "Buyer",
+      "Sourcing Specialist",
+      "Vendor Manager",
+      "Contracts & Compliance Analyst"
+    ],
+    "programIds": [
+      "prog-syn-procurement"
+    ],
+    "fullLibrary": true,
+    "enabled": true,
+    "note": "AI for Functions \u00b7 AI for Procurement",
+    "createdAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "id": "seed-responsible-ai-essentials",
+    "code": "SYNOTTIC-RESPONSIBLE",
+    "orgName": "Synottic AI Institute",
+    "domain": "synottic.com",
+    "industry": "Education",
+    "functions": [],
+    "roles": [],
+    "programIds": [
+      "prog-syn-responsible-ai-essentials"
+    ],
+    "fullLibrary": true,
+    "enabled": true,
+    "note": "Responsible AI & Governance \u00b7 Responsible AI Essentials",
+    "createdAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "id": "seed-ai-risk-governance-leaders",
+    "code": "SYNOTTIC-RISK",
+    "orgName": "Synottic AI Institute",
+    "domain": "synottic.com",
+    "industry": "Education",
+    "functions": [],
+    "roles": [
+      "Executive Sponsor",
+      "Risk Officer",
+      "General Counsel",
+      "CISO",
+      "Head of Compliance",
+      "Board Member"
+    ],
+    "programIds": [
+      "prog-syn-ai-risk-governance-leaders"
+    ],
+    "fullLibrary": true,
+    "enabled": true,
+    "note": "Responsible AI & Governance \u00b7 AI Risk & Governance for Leaders",
+    "createdAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "id": "seed-ai-governance-practitioner",
+    "code": "SYNOTTIC-GOV-PRACTITIONER",
+    "orgName": "Synottic AI Institute",
+    "domain": "synottic.com",
+    "industry": "Education",
+    "functions": [],
+    "roles": [
+      "AI Governance Lead",
+      "Compliance Manager",
+      "Risk Analyst",
+      "Privacy Officer",
+      "Model Risk Manager",
+      "Internal Audit"
+    ],
+    "programIds": [
+      "prog-syn-ai-governance-practitioner"
+    ],
+    "fullLibrary": true,
+    "enabled": true,
+    "note": "Responsible AI & Governance \u00b7 AI Governance Practitioner",
+    "createdAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "id": "seed-enterprise-ai-governance",
+    "code": "SYNOTTIC-GOV-ENTERPRISE",
+    "orgName": "Synottic AI Institute",
+    "domain": "synottic.com",
+    "industry": "Education",
+    "functions": [],
+    "roles": [
+      "Chief AI Officer",
+      "Head of AI Governance",
+      "Enterprise Risk",
+      "Legal & Compliance",
+      "Security",
+      "Data Protection"
+    ],
+    "programIds": [
+      "prog-syn-enterprise-ai-governance"
+    ],
+    "fullLibrary": true,
+    "enabled": true,
+    "note": "Responsible AI & Governance \u00b7 Enterprise AI Governance Academy",
+    "createdAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "id": "seed-ai-agents-essentials",
+    "code": "SYNOTTIC-AGENTS",
+    "orgName": "Synottic AI Institute",
+    "domain": "synottic.com",
+    "industry": "Education",
+    "functions": [],
+    "roles": [],
+    "programIds": [
+      "prog-syn-ai-agents-essentials"
+    ],
+    "fullLibrary": true,
+    "enabled": true,
+    "note": "Agentic AI \u00b7 AI Agents Essentials",
+    "createdAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "id": "seed-ai-agent-builder",
+    "code": "SYNOTTIC-AGENT-BUILDER",
+    "orgName": "Synottic AI Institute",
+    "domain": "synottic.com",
+    "industry": "Education",
+    "functions": [],
+    "roles": [
+      "Software Engineer",
+      "AI Engineer",
+      "Automation Specialist",
+      "Solutions Architect",
+      "Product Manager"
+    ],
+    "programIds": [
+      "prog-syn-ai-agent-builder"
+    ],
+    "fullLibrary": true,
+    "enabled": true,
+    "note": "Agentic AI \u00b7 AI Agent Builder",
+    "createdAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "id": "seed-advanced-agentic-ai",
+    "code": "SYNOTTIC-AGENTIC-ADV",
+    "orgName": "Synottic AI Institute",
+    "domain": "synottic.com",
+    "industry": "Education",
+    "functions": [],
+    "roles": [],
+    "programIds": [
+      "prog-syn-advanced-agentic-ai"
+    ],
+    "fullLibrary": true,
+    "enabled": true,
+    "note": "Agentic AI \u00b7 Advanced Agentic AI",
+    "createdAt": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "id": "seed-enterprise-agentic-ai",
+    "code": "SYNOTTIC-AGENTIC-ENT",
+    "orgName": "Synottic AI Institute",
+    "domain": "synottic.com",
+    "industry": "Education",
+    "functions": [],
+    "roles": [
+      "Transformation Lead",
+      "Enterprise Architect",
+      "Operations Director",
+      "Head of Automation",
+      "Risk & Governance"
+    ],
+    "programIds": [
+      "prog-syn-enterprise-agentic-ai"
+    ],
+    "fullLibrary": true,
+    "enabled": true,
+    "note": "Agentic AI \u00b7 Enterprise Agentic AI",
+    "createdAt": "2026-09-01T00:00:00.000Z"
   }
 ]
