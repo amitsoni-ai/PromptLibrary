@@ -1,18 +1,25 @@
 #!/usr/bin/env python3
 """Assemble ../index.html from the parts in this directory.
 Run: python3 build.py   (from prompt-library/src/)"""
-import json, os
+import base64, json, os
 HERE = os.path.dirname(os.path.abspath(__file__))
+ASSETS = os.path.normpath(os.path.join(HERE, ".."))
 OUT = os.path.normpath(os.path.join(HERE, "..", "index.html"))
 PUSH = os.path.normpath(os.path.join(HERE, "..", "..", "promptlibrary-push-package", "index.html"))
 
 def read(name): return open(os.path.join(HERE, name), encoding="utf-8").read()
+
+def data_uri(name):
+    p = os.path.join(ASSETS, name)
+    return "data:image/png;base64," + base64.b64encode(open(p, "rb").read()).decode("ascii")
 
 def main():
     data_blocks = read("data_blocks.html")
     assert data_blocks.startswith('<script type="application/json" id="data-prompts">')
     assert data_blocks.rstrip().endswith("</script>")
     head = read("part_head.html")
+    head = head.replace("{{LOGO_DATA_URI}}", data_uri("Synottic_Logo.png"))
+    head = head.replace("{{FAVICON_DATA_URI}}", data_uri("favicon.png"))
     orgmodel = read("part_orgmodel.json"); json.loads(orgmodel)
     curriculum = read("part_curriculum.json"); json.loads(curriculum)
     admin_seed = read("part_admin_seed.json"); json.loads(admin_seed)

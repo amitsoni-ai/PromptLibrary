@@ -4,9 +4,7 @@ function renderGate(prefillMsg) {
   root.innerHTML = `
   <div class="gate">
     <div class="gate-card">
-      <div class="gate-mark">
-        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M12 18v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M3 12h3M18 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/><circle cx="12" cy="12" r="3.4"/></svg>
-      </div>
+      <div class="gate-mark" role="img" aria-label="Synottic"></div>
       <h1>Synottic Prompt Library</h1>
       <p class="sub">Enter the access code from your program to open the library assigned to your cohort.</p>
       <label for="gate-code">Access code</label>
@@ -19,10 +17,10 @@ function renderGate(prefillMsg) {
       <div class="gate-error" id="gate-error"></div>
       <button class="btn btn-primary" id="gate-enter" disabled>Enter library</button>
       <div class="gate-hint">
-        Evaluating? Try <code data-fill="DEMO-2026">DEMO-2026</code> ·
-        <code data-fill="SYNOTTIC-PM-01">SYNOTTIC-PM-01</code> ·
-        <code data-fill="ACME-SALES-EMEA">ACME-SALES-EMEA</code> (program-scoped) ·
-        <code data-fill="NORTHWIND-WRITE">NORTHWIND-WRITE</code>
+        Try <code data-fill="SYNOTTIC-ALL">SYNOTTIC-ALL</code> (everything) ·
+        <code data-fill="SYNOTTIC-SALES">SYNOTTIC-SALES</code> (scoped course) ·
+        <code data-fill="SYNOTTIC-SUPERADMIN">SYNOTTIC-SUPERADMIN</code> ·
+        <code data-fill="DEMO-2026">DEMO-2026</code>
       </div>
       <div class="gate-hint" style="border:0;padding-top:6px;margin-top:0;">
         <button class="gate-admin-link" id="gate-admin">Admin console →</button>
@@ -59,9 +57,11 @@ function renderGate(prefillMsg) {
     if (resolved.kind === "admin") {
       const a = resolved.adminCode;
       const progNames = (resolved.programs || []).map((p) => p.name).join(", ");
-      const scopeNote = a.fullLibrary
-        ? "Full library access."
-        : "Access limited to the assigned functions and programs.";
+      const scopeNote = a.superAdmin
+        ? "Super-admin — full library and the admin console."
+        : a.fullLibrary
+          ? "Full library — all categories, functions and programs."
+          : "Scoped access — only the prompts in the assigned program(s).";
       resolvedEl.innerHTML = `<div class="gate-resolved"><b>${escapeHtml(a.orgName)}</b><br>${escapeHtml([a.industry, a.domain].filter(Boolean).join(" · "))}<br><span style="opacity:.8">${escapeHtml(progNames ? "Programs: " + progNames + ". " : "")}${scopeNote}</span></div>`;
       nameWrap.hidden = false;
       enterBtn.disabled = false;
@@ -89,8 +89,10 @@ function renderGate(prefillMsg) {
         domain: a.domain || "", industry: a.industry || "",
         functions: a.functions || [], roles: a.roles || [],
         programIds: a.programIds || [], fullLibrary: !!a.fullLibrary,
+        superAdmin: !!a.superAdmin,
         name: (nameI.value.trim() || "Learner"), startedAt: Date.now(),
       };
+      if (a.superAdmin) { try { sessionStorage.setItem("prompt-lib:admin-ok", "1"); } catch (e) {} }
     } else {
       s = {
         code: resolved.code,

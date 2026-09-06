@@ -2,13 +2,20 @@
 
 _Generated from the course catalogue. Codes are case-insensitive; spaces are ignored._
 
-## Admin
+## Admin & all-access
 
-| Purpose | Code |
-|---|---|
-| Admin console (sign-in screen → "Admin console →") | `SYNOTTIC-ADMIN` |
+| Purpose | Code | What it opens |
+|---|---|---|
+| **Super-admin** | `SYNOTTIC-SUPERADMIN` | Full library **and** the admin console (an "Admin console" link appears in the app). |
+| Admin console only | `SYNOTTIC-ADMIN` | The admin console (enter on the sign-in screen → "Admin console →"). |
+| Global / all-roles learner | `SYNOTTIC-ALL` | The whole library with every category, function and program (Categories browsing on). |
+| Evaluation | `DEMO-2026` | Same as `SYNOTTIC-ALL` — full library, for demos. |
 
-## Whole-track codes (every course in the track + full library)
+> Every other `SYNOTTIC-*` code below is **scoped**: the learner sees only that course's / track's
+> prompts as part of their program. The **Categories** and **Library Governance** tabs are hidden for
+> scoped learners — they discover prompts through their program, search, Learn and Practice.
+
+## Whole-track codes (all courses in the track, scoped to the track)
 
 | Track | Code | Courses |
 |---|---|---|
@@ -101,12 +108,10 @@ _Generated from the course catalogue. Codes are case-insensitive; spaces are ign
 | Advanced Agentic AI | `SYNOTTIC-AGENTIC-ADV` |
 | Enterprise Agentic AI | `SYNOTTIC-AGENTIC-ENT` |
 
-## Demo / client codes (built-in)
+## Client codes (built-in)
 
 | Code | Scope |
 |---|---|
-| `DEMO-2026` | Full library (evaluation) |
-| `SYNOTTIC-PM-01` | Full library, AI for Sales program |
 | `ACME-SALES-EMEA` / `ACME-SALES-AMER` | Acme Corp — program-scoped sales enablement |
 | `NORTHWIND-WRITE` | Northwind — program-scoped writing |
 

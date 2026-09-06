@@ -313,6 +313,15 @@ TRACK_CODE = {
     "AI Tools": "SYNOTTIC-TOOLS", "Responsible AI & Governance": "SYNOTTIC-GOVERNANCE",
     "Agentic AI": "SYNOTTIC-AGENTIC",
 }
+# The 13 "AI for Functions" course slugs -> admin-console function name.
+SLUG_FUNCTION = {
+    "sales": "Sales", "marketing": "Marketing", "hr": "HR", "ld": "L&D",
+    "finance": "Finance & Accounting", "legal": "Legal & Compliance",
+    "it-eng": "IT & Engineering", "product": "Product Management",
+    "ppm": "Project & Program Management", "customer-service": "Customer Service",
+    "data-analyst": "Data & Business Analysis", "operations": "Operations & Supply Chain",
+    "procurement": "Procurement",
+}
 
 TRACK_ORDER = ["AI Essentials", "AI at Work", "AI Tools", "AI for Leaders", "AI for Functions", "Responsible AI & Governance", "Agentic AI"]
 TRACK_SKILL = {
@@ -339,7 +348,7 @@ def build_programs():
             cats = sorted(set([c["cat"]] + [x for mm in mods for x in mm["rules"]["categories"]]))
             progs.append({
                 "id": pid, "orgId": "org-synottic", "name": c["name"], "track": track,
-                "description": c["desc"], "scope": "full",
+                "description": c["desc"], "scope": "program",
                 "accessCode": COURSE_CODE.get(c["slug"]),
                 "skillFocus": [TRACK_SKILL[track], c["cat"]],
                 "audienceRoles": roles,
@@ -422,18 +431,43 @@ def flagship_prompt(course, track):
     }
 
 
+ALL_CATEGORIES = [
+    "AI & Prompt Engineering", "Book & Ebook Writing", "Business Strategy", "Career Growth",
+    "Coaching & Self-Development", "Coding & Tech", "Communication & Leadership",
+    "Content Writing & Copywriting", "Customer Support", "E-Commerce", "Education & Learning",
+    "Email Marketing", "Finance & Accounting", "General", "HR & Recruiting", "Health & Fitness",
+    "Image & Design", "Legal & Compliance", "Marketing & Branding", "Presentation & Slides",
+    "Product Management", "Productivity & Automation", "Research & Data Analysis", "SEO & Analytics",
+    "Sales & Lead Generation", "Social Media", "Spirituality & Wellness", "UX/UI Design",
+]
+
+FULL_PROGRAM = {
+    "id": "prog-full", "orgId": "org-synottic", "name": "Full Library", "track": "All access",
+    "description": "Full access to every category, function, program and the whole prompt library — the global / all-roles view.",
+    "scope": "full", "accessCode": "SYNOTTIC-ALL",
+    "skillFocus": ["All access"], "audienceRoles": ["All roles"],
+    "categories": ALL_CATEGORIES,
+    "modules": [
+        {"id": "m-full-1", "name": "Everything, ranked by quality", "summary": "The strongest prompts across all 28 categories.",
+         "rules": {"categories": [], "keywords": [], "limit": 20}},
+        {"id": "m-full-2", "name": "Reusable templates", "summary": "Prompts with variables you can run again and again.",
+         "rules": {"categories": [], "keywords": ["template"], "limit": 16}},
+    ],
+}
+
+
 def main():
     progs = build_programs()
     org_model = {
-        "_note": "Multi-tenant model. Access codes resolve Organization -> Program -> Cohort -> Learner. Module prompt lists resolve at load from rules (category+keyword) against the central library — no central prompt is duplicated per learner. The Synottic programs (prog-syn-*) mirror the Synottic AI Institute course catalogue; the admin console maps org codes to any subset of them by domain / industry / function / role.",
+        "_note": "Multi-tenant model. Access codes resolve Organization -> Program -> Cohort -> Learner. Module prompt lists resolve at load from rules (category+keyword) against the central library — no central prompt is duplicated per learner. prog-syn-* programs (scope 'program') scope a learner to that course's categories; prog-full (scope 'full') is the global / all-roles view. The admin console maps org codes to any subset by domain / industry / function / role.",
         "organizations": ORGS,
-        "programs": DEMO_PROGRAMS + progs,
+        "programs": DEMO_PROGRAMS + [FULL_PROGRAM] + progs,
         "cohorts": [
             {"id": "coh-acme-emea", "programId": "prog-acme-sales", "name": "EMEA Sales · 2026", "startsOn": "2026-05-04"},
             {"id": "coh-acme-amer", "programId": "prog-acme-sales", "name": "AMER Sales · 2026", "startsOn": "2026-05-04"},
             {"id": "coh-nw-fall", "programId": "prog-northwind-writing", "name": "Fall Writers 2026", "startsOn": "2026-09-08"},
-            {"id": "coh-demo", "programId": "prog-syn-prompt-engineering-mastery", "name": "Demo / Evaluation", "startsOn": "2026-01-01"},
-            {"id": "coh-syn-functions", "programId": "prog-syn-sales", "name": "Synottic · AI for Functions · 2026", "startsOn": "2026-09-01"},
+            {"id": "coh-demo", "programId": "prog-full", "name": "Demo / Evaluation", "startsOn": "2026-01-01"},
+            {"id": "coh-syn-functions", "programId": "prog-syn-sales", "name": "Synottic · AI for Sales · 2026", "startsOn": "2026-09-01"},
         ],
         "learners": [
             {"id": "lrn-amit", "cohortId": "coh-syn-functions", "name": "Amit Soni", "email": "amitsoni.id@gmail.com"},
@@ -443,7 +477,6 @@ def main():
             {"code": "ACME-SALES-AMER", "cohortId": "coh-acme-amer", "kind": "cohort"},
             {"code": "NORTHWIND-WRITE", "cohortId": "coh-nw-fall", "kind": "cohort"},
             {"code": "DEMO-2026", "cohortId": "coh-demo", "kind": "cohort"},
-            {"code": "SYNOTTIC-PM-01", "cohortId": "coh-syn-functions", "kind": "cohort"},
         ],
     }
     open(os.path.join(HERE, "part_orgmodel.json"), "w", encoding="utf-8").write(json.dumps(org_model, indent=2))
@@ -454,27 +487,35 @@ def main():
             curriculum.append(flagship_prompt(c, track))
     open(os.path.join(HERE, "part_curriculum.json"), "w", encoding="utf-8").write(json.dumps(curriculum, indent=2))
 
-    # admin-console seed: one editable code per TRACK (all courses in it) plus
-    # one per COURSE. All full-library; the per-course code pins that course as
-    # the learner's program. Merged by AdminStore on first run.
-    seed = []
+    # admin-console seed codes. Merged by AdminStore on first run.
+    #  - per-course & per-track codes: SCOPED (fullLibrary false) — the learner
+    #    sees only that program's / track's prompts, Categories nav is hidden.
+    #  - SYNOTTIC-ALL: the global / all-roles view (full library, Categories on).
+    #  - SYNOTTIC-SUPERADMIN: full library + the admin console.
+    def base(**kw):
+        d = {"orgName": "Synottic AI Institute", "domain": "synottic.com", "industry": "Education",
+             "functions": [], "roles": [], "programIds": [], "fullLibrary": False, "enabled": True,
+             "createdAt": "2026-09-01T00:00:00.000Z"}
+        d.update(kw)
+        return d
+
+    seed = [
+        base(id="seed-all", code="SYNOTTIC-ALL", roles=["All roles"], programIds=["prog-full"],
+             fullLibrary=True, note="Global / all-roles view — every category, function and program"),
+        base(id="seed-superadmin", code="SYNOTTIC-SUPERADMIN", roles=["Super-admin"], programIds=["prog-full"],
+             fullLibrary=True, superAdmin=True, note="Super-admin — full library + admin console"),
+    ]
     for track in TRACK_ORDER:
-        seed.append({
-            "id": "seed-" + re.sub(r"[^a-z0-9]+", "-", track.lower()).strip("-"),
-            "code": TRACK_CODE[track], "orgName": "Synottic AI Institute", "domain": "synottic.com",
-            "industry": "Education", "functions": [], "roles": [],
-            "programIds": track_program_ids(track), "fullLibrary": True, "enabled": True,
-            "note": track + " track — all courses", "createdAt": "2026-09-01T00:00:00.000Z",
-        })
+        seed.append(base(id="seed-" + re.sub(r"[^a-z0-9]+", "-", track.lower()).strip("-"),
+                         code=TRACK_CODE[track], programIds=track_program_ids(track),
+                         note=track + " track — all courses (scoped)"))
     for track in TRACK_ORDER:
         for c in CATALOGUE[track]["courses"]:
-            seed.append({
-                "id": "seed-" + c["slug"],
-                "code": COURSE_CODE[c["slug"]], "orgName": "Synottic AI Institute", "domain": "synottic.com",
-                "industry": "Education", "functions": [], "roles": c.get("roles") or [],
-                "programIds": ["prog-syn-" + c["slug"]], "fullLibrary": True, "enabled": True,
-                "note": track + " · " + c["name"], "createdAt": "2026-09-01T00:00:00.000Z",
-            })
+            fn = SLUG_FUNCTION.get(c["slug"])
+            seed.append(base(id="seed-" + c["slug"], code=COURSE_CODE[c["slug"]],
+                             functions=[fn] if fn else [], roles=c.get("roles") or [],
+                             programIds=["prog-syn-" + c["slug"]],
+                             note=track + " · " + c["name"] + " (scoped)"))
     open(os.path.join(HERE, "part_admin_seed.json"), "w", encoding="utf-8").write(json.dumps(seed, indent=2))
 
     # --- human reference sheet -------------------------------------------------
@@ -483,13 +524,20 @@ def main():
         "",
         "_Generated from the course catalogue. Codes are case-insensitive; spaces are ignored._",
         "",
-        "## Admin",
+        "## Admin & all-access",
         "",
-        "| Purpose | Code |",
-        "|---|---|",
-        "| Admin console (sign-in screen → \"Admin console →\") | `" + ADMIN_KEY + "` |",
+        "| Purpose | Code | What it opens |",
+        "|---|---|---|",
+        "| **Super-admin** | `SYNOTTIC-SUPERADMIN` | Full library **and** the admin console (an \"Admin console\" link appears in the app). |",
+        "| Admin console only | `" + ADMIN_KEY + "` | The admin console (enter on the sign-in screen → \"Admin console →\"). |",
+        "| Global / all-roles learner | `SYNOTTIC-ALL` | The whole library with every category, function and program (Categories browsing on). |",
+        "| Evaluation | `DEMO-2026` | Same as `SYNOTTIC-ALL` — full library, for demos. |",
         "",
-        "## Whole-track codes (every course in the track + full library)",
+        "> Every other `SYNOTTIC-*` code below is **scoped**: the learner sees only that course's / track's",
+        "> prompts as part of their program. The **Categories** and **Library Governance** tabs are hidden for",
+        "> scoped learners — they discover prompts through their program, search, Learn and Practice.",
+        "",
+        "## Whole-track codes (all courses in the track, scoped to the track)",
         "",
         "| Track | Code | Courses |",
         "|---|---|---|",
@@ -503,12 +551,10 @@ def main():
             lines.append("| " + c["name"] + " | `" + COURSE_CODE[c["slug"]] + "` |")
         lines.append("")
     lines += [
-        "## Demo / client codes (built-in)",
+        "## Client codes (built-in)",
         "",
         "| Code | Scope |",
         "|---|---|",
-        "| `DEMO-2026` | Full library (evaluation) |",
-        "| `SYNOTTIC-PM-01` | Full library, AI for Sales program |",
         "| `ACME-SALES-EMEA` / `ACME-SALES-AMER` | Acme Corp — program-scoped sales enablement |",
         "| `NORTHWIND-WRITE` | Northwind — program-scoped writing |",
         "",

@@ -1,7 +1,42 @@
 [
   {
-    "id": "seed-ai-essentials",
-    "code": "SYNOTTIC-ESSENTIALS",
+    "orgName": "Synottic AI Institute",
+    "domain": "synottic.com",
+    "industry": "Education",
+    "functions": [],
+    "roles": [
+      "All roles"
+    ],
+    "programIds": [
+      "prog-full"
+    ],
+    "fullLibrary": true,
+    "enabled": true,
+    "createdAt": "2026-09-01T00:00:00.000Z",
+    "id": "seed-all",
+    "code": "SYNOTTIC-ALL",
+    "note": "Global / all-roles view \u2014 every category, function and program"
+  },
+  {
+    "orgName": "Synottic AI Institute",
+    "domain": "synottic.com",
+    "industry": "Education",
+    "functions": [],
+    "roles": [
+      "Super-admin"
+    ],
+    "programIds": [
+      "prog-full"
+    ],
+    "fullLibrary": true,
+    "enabled": true,
+    "createdAt": "2026-09-01T00:00:00.000Z",
+    "id": "seed-superadmin",
+    "code": "SYNOTTIC-SUPERADMIN",
+    "superAdmin": true,
+    "note": "Super-admin \u2014 full library + admin console"
+  },
+  {
     "orgName": "Synottic AI Institute",
     "domain": "synottic.com",
     "industry": "Education",
@@ -13,14 +48,14 @@
       "prog-syn-genai-essentials",
       "prog-syn-ai-security-responsible-use"
     ],
-    "fullLibrary": true,
+    "fullLibrary": false,
     "enabled": true,
-    "note": "AI Essentials track \u2014 all courses",
-    "createdAt": "2026-09-01T00:00:00.000Z"
+    "createdAt": "2026-09-01T00:00:00.000Z",
+    "id": "seed-ai-essentials",
+    "code": "SYNOTTIC-ESSENTIALS",
+    "note": "AI Essentials track \u2014 all courses (scoped)"
   },
   {
-    "id": "seed-ai-at-work",
-    "code": "SYNOTTIC-WORK",
     "orgName": "Synottic AI Institute",
     "domain": "synottic.com",
     "industry": "Education",
@@ -34,14 +69,14 @@
       "prog-syn-genai-tools-mastery",
       "prog-syn-prompt-engineering-mastery"
     ],
-    "fullLibrary": true,
+    "fullLibrary": false,
     "enabled": true,
-    "note": "AI at Work track \u2014 all courses",
-    "createdAt": "2026-09-01T00:00:00.000Z"
+    "createdAt": "2026-09-01T00:00:00.000Z",
+    "id": "seed-ai-at-work",
+    "code": "SYNOTTIC-WORK",
+    "note": "AI at Work track \u2014 all courses (scoped)"
   },
   {
-    "id": "seed-ai-tools",
-    "code": "SYNOTTIC-TOOLS",
     "orgName": "Synottic AI Institute",
     "domain": "synottic.com",
     "industry": "Education",
@@ -58,14 +93,14 @@
       "prog-syn-deepseek-mastery",
       "prog-syn-ai-productivity-stack"
     ],
-    "fullLibrary": true,
+    "fullLibrary": false,
     "enabled": true,
-    "note": "AI Tools track \u2014 all courses",
-    "createdAt": "2026-09-01T00:00:00.000Z"
+    "createdAt": "2026-09-01T00:00:00.000Z",
+    "id": "seed-ai-tools",
+    "code": "SYNOTTIC-TOOLS",
+    "note": "AI Tools track \u2014 all courses (scoped)"
   },
   {
-    "id": "seed-ai-for-leaders",
-    "code": "SYNOTTIC-LEADERS",
     "orgName": "Synottic AI Institute",
     "domain": "synottic.com",
     "industry": "Education",
@@ -77,14 +112,14 @@
       "prog-syn-leaders",
       "prog-syn-people-managers"
     ],
-    "fullLibrary": true,
+    "fullLibrary": false,
     "enabled": true,
-    "note": "AI for Leaders track \u2014 all courses",
-    "createdAt": "2026-09-01T00:00:00.000Z"
+    "createdAt": "2026-09-01T00:00:00.000Z",
+    "id": "seed-ai-for-leaders",
+    "code": "SYNOTTIC-LEADERS",
+    "note": "AI for Leaders track \u2014 all courses (scoped)"
   },
   {
-    "id": "seed-ai-for-functions",
-    "code": "SYNOTTIC-FUNCTIONS",
     "orgName": "Synottic AI Institute",
     "domain": "synottic.com",
     "industry": "Education",
@@ -105,14 +140,14 @@
       "prog-syn-operations",
       "prog-syn-procurement"
     ],
-    "fullLibrary": true,
+    "fullLibrary": false,
     "enabled": true,
-    "note": "AI for Functions track \u2014 all courses",
-    "createdAt": "2026-09-01T00:00:00.000Z"
+    "createdAt": "2026-09-01T00:00:00.000Z",
+    "id": "seed-ai-for-functions",
+    "code": "SYNOTTIC-FUNCTIONS",
+    "note": "AI for Functions track \u2014 all courses (scoped)"
   },
   {
-    "id": "seed-responsible-ai-governance",
-    "code": "SYNOTTIC-GOVERNANCE",
     "orgName": "Synottic AI Institute",
     "domain": "synottic.com",
     "industry": "Education",
@@ -124,14 +159,14 @@
       "prog-syn-ai-governance-practitioner",
       "prog-syn-enterprise-ai-governance"
     ],
-    "fullLibrary": true,
+    "fullLibrary": false,
     "enabled": true,
-    "note": "Responsible AI & Governance track \u2014 all courses",
-    "createdAt": "2026-09-01T00:00:00.000Z"
+    "createdAt": "2026-09-01T00:00:00.000Z",
+    "id": "seed-responsible-ai-governance",
+    "code": "SYNOTTIC-GOVERNANCE",
+    "note": "Responsible AI & Governance track \u2014 all courses (scoped)"
   },
   {
-    "id": "seed-agentic-ai",
-    "code": "SYNOTTIC-AGENTIC",
     "orgName": "Synottic AI Institute",
     "domain": "synottic.com",
     "industry": "Education",
@@ -143,14 +178,14 @@
       "prog-syn-advanced-agentic-ai",
       "prog-syn-enterprise-agentic-ai"
     ],
-    "fullLibrary": true,
+    "fullLibrary": false,
     "enabled": true,
-    "note": "Agentic AI track \u2014 all courses",
-    "createdAt": "2026-09-01T00:00:00.000Z"
+    "createdAt": "2026-09-01T00:00:00.000Z",
+    "id": "seed-agentic-ai",
+    "code": "SYNOTTIC-AGENTIC",
+    "note": "Agentic AI track \u2014 all courses (scoped)"
   },
   {
-    "id": "seed-ai-literacy-essentials",
-    "code": "SYNOTTIC-LITERACY",
     "orgName": "Synottic AI Institute",
     "domain": "synottic.com",
     "industry": "Education",
@@ -159,14 +194,14 @@
     "programIds": [
       "prog-syn-ai-literacy-essentials"
     ],
-    "fullLibrary": true,
+    "fullLibrary": false,
     "enabled": true,
-    "note": "AI Essentials \u00b7 AI Literacy Essentials",
-    "createdAt": "2026-09-01T00:00:00.000Z"
+    "createdAt": "2026-09-01T00:00:00.000Z",
+    "id": "seed-ai-literacy-essentials",
+    "code": "SYNOTTIC-LITERACY",
+    "note": "AI Essentials \u00b7 AI Literacy Essentials (scoped)"
   },
   {
-    "id": "seed-advance-ai-literacy",
-    "code": "SYNOTTIC-LITERACY-ADV",
     "orgName": "Synottic AI Institute",
     "domain": "synottic.com",
     "industry": "Education",
@@ -175,14 +210,14 @@
     "programIds": [
       "prog-syn-advance-ai-literacy"
     ],
-    "fullLibrary": true,
+    "fullLibrary": false,
     "enabled": true,
-    "note": "AI Essentials \u00b7 Advance AI Literacy",
-    "createdAt": "2026-09-01T00:00:00.000Z"
+    "createdAt": "2026-09-01T00:00:00.000Z",
+    "id": "seed-advance-ai-literacy",
+    "code": "SYNOTTIC-LITERACY-ADV",
+    "note": "AI Essentials \u00b7 Advance AI Literacy (scoped)"
   },
   {
-    "id": "seed-genai-essentials",
-    "code": "SYNOTTIC-GENAI",
     "orgName": "Synottic AI Institute",
     "domain": "synottic.com",
     "industry": "Education",
@@ -191,14 +226,14 @@
     "programIds": [
       "prog-syn-genai-essentials"
     ],
-    "fullLibrary": true,
+    "fullLibrary": false,
     "enabled": true,
-    "note": "AI Essentials \u00b7 Generative AI Essentials",
-    "createdAt": "2026-09-01T00:00:00.000Z"
+    "createdAt": "2026-09-01T00:00:00.000Z",
+    "id": "seed-genai-essentials",
+    "code": "SYNOTTIC-GENAI",
+    "note": "AI Essentials \u00b7 Generative AI Essentials (scoped)"
   },
   {
-    "id": "seed-ai-security-responsible-use",
-    "code": "SYNOTTIC-SECURITY",
     "orgName": "Synottic AI Institute",
     "domain": "synottic.com",
     "industry": "Education",
@@ -207,14 +242,14 @@
     "programIds": [
       "prog-syn-ai-security-responsible-use"
     ],
-    "fullLibrary": true,
+    "fullLibrary": false,
     "enabled": true,
-    "note": "AI Essentials \u00b7 AI Security and Responsible Use",
-    "createdAt": "2026-09-01T00:00:00.000Z"
+    "createdAt": "2026-09-01T00:00:00.000Z",
+    "id": "seed-ai-security-responsible-use",
+    "code": "SYNOTTIC-SECURITY",
+    "note": "AI Essentials \u00b7 AI Security and Responsible Use (scoped)"
   },
   {
-    "id": "seed-advanced-prompt-context",
-    "code": "SYNOTTIC-CONTEXT",
     "orgName": "Synottic AI Institute",
     "domain": "synottic.com",
     "industry": "Education",
@@ -223,14 +258,14 @@
     "programIds": [
       "prog-syn-advanced-prompt-context"
     ],
-    "fullLibrary": true,
+    "fullLibrary": false,
     "enabled": true,
-    "note": "AI at Work \u00b7 Advanced Prompt and Context Engineering",
-    "createdAt": "2026-09-01T00:00:00.000Z"
+    "createdAt": "2026-09-01T00:00:00.000Z",
+    "id": "seed-advanced-prompt-context",
+    "code": "SYNOTTIC-CONTEXT",
+    "note": "AI at Work \u00b7 Advanced Prompt and Context Engineering (scoped)"
   },
   {
-    "id": "seed-data-analysis-decision",
-    "code": "SYNOTTIC-DECISIONS",
     "orgName": "Synottic AI Institute",
     "domain": "synottic.com",
     "industry": "Education",
@@ -239,14 +274,14 @@
     "programIds": [
       "prog-syn-data-analysis-decision"
     ],
-    "fullLibrary": true,
+    "fullLibrary": false,
     "enabled": true,
-    "note": "AI at Work \u00b7 AI for Data Analysis and Decision Support",
-    "createdAt": "2026-09-01T00:00:00.000Z"
+    "createdAt": "2026-09-01T00:00:00.000Z",
+    "id": "seed-data-analysis-decision",
+    "code": "SYNOTTIC-DECISIONS",
+    "note": "AI at Work \u00b7 AI for Data Analysis and Decision Support (scoped)"
   },
   {
-    "id": "seed-productivity-at-work",
-    "code": "SYNOTTIC-PRODUCTIVITY",
     "orgName": "Synottic AI Institute",
     "domain": "synottic.com",
     "industry": "Education",
@@ -255,14 +290,14 @@
     "programIds": [
       "prog-syn-productivity-at-work"
     ],
-    "fullLibrary": true,
+    "fullLibrary": false,
     "enabled": true,
-    "note": "AI at Work \u00b7 AI Productivity at Work",
-    "createdAt": "2026-09-01T00:00:00.000Z"
+    "createdAt": "2026-09-01T00:00:00.000Z",
+    "id": "seed-productivity-at-work",
+    "code": "SYNOTTIC-PRODUCTIVITY",
+    "note": "AI at Work \u00b7 AI Productivity at Work (scoped)"
   },
   {
-    "id": "seed-deep-research",
-    "code": "SYNOTTIC-RESEARCH",
     "orgName": "Synottic AI Institute",
     "domain": "synottic.com",
     "industry": "Education",
@@ -271,14 +306,14 @@
     "programIds": [
       "prog-syn-deep-research"
     ],
-    "fullLibrary": true,
+    "fullLibrary": false,
     "enabled": true,
-    "note": "AI at Work \u00b7 AI Research and Deep Research",
-    "createdAt": "2026-09-01T00:00:00.000Z"
+    "createdAt": "2026-09-01T00:00:00.000Z",
+    "id": "seed-deep-research",
+    "code": "SYNOTTIC-RESEARCH",
+    "note": "AI at Work \u00b7 AI Research and Deep Research (scoped)"
   },
   {
-    "id": "seed-genai-tools-mastery",
-    "code": "SYNOTTIC-GENAI-TOOLS",
     "orgName": "Synottic AI Institute",
     "domain": "synottic.com",
     "industry": "Education",
@@ -287,14 +322,14 @@
     "programIds": [
       "prog-syn-genai-tools-mastery"
     ],
-    "fullLibrary": true,
+    "fullLibrary": false,
     "enabled": true,
-    "note": "AI at Work \u00b7 Generative AI Tools Mastery",
-    "createdAt": "2026-09-01T00:00:00.000Z"
+    "createdAt": "2026-09-01T00:00:00.000Z",
+    "id": "seed-genai-tools-mastery",
+    "code": "SYNOTTIC-GENAI-TOOLS",
+    "note": "AI at Work \u00b7 Generative AI Tools Mastery (scoped)"
   },
   {
-    "id": "seed-prompt-engineering-mastery",
-    "code": "SYNOTTIC-PROMPTING",
     "orgName": "Synottic AI Institute",
     "domain": "synottic.com",
     "industry": "Education",
@@ -303,14 +338,14 @@
     "programIds": [
       "prog-syn-prompt-engineering-mastery"
     ],
-    "fullLibrary": true,
+    "fullLibrary": false,
     "enabled": true,
-    "note": "AI at Work \u00b7 Prompt Engineering Mastery Program",
-    "createdAt": "2026-09-01T00:00:00.000Z"
+    "createdAt": "2026-09-01T00:00:00.000Z",
+    "id": "seed-prompt-engineering-mastery",
+    "code": "SYNOTTIC-PROMPTING",
+    "note": "AI at Work \u00b7 Prompt Engineering Mastery Program (scoped)"
   },
   {
-    "id": "seed-chatgpt-mastery",
-    "code": "SYNOTTIC-CHATGPT",
     "orgName": "Synottic AI Institute",
     "domain": "synottic.com",
     "industry": "Education",
@@ -319,14 +354,14 @@
     "programIds": [
       "prog-syn-chatgpt-mastery"
     ],
-    "fullLibrary": true,
+    "fullLibrary": false,
     "enabled": true,
-    "note": "AI Tools \u00b7 ChatGPT Mastery Course",
-    "createdAt": "2026-09-01T00:00:00.000Z"
+    "createdAt": "2026-09-01T00:00:00.000Z",
+    "id": "seed-chatgpt-mastery",
+    "code": "SYNOTTIC-CHATGPT",
+    "note": "AI Tools \u00b7 ChatGPT Mastery Course (scoped)"
   },
   {
-    "id": "seed-claude-mastery",
-    "code": "SYNOTTIC-CLAUDE",
     "orgName": "Synottic AI Institute",
     "domain": "synottic.com",
     "industry": "Education",
@@ -335,14 +370,14 @@
     "programIds": [
       "prog-syn-claude-mastery"
     ],
-    "fullLibrary": true,
+    "fullLibrary": false,
     "enabled": true,
-    "note": "AI Tools \u00b7 Claude AI Mastery",
-    "createdAt": "2026-09-01T00:00:00.000Z"
+    "createdAt": "2026-09-01T00:00:00.000Z",
+    "id": "seed-claude-mastery",
+    "code": "SYNOTTIC-CLAUDE",
+    "note": "AI Tools \u00b7 Claude AI Mastery (scoped)"
   },
   {
-    "id": "seed-gemini-mastery",
-    "code": "SYNOTTIC-GEMINI",
     "orgName": "Synottic AI Institute",
     "domain": "synottic.com",
     "industry": "Education",
@@ -351,14 +386,14 @@
     "programIds": [
       "prog-syn-gemini-mastery"
     ],
-    "fullLibrary": true,
+    "fullLibrary": false,
     "enabled": true,
-    "note": "AI Tools \u00b7 Gemini Mastery Course",
-    "createdAt": "2026-09-01T00:00:00.000Z"
+    "createdAt": "2026-09-01T00:00:00.000Z",
+    "id": "seed-gemini-mastery",
+    "code": "SYNOTTIC-GEMINI",
+    "note": "AI Tools \u00b7 Gemini Mastery Course (scoped)"
   },
   {
-    "id": "seed-copilot-mastery",
-    "code": "SYNOTTIC-COPILOT",
     "orgName": "Synottic AI Institute",
     "domain": "synottic.com",
     "industry": "Education",
@@ -367,14 +402,14 @@
     "programIds": [
       "prog-syn-copilot-mastery"
     ],
-    "fullLibrary": true,
+    "fullLibrary": false,
     "enabled": true,
-    "note": "AI Tools \u00b7 Copilot Mastery Course",
-    "createdAt": "2026-09-01T00:00:00.000Z"
+    "createdAt": "2026-09-01T00:00:00.000Z",
+    "id": "seed-copilot-mastery",
+    "code": "SYNOTTIC-COPILOT",
+    "note": "AI Tools \u00b7 Copilot Mastery Course (scoped)"
   },
   {
-    "id": "seed-perplexity-mastery",
-    "code": "SYNOTTIC-PERPLEXITY",
     "orgName": "Synottic AI Institute",
     "domain": "synottic.com",
     "industry": "Education",
@@ -383,14 +418,14 @@
     "programIds": [
       "prog-syn-perplexity-mastery"
     ],
-    "fullLibrary": true,
+    "fullLibrary": false,
     "enabled": true,
-    "note": "AI Tools \u00b7 Perplexity Mastery Course",
-    "createdAt": "2026-09-01T00:00:00.000Z"
+    "createdAt": "2026-09-01T00:00:00.000Z",
+    "id": "seed-perplexity-mastery",
+    "code": "SYNOTTIC-PERPLEXITY",
+    "note": "AI Tools \u00b7 Perplexity Mastery Course (scoped)"
   },
   {
-    "id": "seed-notebooklm-mastery",
-    "code": "SYNOTTIC-NOTEBOOKLM",
     "orgName": "Synottic AI Institute",
     "domain": "synottic.com",
     "industry": "Education",
@@ -399,14 +434,14 @@
     "programIds": [
       "prog-syn-notebooklm-mastery"
     ],
-    "fullLibrary": true,
+    "fullLibrary": false,
     "enabled": true,
-    "note": "AI Tools \u00b7 NotebookLM Mastery",
-    "createdAt": "2026-09-01T00:00:00.000Z"
+    "createdAt": "2026-09-01T00:00:00.000Z",
+    "id": "seed-notebooklm-mastery",
+    "code": "SYNOTTIC-NOTEBOOKLM",
+    "note": "AI Tools \u00b7 NotebookLM Mastery (scoped)"
   },
   {
-    "id": "seed-grok-mastery",
-    "code": "SYNOTTIC-GROK",
     "orgName": "Synottic AI Institute",
     "domain": "synottic.com",
     "industry": "Education",
@@ -415,14 +450,14 @@
     "programIds": [
       "prog-syn-grok-mastery"
     ],
-    "fullLibrary": true,
+    "fullLibrary": false,
     "enabled": true,
-    "note": "AI Tools \u00b7 Grok Mastery Course",
-    "createdAt": "2026-09-01T00:00:00.000Z"
+    "createdAt": "2026-09-01T00:00:00.000Z",
+    "id": "seed-grok-mastery",
+    "code": "SYNOTTIC-GROK",
+    "note": "AI Tools \u00b7 Grok Mastery Course (scoped)"
   },
   {
-    "id": "seed-deepseek-mastery",
-    "code": "SYNOTTIC-DEEPSEEK",
     "orgName": "Synottic AI Institute",
     "domain": "synottic.com",
     "industry": "Education",
@@ -431,14 +466,14 @@
     "programIds": [
       "prog-syn-deepseek-mastery"
     ],
-    "fullLibrary": true,
+    "fullLibrary": false,
     "enabled": true,
-    "note": "AI Tools \u00b7 DeepSeek Mastery",
-    "createdAt": "2026-09-01T00:00:00.000Z"
+    "createdAt": "2026-09-01T00:00:00.000Z",
+    "id": "seed-deepseek-mastery",
+    "code": "SYNOTTIC-DEEPSEEK",
+    "note": "AI Tools \u00b7 DeepSeek Mastery (scoped)"
   },
   {
-    "id": "seed-ai-productivity-stack",
-    "code": "SYNOTTIC-STACK",
     "orgName": "Synottic AI Institute",
     "domain": "synottic.com",
     "industry": "Education",
@@ -447,14 +482,14 @@
     "programIds": [
       "prog-syn-ai-productivity-stack"
     ],
-    "fullLibrary": true,
+    "fullLibrary": false,
     "enabled": true,
-    "note": "AI Tools \u00b7 AI Productivity Stack",
-    "createdAt": "2026-09-01T00:00:00.000Z"
+    "createdAt": "2026-09-01T00:00:00.000Z",
+    "id": "seed-ai-productivity-stack",
+    "code": "SYNOTTIC-STACK",
+    "note": "AI Tools \u00b7 AI Productivity Stack (scoped)"
   },
   {
-    "id": "seed-business-leaders",
-    "code": "SYNOTTIC-BIZLEADERS",
     "orgName": "Synottic AI Institute",
     "domain": "synottic.com",
     "industry": "Education",
@@ -470,14 +505,14 @@
     "programIds": [
       "prog-syn-business-leaders"
     ],
-    "fullLibrary": true,
+    "fullLibrary": false,
     "enabled": true,
-    "note": "AI for Leaders \u00b7 AI for Business Leaders",
-    "createdAt": "2026-09-01T00:00:00.000Z"
+    "createdAt": "2026-09-01T00:00:00.000Z",
+    "id": "seed-business-leaders",
+    "code": "SYNOTTIC-BIZLEADERS",
+    "note": "AI for Leaders \u00b7 AI for Business Leaders (scoped)"
   },
   {
-    "id": "seed-executives-mastery",
-    "code": "SYNOTTIC-EXECUTIVES",
     "orgName": "Synottic AI Institute",
     "domain": "synottic.com",
     "industry": "Education",
@@ -494,14 +529,14 @@
     "programIds": [
       "prog-syn-executives-mastery"
     ],
-    "fullLibrary": true,
+    "fullLibrary": false,
     "enabled": true,
-    "note": "AI for Leaders \u00b7 AI for Executives Mastery Program",
-    "createdAt": "2026-09-01T00:00:00.000Z"
+    "createdAt": "2026-09-01T00:00:00.000Z",
+    "id": "seed-executives-mastery",
+    "code": "SYNOTTIC-EXECUTIVES",
+    "note": "AI for Leaders \u00b7 AI for Executives Mastery Program (scoped)"
   },
   {
-    "id": "seed-leaders",
-    "code": "SYNOTTIC-LEADER",
     "orgName": "Synottic AI Institute",
     "domain": "synottic.com",
     "industry": "Education",
@@ -516,14 +551,14 @@
     "programIds": [
       "prog-syn-leaders"
     ],
-    "fullLibrary": true,
+    "fullLibrary": false,
     "enabled": true,
-    "note": "AI for Leaders \u00b7 AI for Leaders",
-    "createdAt": "2026-09-01T00:00:00.000Z"
+    "createdAt": "2026-09-01T00:00:00.000Z",
+    "id": "seed-leaders",
+    "code": "SYNOTTIC-LEADER",
+    "note": "AI for Leaders \u00b7 AI for Leaders (scoped)"
   },
   {
-    "id": "seed-people-managers",
-    "code": "SYNOTTIC-MANAGERS",
     "orgName": "Synottic AI Institute",
     "domain": "synottic.com",
     "industry": "Education",
@@ -539,18 +574,20 @@
     "programIds": [
       "prog-syn-people-managers"
     ],
-    "fullLibrary": true,
+    "fullLibrary": false,
     "enabled": true,
-    "note": "AI for Leaders \u00b7 AI for People Managers",
-    "createdAt": "2026-09-01T00:00:00.000Z"
+    "createdAt": "2026-09-01T00:00:00.000Z",
+    "id": "seed-people-managers",
+    "code": "SYNOTTIC-MANAGERS",
+    "note": "AI for Leaders \u00b7 AI for People Managers (scoped)"
   },
   {
-    "id": "seed-sales",
-    "code": "SYNOTTIC-SALES",
     "orgName": "Synottic AI Institute",
     "domain": "synottic.com",
     "industry": "Education",
-    "functions": [],
+    "functions": [
+      "Sales"
+    ],
     "roles": [
       "Chief Sales Officer",
       "Sales Director",
@@ -569,18 +606,20 @@
     "programIds": [
       "prog-syn-sales"
     ],
-    "fullLibrary": true,
+    "fullLibrary": false,
     "enabled": true,
-    "note": "AI for Functions \u00b7 AI for Sales",
-    "createdAt": "2026-09-01T00:00:00.000Z"
+    "createdAt": "2026-09-01T00:00:00.000Z",
+    "id": "seed-sales",
+    "code": "SYNOTTIC-SALES",
+    "note": "AI for Functions \u00b7 AI for Sales (scoped)"
   },
   {
-    "id": "seed-marketing",
-    "code": "SYNOTTIC-MARKETING",
     "orgName": "Synottic AI Institute",
     "domain": "synottic.com",
     "industry": "Education",
-    "functions": [],
+    "functions": [
+      "Marketing"
+    ],
     "roles": [
       "CMO",
       "Marketing Director",
@@ -597,18 +636,20 @@
     "programIds": [
       "prog-syn-marketing"
     ],
-    "fullLibrary": true,
+    "fullLibrary": false,
     "enabled": true,
-    "note": "AI for Functions \u00b7 AI for Marketing",
-    "createdAt": "2026-09-01T00:00:00.000Z"
+    "createdAt": "2026-09-01T00:00:00.000Z",
+    "id": "seed-marketing",
+    "code": "SYNOTTIC-MARKETING",
+    "note": "AI for Functions \u00b7 AI for Marketing (scoped)"
   },
   {
-    "id": "seed-hr",
-    "code": "SYNOTTIC-HR",
     "orgName": "Synottic AI Institute",
     "domain": "synottic.com",
     "industry": "Education",
-    "functions": [],
+    "functions": [
+      "HR"
+    ],
     "roles": [
       "HR Director",
       "HR Manager",
@@ -625,18 +666,20 @@
     "programIds": [
       "prog-syn-hr"
     ],
-    "fullLibrary": true,
+    "fullLibrary": false,
     "enabled": true,
-    "note": "AI for Functions \u00b7 AI for HR",
-    "createdAt": "2026-09-01T00:00:00.000Z"
+    "createdAt": "2026-09-01T00:00:00.000Z",
+    "id": "seed-hr",
+    "code": "SYNOTTIC-HR",
+    "note": "AI for Functions \u00b7 AI for HR (scoped)"
   },
   {
-    "id": "seed-ld",
-    "code": "SYNOTTIC-LD",
     "orgName": "Synottic AI Institute",
     "domain": "synottic.com",
     "industry": "Education",
-    "functions": [],
+    "functions": [
+      "L&D"
+    ],
     "roles": [
       "L&D Director",
       "L&D Manager",
@@ -650,18 +693,20 @@
     "programIds": [
       "prog-syn-ld"
     ],
-    "fullLibrary": true,
+    "fullLibrary": false,
     "enabled": true,
-    "note": "AI for Functions \u00b7 AI for L&D",
-    "createdAt": "2026-09-01T00:00:00.000Z"
+    "createdAt": "2026-09-01T00:00:00.000Z",
+    "id": "seed-ld",
+    "code": "SYNOTTIC-LD",
+    "note": "AI for Functions \u00b7 AI for L&D (scoped)"
   },
   {
-    "id": "seed-finance",
-    "code": "SYNOTTIC-FINANCE",
     "orgName": "Synottic AI Institute",
     "domain": "synottic.com",
     "industry": "Education",
-    "functions": [],
+    "functions": [
+      "Finance & Accounting"
+    ],
     "roles": [
       "CFO",
       "Finance Director",
@@ -676,18 +721,20 @@
     "programIds": [
       "prog-syn-finance"
     ],
-    "fullLibrary": true,
+    "fullLibrary": false,
     "enabled": true,
-    "note": "AI for Functions \u00b7 AI for Finance & Accounting",
-    "createdAt": "2026-09-01T00:00:00.000Z"
+    "createdAt": "2026-09-01T00:00:00.000Z",
+    "id": "seed-finance",
+    "code": "SYNOTTIC-FINANCE",
+    "note": "AI for Functions \u00b7 AI for Finance & Accounting (scoped)"
   },
   {
-    "id": "seed-legal",
-    "code": "SYNOTTIC-LEGAL",
     "orgName": "Synottic AI Institute",
     "domain": "synottic.com",
     "industry": "Education",
-    "functions": [],
+    "functions": [
+      "Legal & Compliance"
+    ],
     "roles": [
       "General Counsel",
       "Legal Counsel",
@@ -701,18 +748,20 @@
     "programIds": [
       "prog-syn-legal"
     ],
-    "fullLibrary": true,
+    "fullLibrary": false,
     "enabled": true,
-    "note": "AI for Functions \u00b7 AI for Legal & Compliance",
-    "createdAt": "2026-09-01T00:00:00.000Z"
+    "createdAt": "2026-09-01T00:00:00.000Z",
+    "id": "seed-legal",
+    "code": "SYNOTTIC-LEGAL",
+    "note": "AI for Functions \u00b7 AI for Legal & Compliance (scoped)"
   },
   {
-    "id": "seed-it-eng",
-    "code": "SYNOTTIC-IT",
     "orgName": "Synottic AI Institute",
     "domain": "synottic.com",
     "industry": "Education",
-    "functions": [],
+    "functions": [
+      "IT & Engineering"
+    ],
     "roles": [
       "CTO",
       "Engineering Manager",
@@ -727,18 +776,20 @@
     "programIds": [
       "prog-syn-it-eng"
     ],
-    "fullLibrary": true,
+    "fullLibrary": false,
     "enabled": true,
-    "note": "AI for Functions \u00b7 AI for IT & Engineering",
-    "createdAt": "2026-09-01T00:00:00.000Z"
+    "createdAt": "2026-09-01T00:00:00.000Z",
+    "id": "seed-it-eng",
+    "code": "SYNOTTIC-IT",
+    "note": "AI for Functions \u00b7 AI for IT & Engineering (scoped)"
   },
   {
-    "id": "seed-product",
-    "code": "SYNOTTIC-PRODUCT",
     "orgName": "Synottic AI Institute",
     "domain": "synottic.com",
     "industry": "Education",
-    "functions": [],
+    "functions": [
+      "Product Management"
+    ],
     "roles": [
       "Head of Product",
       "Product Manager",
@@ -752,18 +803,20 @@
     "programIds": [
       "prog-syn-product"
     ],
-    "fullLibrary": true,
+    "fullLibrary": false,
     "enabled": true,
-    "note": "AI for Functions \u00b7 AI for Product Management",
-    "createdAt": "2026-09-01T00:00:00.000Z"
+    "createdAt": "2026-09-01T00:00:00.000Z",
+    "id": "seed-product",
+    "code": "SYNOTTIC-PRODUCT",
+    "note": "AI for Functions \u00b7 AI for Product Management (scoped)"
   },
   {
-    "id": "seed-ppm",
-    "code": "SYNOTTIC-PROJECTS",
     "orgName": "Synottic AI Institute",
     "domain": "synottic.com",
     "industry": "Education",
-    "functions": [],
+    "functions": [
+      "Project & Program Management"
+    ],
     "roles": [
       "Programme Director",
       "Project Manager",
@@ -777,18 +830,20 @@
     "programIds": [
       "prog-syn-ppm"
     ],
-    "fullLibrary": true,
+    "fullLibrary": false,
     "enabled": true,
-    "note": "AI for Functions \u00b7 AI for Project & Program Management",
-    "createdAt": "2026-09-01T00:00:00.000Z"
+    "createdAt": "2026-09-01T00:00:00.000Z",
+    "id": "seed-ppm",
+    "code": "SYNOTTIC-PROJECTS",
+    "note": "AI for Functions \u00b7 AI for Project & Program Management (scoped)"
   },
   {
-    "id": "seed-customer-service",
-    "code": "SYNOTTIC-SUPPORT",
     "orgName": "Synottic AI Institute",
     "domain": "synottic.com",
     "industry": "Education",
-    "functions": [],
+    "functions": [
+      "Customer Service"
+    ],
     "roles": [
       "Head of Customer Support",
       "Support Team Lead",
@@ -801,18 +856,20 @@
     "programIds": [
       "prog-syn-customer-service"
     ],
-    "fullLibrary": true,
+    "fullLibrary": false,
     "enabled": true,
-    "note": "AI for Functions \u00b7 AI for Customer Service",
-    "createdAt": "2026-09-01T00:00:00.000Z"
+    "createdAt": "2026-09-01T00:00:00.000Z",
+    "id": "seed-customer-service",
+    "code": "SYNOTTIC-SUPPORT",
+    "note": "AI for Functions \u00b7 AI for Customer Service (scoped)"
   },
   {
-    "id": "seed-data-analyst",
-    "code": "SYNOTTIC-DATA",
     "orgName": "Synottic AI Institute",
     "domain": "synottic.com",
     "industry": "Education",
-    "functions": [],
+    "functions": [
+      "Data & Business Analysis"
+    ],
     "roles": [
       "Head of Analytics",
       "Data Analyst",
@@ -825,18 +882,20 @@
     "programIds": [
       "prog-syn-data-analyst"
     ],
-    "fullLibrary": true,
+    "fullLibrary": false,
     "enabled": true,
-    "note": "AI for Functions \u00b7 AI for Data & Business Analysts",
-    "createdAt": "2026-09-01T00:00:00.000Z"
+    "createdAt": "2026-09-01T00:00:00.000Z",
+    "id": "seed-data-analyst",
+    "code": "SYNOTTIC-DATA",
+    "note": "AI for Functions \u00b7 AI for Data & Business Analysts (scoped)"
   },
   {
-    "id": "seed-operations",
-    "code": "SYNOTTIC-OPS",
     "orgName": "Synottic AI Institute",
     "domain": "synottic.com",
     "industry": "Education",
-    "functions": [],
+    "functions": [
+      "Operations & Supply Chain"
+    ],
     "roles": [
       "COO",
       "Operations Director",
@@ -850,18 +909,20 @@
     "programIds": [
       "prog-syn-operations"
     ],
-    "fullLibrary": true,
+    "fullLibrary": false,
     "enabled": true,
-    "note": "AI for Functions \u00b7 AI for Operations & Supply Chain",
-    "createdAt": "2026-09-01T00:00:00.000Z"
+    "createdAt": "2026-09-01T00:00:00.000Z",
+    "id": "seed-operations",
+    "code": "SYNOTTIC-OPS",
+    "note": "AI for Functions \u00b7 AI for Operations & Supply Chain (scoped)"
   },
   {
-    "id": "seed-procurement",
-    "code": "SYNOTTIC-PROCUREMENT",
     "orgName": "Synottic AI Institute",
     "domain": "synottic.com",
     "industry": "Education",
-    "functions": [],
+    "functions": [
+      "Procurement"
+    ],
     "roles": [
       "CPO",
       "Procurement Director",
@@ -875,14 +936,14 @@
     "programIds": [
       "prog-syn-procurement"
     ],
-    "fullLibrary": true,
+    "fullLibrary": false,
     "enabled": true,
-    "note": "AI for Functions \u00b7 AI for Procurement",
-    "createdAt": "2026-09-01T00:00:00.000Z"
+    "createdAt": "2026-09-01T00:00:00.000Z",
+    "id": "seed-procurement",
+    "code": "SYNOTTIC-PROCUREMENT",
+    "note": "AI for Functions \u00b7 AI for Procurement (scoped)"
   },
   {
-    "id": "seed-responsible-ai-essentials",
-    "code": "SYNOTTIC-RESPONSIBLE",
     "orgName": "Synottic AI Institute",
     "domain": "synottic.com",
     "industry": "Education",
@@ -891,14 +952,14 @@
     "programIds": [
       "prog-syn-responsible-ai-essentials"
     ],
-    "fullLibrary": true,
+    "fullLibrary": false,
     "enabled": true,
-    "note": "Responsible AI & Governance \u00b7 Responsible AI Essentials",
-    "createdAt": "2026-09-01T00:00:00.000Z"
+    "createdAt": "2026-09-01T00:00:00.000Z",
+    "id": "seed-responsible-ai-essentials",
+    "code": "SYNOTTIC-RESPONSIBLE",
+    "note": "Responsible AI & Governance \u00b7 Responsible AI Essentials (scoped)"
   },
   {
-    "id": "seed-ai-risk-governance-leaders",
-    "code": "SYNOTTIC-RISK",
     "orgName": "Synottic AI Institute",
     "domain": "synottic.com",
     "industry": "Education",
@@ -914,14 +975,14 @@
     "programIds": [
       "prog-syn-ai-risk-governance-leaders"
     ],
-    "fullLibrary": true,
+    "fullLibrary": false,
     "enabled": true,
-    "note": "Responsible AI & Governance \u00b7 AI Risk & Governance for Leaders",
-    "createdAt": "2026-09-01T00:00:00.000Z"
+    "createdAt": "2026-09-01T00:00:00.000Z",
+    "id": "seed-ai-risk-governance-leaders",
+    "code": "SYNOTTIC-RISK",
+    "note": "Responsible AI & Governance \u00b7 AI Risk & Governance for Leaders (scoped)"
   },
   {
-    "id": "seed-ai-governance-practitioner",
-    "code": "SYNOTTIC-GOV-PRACTITIONER",
     "orgName": "Synottic AI Institute",
     "domain": "synottic.com",
     "industry": "Education",
@@ -937,14 +998,14 @@
     "programIds": [
       "prog-syn-ai-governance-practitioner"
     ],
-    "fullLibrary": true,
+    "fullLibrary": false,
     "enabled": true,
-    "note": "Responsible AI & Governance \u00b7 AI Governance Practitioner",
-    "createdAt": "2026-09-01T00:00:00.000Z"
+    "createdAt": "2026-09-01T00:00:00.000Z",
+    "id": "seed-ai-governance-practitioner",
+    "code": "SYNOTTIC-GOV-PRACTITIONER",
+    "note": "Responsible AI & Governance \u00b7 AI Governance Practitioner (scoped)"
   },
   {
-    "id": "seed-enterprise-ai-governance",
-    "code": "SYNOTTIC-GOV-ENTERPRISE",
     "orgName": "Synottic AI Institute",
     "domain": "synottic.com",
     "industry": "Education",
@@ -960,14 +1021,14 @@
     "programIds": [
       "prog-syn-enterprise-ai-governance"
     ],
-    "fullLibrary": true,
+    "fullLibrary": false,
     "enabled": true,
-    "note": "Responsible AI & Governance \u00b7 Enterprise AI Governance Academy",
-    "createdAt": "2026-09-01T00:00:00.000Z"
+    "createdAt": "2026-09-01T00:00:00.000Z",
+    "id": "seed-enterprise-ai-governance",
+    "code": "SYNOTTIC-GOV-ENTERPRISE",
+    "note": "Responsible AI & Governance \u00b7 Enterprise AI Governance Academy (scoped)"
   },
   {
-    "id": "seed-ai-agents-essentials",
-    "code": "SYNOTTIC-AGENTS",
     "orgName": "Synottic AI Institute",
     "domain": "synottic.com",
     "industry": "Education",
@@ -976,14 +1037,14 @@
     "programIds": [
       "prog-syn-ai-agents-essentials"
     ],
-    "fullLibrary": true,
+    "fullLibrary": false,
     "enabled": true,
-    "note": "Agentic AI \u00b7 AI Agents Essentials",
-    "createdAt": "2026-09-01T00:00:00.000Z"
+    "createdAt": "2026-09-01T00:00:00.000Z",
+    "id": "seed-ai-agents-essentials",
+    "code": "SYNOTTIC-AGENTS",
+    "note": "Agentic AI \u00b7 AI Agents Essentials (scoped)"
   },
   {
-    "id": "seed-ai-agent-builder",
-    "code": "SYNOTTIC-AGENT-BUILDER",
     "orgName": "Synottic AI Institute",
     "domain": "synottic.com",
     "industry": "Education",
@@ -998,14 +1059,14 @@
     "programIds": [
       "prog-syn-ai-agent-builder"
     ],
-    "fullLibrary": true,
+    "fullLibrary": false,
     "enabled": true,
-    "note": "Agentic AI \u00b7 AI Agent Builder",
-    "createdAt": "2026-09-01T00:00:00.000Z"
+    "createdAt": "2026-09-01T00:00:00.000Z",
+    "id": "seed-ai-agent-builder",
+    "code": "SYNOTTIC-AGENT-BUILDER",
+    "note": "Agentic AI \u00b7 AI Agent Builder (scoped)"
   },
   {
-    "id": "seed-advanced-agentic-ai",
-    "code": "SYNOTTIC-AGENTIC-ADV",
     "orgName": "Synottic AI Institute",
     "domain": "synottic.com",
     "industry": "Education",
@@ -1014,14 +1075,14 @@
     "programIds": [
       "prog-syn-advanced-agentic-ai"
     ],
-    "fullLibrary": true,
+    "fullLibrary": false,
     "enabled": true,
-    "note": "Agentic AI \u00b7 Advanced Agentic AI",
-    "createdAt": "2026-09-01T00:00:00.000Z"
+    "createdAt": "2026-09-01T00:00:00.000Z",
+    "id": "seed-advanced-agentic-ai",
+    "code": "SYNOTTIC-AGENTIC-ADV",
+    "note": "Agentic AI \u00b7 Advanced Agentic AI (scoped)"
   },
   {
-    "id": "seed-enterprise-agentic-ai",
-    "code": "SYNOTTIC-AGENTIC-ENT",
     "orgName": "Synottic AI Institute",
     "domain": "synottic.com",
     "industry": "Education",
@@ -1036,9 +1097,11 @@
     "programIds": [
       "prog-syn-enterprise-agentic-ai"
     ],
-    "fullLibrary": true,
+    "fullLibrary": false,
     "enabled": true,
-    "note": "Agentic AI \u00b7 Enterprise Agentic AI",
-    "createdAt": "2026-09-01T00:00:00.000Z"
+    "createdAt": "2026-09-01T00:00:00.000Z",
+    "id": "seed-enterprise-agentic-ai",
+    "code": "SYNOTTIC-AGENTIC-ENT",
+    "note": "Agentic AI \u00b7 Enterprise Agentic AI (scoped)"
   }
 ]

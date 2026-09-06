@@ -275,7 +275,7 @@ function renderAdminGate() {
   root.innerHTML = `
   <div class="gate">
     <div class="gate-card">
-      <div class="gate-mark">${icon("slider")}</div>
+      <div class="gate-mark" role="img" aria-label="Synottic"></div>
       <h1>Admin console</h1>
       <p class="sub">Enter the admin key to manage organisation access codes.</p>
       <label for="admin-key">Admin key</label>
@@ -300,6 +300,15 @@ function renderAdminGate() {
   inp.focus();
 }
 function exitAdmin() {
+  // Super-admin (has a learner session): drop back into the library, keep the
+  // "Admin console" nav link. Pure admin: clear the unlock and return to the gate.
+  const s = (typeof Store !== "undefined") && Store.getSession && Store.getSession();
+  if (s && s.superAdmin) {
+    const root = document.getElementById("admin-root");
+    if (root) root.hidden = true;
+    bootApp();
+    return;
+  }
   try { sessionStorage.removeItem("prompt-lib:admin-ok"); } catch (e) {}
   location.reload();
 }
@@ -325,10 +334,10 @@ function renderAdminConsole() {
   root.innerHTML = `
     <div class="admin-shell">
       <div class="admin-top">
-        <div class="brand-mark" style="width:34px;height:34px;">${icon("slider")}</div>
+        <div class="brand-mark" style="width:36px;height:31px;" role="img" aria-label="Synottic"></div>
         <h1>Synottic — Admin Console</h1>
         <span class="chip">${AdminStore.backend() === "db" ? "Synced to account" : "Saved in this browser"}</span>
-        <button class="btn btn-sm" id="admin-exit">${icon("logout")} Exit</button>
+        <button class="btn btn-sm" id="admin-exit">${icon("logout")} ${(Store.getSession && Store.getSession() && Store.getSession().superAdmin) ? "Back to library" : "Exit"}</button>
       </div>
       <div class="tabs">
         <button class="tab-btn ${ADMIN_STATE.tab === "codes" ? "active" : ""}" data-atab="codes">Access codes</button>

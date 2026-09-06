@@ -409,7 +409,14 @@ function findPromptById(id) {
   return ALL_PROMPTS_BY_ID[id] || Store.getMyPrompts().find((p) => p.id === id) || null;
 }
 const SHARED_QUERY_VIEWS = new Set(["home", "search"]);
+// Views a scoped learner never sees — they discover through their program,
+// search, Learn and Practice, not by browsing the whole library.
+const SCOPED_HIDDEN_VIEWS = new Set(["categories", "categoryDetail", "insights"]);
+function isViewAllowed(view) {
+  return !(isScopeRestricted() && SCOPED_HIDDEN_VIEWS.has(view));
+}
 function navigate(view) {
+  if (!isViewAllowed(view)) view = "search";
   if (!(SHARED_QUERY_VIEWS.has(view) && SHARED_QUERY_VIEWS.has(STATE.view))) STATE.query = "";
   STATE.view = view;
   renderApp();
@@ -422,13 +429,24 @@ function setQuery(q) {
 }
 function renderNav() {
   const nav = document.getElementById("nav");
-  nav.innerHTML = NAV_GROUPS.map((g) => `
+  const s = Store.getSession();
+  const groups = NAV_GROUPS
+    .map((g) => ({ label: g.label, items: g.items.filter((it) => isViewAllowed(it.key)) }))
+    .filter((g) => g.items.length);
+  if (s && s.superAdmin) {
+    groups.push({ label: "Admin", items: [{ key: "__admin", label: "Admin console", icon: "slider" }] });
+  }
+  nav.innerHTML = groups.map((g) => `
     <div class="nav-group-label">${g.label}</div>
     ${g.items.map((item) => `
       <button class="nav-item ${STATE.view === item.key || (STATE.view === "categoryDetail" && item.key === "categories") ? "active" : ""}" data-nav="${item.key}">
         ${icon(item.icon)}<span>${item.label}</span>${item.kbd ? `<span class="nav-kbd">${item.kbd}</span>` : ""}
       </button>`).join("")}`).join("");
-  nav.querySelectorAll("[data-nav]").forEach((b) => b.addEventListener("click", () => { closeSidebar(); navigate(b.dataset.nav); }));
+  nav.querySelectorAll("[data-nav]").forEach((b) => b.addEventListener("click", () => {
+    closeSidebar();
+    if (b.dataset.nav === "__admin") { openAdmin(); return; }
+    navigate(b.dataset.nav);
+  }));
 }
 const TOPBAR_SEARCH_VIEWS = new Set(["search", "categories", "categoryDetail"]);
 function renderTopbar() {
@@ -446,6 +464,7 @@ function renderTopbar() {
 }
 function renderContent() {
   const content = document.getElementById("content");
+  if (!isViewAllowed(STATE.view)) STATE.view = "search";
   content.className = "content" + (STATE.view === "insights" || STATE.view === "myLibrary" ? " wide" : "");
   const map = {
     home: renderHome, search: renderSearchView, categories: renderCategoriesView, categoryDetail: renderCategoryDetail,
@@ -552,10 +571,11 @@ async function initApp() {
   try { await AdminStore.init(); } catch (e) {}
   let adminOk = false;
   try { adminOk = sessionStorage.getItem("prompt-lib:admin-ok") === "1"; } catch (e) {}
-  if (adminOk) { openAdmin(); return; }
   let session = null;
   try { const v = localStorage.getItem("prompt-lib:session"); session = v ? JSON.parse(v) : null; } catch (e) {}
   const r = session && resolveAccessCode(session.code);
+  // pure admin (key entered at the gate, no learner session) -> straight to console
+  if (adminOk && !session) { openAdmin(); return; }
   if (session && r && !r.disabled) {
     Store.setSession(session);
     bootApp();

@@ -1,7 +1,20 @@
 <title>Synottic Prompt Library</title>
+<link rel="icon" type="image/png" href="{{FAVICON_DATA_URI}}">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#0E7C6B">
+<meta name="description" content="A learner-first AI prompt platform — learn, find, practice, customize, copy, improve and save prompts.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Synottic Prompt Library">
+<meta property="og:description" content="A learner-first AI prompt platform — learn, find, practice, customize, copy, improve and save prompts.">
+<meta property="og:image" content="/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Synottic Prompt Library">
+<meta name="twitter:description" content="A learner-first AI prompt platform powered by a trusted central prompt library.">
+<meta name="twitter:image" content="/og-image.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
 :root{
+  --logo:url("{{LOGO_DATA_URI}}");
   --bg:#F6F7F5; --surface:#FFFFFF; --surface-2:#EFF2EF; --surface-hover:#E9ECE8;
   --border:#E1E4DF; --border-strong:#CDD2CA;
   --text:#14181A; --text-muted:#5B6660; --text-faint:#8B958E;
@@ -67,7 +80,7 @@ button{cursor:pointer;}
   radial-gradient(1200px 600px at 15% -10%, var(--accent-soft), transparent 60%),
   radial-gradient(900px 500px at 110% 10%, var(--good-blue-soft), transparent 55%), var(--bg);}
 .gate-card{width:min(440px,100%); background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); box-shadow:var(--shadow-lg); padding:30px 28px;}
-.gate-mark{width:38px; height:38px; border-radius:10px; background:linear-gradient(155deg, var(--accent), var(--accent-strong)); display:flex; align-items:center; justify-content:center;}
+.gate-mark{width:46px; height:46px; background:var(--logo) center/contain no-repeat;}
 .gate-mark svg{width:21px; height:21px;}
 .gate h1{font-size:20px; letter-spacing:-0.01em; margin:16px 0 4px;}
 .gate p.sub{color:var(--text-muted); font-size:13px; margin-bottom:20px;}
@@ -111,7 +124,7 @@ button{cursor:pointer;}
   display:flex; flex-direction:column; position:sticky; top:0; height:100vh; overflow-y:auto;
 }
 .brand{display:flex; align-items:center; gap:10px; padding:18px 16px 12px;}
-.brand-mark{width:30px; height:30px; border-radius:8px; background:linear-gradient(155deg, var(--accent), var(--accent-strong)); display:flex; align-items:center; justify-content:center; flex:none;}
+.brand-mark{width:30px; height:26px; background:var(--logo) center/contain no-repeat; flex:none;}
 .brand-mark svg{width:17px; height:17px;}
 .brand-name{font-family:var(--font-display); font-weight:700; font-size:14.5px; letter-spacing:-0.01em; line-height:1.2;}
 .brand-sub{font-size:10.5px; color:var(--text-faint); letter-spacing:.04em; text-transform:uppercase; margin-top:1px;}
@@ -439,9 +452,7 @@ textarea{resize:vertical; font-family:var(--font-mono); line-height:1.55; font-s
   <div class="overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
   <aside class="sidebar" id="sidebar">
     <div class="brand">
-      <div class="brand-mark">
-        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M12 18v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M3 12h3M18 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/><circle cx="12" cy="12" r="3.4"/></svg>
-      </div>
+      <div class="brand-mark" role="img" aria-label="Synottic"></div>
       <div>
         <div class="brand-name">Synottic Prompt Library</div>
         <div class="brand-sub" id="brand-sub">3,367 prompts</div>
