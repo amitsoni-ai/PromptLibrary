@@ -24,6 +24,9 @@ function renderGate(prefillMsg) {
         <code data-fill="ACME-SALES-EMEA">ACME-SALES-EMEA</code> (program-scoped) ·
         <code data-fill="NORTHWIND-WRITE">NORTHWIND-WRITE</code>
       </div>
+      <div class="gate-hint" style="border:0;padding-top:6px;margin-top:0;">
+        <button class="gate-admin-link" id="gate-admin">Admin console →</button>
+      </div>
     </div>
   </div>`;
   const codeI = root.querySelector("#gate-code");
@@ -38,6 +41,13 @@ function renderGate(prefillMsg) {
     const val = codeI.value.trim();
     resolved = val ? resolveAccessCode(val) : null;
     if (!val) { resolvedEl.innerHTML = ""; nameWrap.hidden = true; enterBtn.disabled = true; errEl.textContent = ""; return; }
+    if (resolved && resolved.disabled) {
+      resolvedEl.innerHTML = "";
+      nameWrap.hidden = true;
+      enterBtn.disabled = true;
+      errEl.textContent = "That access code has been disabled. Contact your programme lead.";
+      return;
+    }
     if (!resolved) {
       resolvedEl.innerHTML = "";
       nameWrap.hidden = true;
@@ -46,6 +56,17 @@ function renderGate(prefillMsg) {
       return;
     }
     errEl.textContent = "";
+    if (resolved.kind === "admin") {
+      const a = resolved.adminCode;
+      const progNames = (resolved.programs || []).map((p) => p.name).join(", ");
+      const scopeNote = a.fullLibrary
+        ? "Full library access."
+        : "Access limited to the assigned functions and programs.";
+      resolvedEl.innerHTML = `<div class="gate-resolved"><b>${escapeHtml(a.orgName)}</b><br>${escapeHtml([a.industry, a.domain].filter(Boolean).join(" · "))}<br><span style="opacity:.8">${escapeHtml(progNames ? "Programs: " + progNames + ". " : "")}${scopeNote}</span></div>`;
+      nameWrap.hidden = false;
+      enterBtn.disabled = false;
+      return;
+    }
     const scopeNote = resolved.program.scope === "program"
       ? "Access is limited to this program's categories."
       : "Full library access, with content recommended for your program.";
@@ -58,22 +79,37 @@ function renderGate(prefillMsg) {
   root.querySelectorAll("[data-fill]").forEach((c) => c.addEventListener("click", () => { codeI.value = c.dataset.fill; check(); codeI.focus(); }));
   function enter() {
     if (!resolved) { resolved = resolveAccessCode(codeI.value); check(); }
-    if (!resolved) return;
-    const s = {
-      code: resolved.code,
-      orgId: resolved.org.id,
-      programId: resolved.program.id,
-      cohortId: resolved.cohort.id,
-      learnerId: resolved.learner ? resolved.learner.id : null,
-      name: (nameI.value.trim() || (resolved.learner && resolved.learner.name) || "Learner"),
-      startedAt: Date.now(),
-    };
+    if (!resolved || resolved.disabled) return;
+    let s;
+    if (resolved.kind === "admin") {
+      const a = resolved.adminCode;
+      s = {
+        code: a.code, kind: "admin",
+        orgId: "adm-" + a.id, orgName: a.orgName,
+        domain: a.domain || "", industry: a.industry || "",
+        functions: a.functions || [], roles: a.roles || [],
+        programIds: a.programIds || [], fullLibrary: !!a.fullLibrary,
+        name: (nameI.value.trim() || "Learner"), startedAt: Date.now(),
+      };
+    } else {
+      s = {
+        code: resolved.code,
+        orgId: resolved.org.id,
+        programId: resolved.program.id,
+        cohortId: resolved.cohort.id,
+        learnerId: resolved.learner ? resolved.learner.id : null,
+        name: (nameI.value.trim() || (resolved.learner && resolved.learner.name) || "Learner"),
+        startedAt: Date.now(),
+      };
+    }
     Store.setSession(s);
     bootApp();
   }
   enterBtn.addEventListener("click", enter);
   codeI.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); enter(); } });
   nameI.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); enter(); } });
+  const adminLink = root.querySelector("#gate-admin");
+  if (adminLink) adminLink.addEventListener("click", () => renderAdminGate());
   codeI.focus();
   if (prefillMsg) errEl.textContent = prefillMsg;
 }
@@ -100,8 +136,11 @@ function recommendedForYou(limit) {
   const favs = Store.getFavorites();
   const sc = currentScope();
   let pool;
-  if (sc && sc.program) {
-    pool = programPromptIds(sc.program.id).map(findPromptById).filter(Boolean);
+  const progIds = scopeProgramIds();
+  if (progIds.length) {
+    const ids = new Set();
+    progIds.forEach((pid) => programPromptIds(pid).forEach((id) => ids.add(id)));
+    pool = Array.from(ids).map(findPromptById).filter(Boolean);
   } else pool = scopedLibrary().slice();
   // skill-level bias: learners who've engaged little get Beginner/Intermediate first
   const engaged = seen.size + favs.size;
@@ -127,7 +166,7 @@ function renderHome(container) {
   const sc = currentScope();
   let html = `
   <div class="hero">
-    <div class="greeting">${greeting()}${s && s.name ? ", " + escapeHtml(s.name.split(" ")[0]) : ""}${sc && sc.program ? " · " + escapeHtml(sc.program.name) : ""}</div>
+    <div class="greeting">${greeting()}${s && s.name ? ", " + escapeHtml(s.name.split(" ")[0]) : ""}${sc && sc.program ? " · " + escapeHtml(sc.program.name) : sc && sc.programs && sc.programs.length ? " · " + escapeHtml(sc.org.name) : ""}</div>
     <h1>What do you want to accomplish?</h1>
     <div class="search-hero">
       ${icon("search", "icon-search")}
@@ -165,7 +204,7 @@ function renderHome(container) {
       </div>
     </div>` : ""}
 
-    <div class="section-title"><h2>Recommended for you</h2><button class="linklike" data-nav="${sc && sc.program ? "program" : "search"}">See more</button></div>
+    <div class="section-title"><h2>Recommended for you</h2><button class="linklike" data-nav="${scopeProgramIds().length ? "program" : "search"}">See more</button></div>
     ${recs.length ? `<div class="rec-grid" id="rec-grid">${recs.map((r) => promptCardHtml(r)).join("")}</div>`
       : `<div class="empty-mini">As you favorite and use prompts, recommendations will sharpen. For now, start from your program or a search.</div>`}
 
@@ -212,7 +251,7 @@ function renderResultsInto(el, opts) {
   const results = computeResults(STATE.query, STATE.filters, STATE.sort, opts.baseCorpus);
   let html = "";
   if (!opts.compactFilters) html += renderFilterBar(STATE);
-  const scopeTag = isScopeRestricted() && !opts.baseCorpus ? ` · scoped to ${escapeHtml((currentScope().program || {}).name || "your program")}` : "";
+  const scopeTag = isScopeRestricted() && !opts.baseCorpus ? ` · scoped to ${escapeHtml(((currentScope() || {}).program || {}).name || ((currentScope() || {}).org || {}).name || "your program")}` : "";
   html += `<div class="result-count">${results.length.toLocaleString()} prompt${results.length === 1 ? "" : "s"}${scopeTag}</div><div id="results-list-target"></div>`;
   el.innerHTML = html;
   wireFilterBar(el, () => renderResultsInto(el, opts));
@@ -272,17 +311,36 @@ function renderCategoryDetail(container) {
 /* ---------- Program Library ---------- */
 function renderProgramView(container) {
   const sc = currentScope();
-  if (!sc || !sc.program) { container.innerHTML = emptyStateHtml("path", "No program attached", "Your access code isn't linked to a program."); return; }
-  const prog = sc.program;
+  const progs = (sc && sc.programs && sc.programs.length) ? sc.programs : (sc && sc.program ? [sc.program] : []);
+  if (!progs.length) {
+    container.innerHTML = emptyStateHtml("path", "No program assigned", "Your access code isn't linked to a program — browse everything from Prompt Library.");
+    return;
+  }
+  let prog = progs.length === 1 ? progs[0] : (STATE.activeProgramId ? progs.find((p) => p.id === STATE.activeProgramId) : null);
+  if (!prog) {
+    container.innerHTML = `
+      <div class="section-title"><h2>Your programs</h2><span style="font-size:12px;color:var(--text-faint)">${progs.length} assigned to ${escapeHtml(sc.org.name)}</span></div>
+      <div class="rec-grid">${progs.map((p) => `
+        <button class="quick-action" data-prog="${p.id}" style="align-items:flex-start;">
+          ${icon("path")}
+          <span class="quick-action-label">${escapeHtml(p.name)}</span>
+          <span style="font-size:11.5px;color:var(--text-muted);">${escapeHtml((p.modules || []).length + " modules · " + ((ORG_INDEX.orgs[p.orgId] || {}).name || ""))}</span>
+        </button>`).join("")}</div>`;
+    container.querySelectorAll("[data-prog]").forEach((b) => b.addEventListener("click", () => { STATE.activeProgramId = b.dataset.prog; renderProgramView(container); }));
+    return;
+  }
+  const multi = progs.length > 1;
   const progress = Store.getProgress();
   const mods = prog.modules || [];
   const touched = mods.filter((m) => progress.modulesTouched[m.id]).length;
   const pct = mods.length ? Math.round((touched / mods.length) * 100) : 0;
   const openMods = STATE.openModules || (STATE.openModules = {});
+  const pathTail = sc.cohort ? sc.cohort.name : (sc.session && sc.session.industry) || "Organisation access";
 
   container.innerHTML = `
+    ${multi ? `<button class="btn btn-ghost btn-sm" id="prog-back" style="margin-bottom:10px;">← Your programs</button>` : ""}
     <div class="program-header">
-      <div class="ph-path">${escapeHtml(sc.org.name)} › ${escapeHtml(prog.name)} › ${escapeHtml(sc.cohort.name)}</div>
+      <div class="ph-path">${escapeHtml(sc.org.name)} › ${escapeHtml(prog.name)} › ${escapeHtml(pathTail)}</div>
       <h2>${escapeHtml(prog.name)}</h2>
       <div class="ph-desc">${escapeHtml(prog.description)}</div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;">${(prog.skillFocus || []).map((s) => `<span class="chip chip-blue">${escapeHtml(s)}</span>`).join("")}</div>
@@ -312,6 +370,8 @@ function renderProgramView(container) {
     </div>`;
   }).join("");
 
+  const backBtn = container.querySelector("#prog-back");
+  if (backBtn) backBtn.addEventListener("click", () => { STATE.activeProgramId = null; renderProgramView(container); });
   list.querySelectorAll("[data-mod]").forEach((head) => head.addEventListener("click", () => {
     const id = head.dataset.mod;
     openMods[id] = !openMods[id];

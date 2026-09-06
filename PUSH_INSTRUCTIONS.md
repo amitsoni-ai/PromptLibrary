@@ -20,6 +20,29 @@ git push origin main
 Then vercel.com → Add New Project → import `amitsoni-ai/PromptLibrary` → deploy. Root `index.html`
 is picked up automatically.
 
+## Admin console
+
+Open it from the "Admin console →" link on the sign-in screen. Default admin key: `SYNOTTIC-ADMIN`
+(change it by setting `adminKey` in the stored `admin/config`, or edit the seed in `src/part_admin.js`).
+
+The console lets you:
+- **Create / edit organisation access codes** — map each code to Organisation, Domain, Industry,
+  Functions, Roles and Programs; tick "Full library" to bypass scoping.
+- **Enable / disable** codes (disabled codes are refused at sign-in, and any learner already on one
+  is bounced to the gate on next load).
+- **View all codes** — organisation codes plus the built-in seed codes (read-only).
+- **Download prompts as .xlsx** (or .csv) filtered by access code / industry / domain / function /
+  role / program. The .xlsx writer is dependency-free.
+
+Admin-created codes are stored in `admin/config` via the `db` runtime capability when the host
+provides one, otherwise in this browser's `localStorage` (shared, not per-learner). Learners then
+sign in with those codes exactly like the built-in ones, and see only the programs / prompts the
+code allows.
+
+> Functions & Roles are seeded from a standard taxonomy in `src/part_admin.js` (`FUNCTIONS`).
+> The SharePoint functions/roles catalogue could not be read in this build — paste its
+> function → {categories, roles} mapping into `FUNCTIONS` to align exactly.
+
 ## Access codes (seed data, editable in the `data-orgmodel` <script> block)
 
 | Code | Organization | Program | Scope |

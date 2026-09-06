@@ -11,7 +11,7 @@ function buildOrgIndex(model) {
   (model.accessCodes || []).forEach((a) => (idx.codes[a.code.toUpperCase().trim()] = a));
   return idx;
 }
-function resolveAccessCode(raw) {
+function resolveStaticAccessCode(raw) {
   const code = (raw || "").toUpperCase().trim().replace(/\s+/g, "");
   const entry = ORG_INDEX.codes[code] || ORG_INDEX.codes[code.replace(/[^A-Z0-9-]/g, "")];
   if (!entry) return null;
@@ -22,13 +22,48 @@ function resolveAccessCode(raw) {
   const learner = entry.learnerId ? ORG_INDEX.learners[entry.learnerId] : null;
   return { entry, code, cohort, program, org, learner };
 }
+/* Merges admin-console codes (AdminStore) with the built-in seed codes.
+   AdminStore is defined in the admin module, loaded before initApp runs. */
+function resolveAccessCode(raw) {
+  const code = (raw || "").toUpperCase().trim().replace(/\s+/g, "");
+  if (typeof AdminStore !== "undefined") {
+    const adm = AdminStore.getCode(code);
+    if (adm) {
+      if (adm.enabled === false) return { disabled: true, code: adm.code, adminCode: adm, kind: "admin" };
+      const programs = (adm.programIds || []).map((id) => ORG_INDEX.programs[id]).filter(Boolean);
+      return {
+        kind: "admin", code: adm.code, adminCode: adm,
+        org: { id: "adm-" + adm.id, name: adm.orgName, shortName: adm.orgName },
+        program: programs[0] || null, programs, cohort: null, learner: null,
+      };
+    }
+  }
+  return resolveStaticAccessCode(raw);
+}
 function currentScope() {
   const s = Store.getSession();
   if (!s) return null;
+  if (s.kind === "admin") {
+    const programs = (s.programIds || []).map((id) => ORG_INDEX.programs[id]).filter(Boolean);
+    return {
+      session: s, admin: s,
+      org: { id: s.orgId, name: s.orgName, shortName: s.orgName },
+      program: programs.length === 1 ? programs[0] : null,
+      programs, cohort: null,
+    };
+  }
   const program = ORG_INDEX.programs[s.programId] || null;
   const cohort = ORG_INDEX.cohorts[s.cohortId] || null;
   const org = ORG_INDEX.orgs[s.orgId] || null;
   return { session: s, program, cohort, org };
+}
+/* Categories an admin-code learner may browse (empty/null => whole library). */
+function adminScopeCategories(s) {
+  if (!s || s.fullLibrary) return null;
+  const cats = new Set();
+  (s.functions || []).forEach((f) => (typeof FUNCTIONS !== "undefined" && FUNCTIONS[f] ? FUNCTIONS[f].categories : []).forEach((c) => cats.add(c)));
+  (s.programIds || []).forEach((pid) => ((ORG_INDEX.programs[pid] || {}).categories || []).forEach((c) => cats.add(c)));
+  return cats;
 }
 
 /* Resolve each program module's prompt list from its rules, once. Central
@@ -75,6 +110,14 @@ function programPromptIds(programId) {
    scope "full"  -> the whole library.
    scope "program" -> only the program's categories + explicitly linked prompts. */
 function scopedLibrary() {
+  const s = Store.getSession();
+  if (s && s.kind === "admin") {
+    const cats = adminScopeCategories(s);
+    if (!cats || cats.size === 0) return ALL_PROMPTS;
+    const linked = new Set();
+    (s.programIds || []).forEach((pid) => programPromptIds(pid).forEach((id) => linked.add(id)));
+    return ALL_PROMPTS.filter((r) => cats.has(r.category) || linked.has(r.id));
+  }
   const sc = currentScope();
   if (!sc || !sc.program || sc.program.scope === "full") return ALL_PROMPTS;
   const cats = new Set(sc.program.categories || []);
@@ -82,8 +125,20 @@ function scopedLibrary() {
   return ALL_PROMPTS.filter((r) => cats.has(r.category) || linked.has(r.id));
 }
 function isScopeRestricted() {
+  const s = Store.getSession();
+  if (s && s.kind === "admin") {
+    const cats = adminScopeCategories(s);
+    return !!(cats && cats.size > 0);
+  }
   const sc = currentScope();
   return !!(sc && sc.program && sc.program.scope === "program");
+}
+function scopeProgramIds() {
+  const sc = currentScope();
+  if (!sc) return [];
+  if (sc.programs && sc.programs.length) return sc.programs.map((p) => p.id);
+  if (sc.program) return [sc.program.id];
+  return [];
 }
 
 /* ---------- Inline icon set ---------- */

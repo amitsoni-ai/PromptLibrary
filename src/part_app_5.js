@@ -459,10 +459,14 @@ function renderLearnerBox() {
   const s = Store.getSession();
   const box = document.getElementById("learner-box");
   if (!s) { box.innerHTML = ""; return; }
+  const line2 = sc && sc.program ? sc.program.name
+    : sc && sc.programs && sc.programs.length ? sc.programs.length + " program" + (sc.programs.length === 1 ? "" : "s")
+    : "";
+  const line3 = sc && sc.cohort ? sc.cohort.name : (s.kind === "admin" ? (s.industry || s.domain || "Organisation access") : "");
   box.innerHTML = `
     <div class="lb-name">${escapeHtml(s.name)}</div>
-    <div class="lb-meta">${escapeHtml((sc && sc.org && sc.org.shortName) || "")} · ${escapeHtml((sc && sc.program && sc.program.name) || "")}</div>
-    <div class="lb-meta">${escapeHtml((sc && sc.cohort && sc.cohort.name) || "")}${isScopeRestricted() ? " · program-scoped" : ""}</div>
+    <div class="lb-meta">${escapeHtml((sc && sc.org && sc.org.shortName) || "")}${line2 ? " · " + escapeHtml(line2) : ""}</div>
+    <div class="lb-meta">${escapeHtml(line3)}${isScopeRestricted() ? " · scoped" : ""}</div>
     <button class="lb-signout" id="lb-signout">Sign out</button>`;
   box.querySelector("#lb-signout").addEventListener("click", signOut);
 }
@@ -521,6 +525,8 @@ function loadData() {
 }
 async function bootApp() {
   document.getElementById("gate-root").innerHTML = "";
+  const adminRoot = document.getElementById("admin-root");
+  if (adminRoot) adminRoot.hidden = true;
   document.getElementById("app").hidden = false;
   await Store.init();
   Store.getMyPrompts().forEach((r) => enrichRecord(r));
@@ -532,17 +538,21 @@ async function bootApp() {
   window.addEventListener("resize", syncMenu);
   document.getElementById("sidebar-overlay").addEventListener("click", closeSidebar);
 }
-function initApp() {
+async function initApp() {
   loadData();
-  const existing = Store.getSession ? null : null; // Store not yet init'd; read session directly
+  try { await AdminStore.init(); } catch (e) {}
+  let adminOk = false;
+  try { adminOk = sessionStorage.getItem("prompt-lib:admin-ok") === "1"; } catch (e) {}
+  if (adminOk) { openAdmin(); return; }
   let session = null;
   try { const v = localStorage.getItem("prompt-lib:session"); session = v ? JSON.parse(v) : null; } catch (e) {}
-  if (session && resolveAccessCode(session.code)) {
+  const r = session && resolveAccessCode(session.code);
+  if (session && r && !r.disabled) {
     Store.setSession(session);
     bootApp();
   } else {
     if (session) { try { localStorage.removeItem("prompt-lib:session"); } catch (e) {} }
-    renderGate();
+    renderGate(r && r.disabled ? "Your previous access code has been disabled." : "");
   }
 }
 initApp();

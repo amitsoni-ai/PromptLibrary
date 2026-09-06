@@ -31,7 +31,10 @@ function renderMyLibraryView(container) {
   const mine = Store.getMyPrompts();
   const favs = Array.from(Store.getFavorites()).map(findPromptById).filter(Boolean);
   const sc = currentScope();
-  const progIds = sc && sc.program ? programPromptIds(sc.program.id) : [];
+  const scopeProgs = scopeProgramIds();
+  const progIdSet = new Set();
+  scopeProgs.forEach((pid) => programPromptIds(pid).forEach((id) => progIdSet.add(id)));
+  const progIds = Array.from(progIdSet);
   container.innerHTML = `
     <div class="section-title">
       <h2>My Library</h2>
@@ -57,9 +60,10 @@ function renderMyLibraryView(container) {
     if (!mine.length) body.innerHTML = emptyStateHtml("folder", "No custom prompts yet", "Create one, or save an improved version of a library prompt.", `<button class="btn btn-primary btn-sm" style="margin-top:8px" onclick="openAddPrompt()">${icon("plus")} Add Prompt</button>`);
     else { body.innerHTML = `<div class="result-count">${mine.length} prompt${mine.length === 1 ? "" : "s"} · created prompts, saved variations and improved versions</div><div id="mine-list"></div>`; renderPaginatedList(body.querySelector("#mine-list"), mine, { showSource: true }); }
   } else if (tab === "program") {
-    if (!sc || !sc.program) { body.innerHTML = emptyStateHtml("path", "No program attached", "Your code isn't linked to a program."); return; }
+    if (!scopeProgs.length) { body.innerHTML = emptyStateHtml("path", "No program attached", "Your code isn't linked to a program — see the Central Library tab."); return; }
     const recs = progIds.map(findPromptById).filter(Boolean).sort((a, b) => b.qualityScore - a.qualityScore);
-    body.innerHTML = `<div class="result-count">${recs.length} prompts recommended across ${sc.program.modules.length} modules of ${escapeHtml(sc.program.name)}</div><div id="prog-list"></div>`;
+    const progNames = scopeProgs.map((pid) => (ORG_INDEX.programs[pid] || {}).name).filter(Boolean).join(", ");
+    body.innerHTML = `<div class="result-count">${recs.length} prompts recommended across ${escapeHtml(progNames)}</div><div id="prog-list"></div>`;
     renderPaginatedList(body.querySelector("#prog-list"), recs, {});
   } else if (tab === "favorites") {
     if (!favs.length) body.innerHTML = emptyStateHtml("star", "No favorites yet", "Star prompts to collect them here.");
