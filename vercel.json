@@ -3,5 +3,11 @@
   "outputDirectory": ".",
   "functions": {
     "api/**/*.js": { "maxDuration": 15 }
-  }
+  },
+  "rewrites": [
+    { "source": "/verify-email", "destination": "/index.html" },
+    { "source": "/reset-password", "destination": "/index.html" },
+    { "source": "/forgot-password", "destination": "/index.html" },
+    { "source": "/admin/login", "destination": "/index.html" }
+  ]
 }

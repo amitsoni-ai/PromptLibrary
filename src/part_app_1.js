@@ -1,6 +1,6 @@
 <script>
 /* =========================================================================
-   Synottic Prompt Library — learner platform
+   Synottic Prompt Intelligence — learner platform
    Single-file app. Central prompt data lives in the #data-* script tags and
    is never mutated. Learner-owned content (favorites, saved prompts,
    improvements, practice, progress) lives in the Store layer.
@@ -193,6 +193,15 @@ const Store = (function () {
     if (neon) pushState("progress", progress);
     else if (db) db.doc("state/" + nsKey("progress")).set(progress).catch(() => {});
   }
+  function ensureFw() {
+    let f = progress.framework;
+    if (!f || typeof f !== "object") f = progress.framework = {};
+    f.comps = f.comps || {};
+    f.levels = f.levels || {};
+    f.attempts = Array.isArray(f.attempts) ? f.attempts : [];
+    f.best = f.best || {};
+    return f;
+  }
 
   return {
     init,
@@ -268,6 +277,20 @@ const Store = (function () {
       progress.practice = progress.practice.slice(0, 100);
       pProg();
       if (typeof Backend !== "undefined") Backend.logActivity("practice", rec.scenarioId || null, { overall: rec.overall });
+    },
+
+    /* ---- Prompt Framework progress (kept inside `progress` so it rides the
+       same localStorage / Neon / db sync path) ---- */
+    getFrameworkProgress: () => ensureFw(),
+    markFrameworkComponent(key) { const f = ensureFw(); if (!f.comps[key]) { f.comps[key] = Date.now(); pProg(); } },
+    markFrameworkLevelViewed(lv) { const f = ensureFw(); if (!f.levels[lv]) { f.levels[lv] = Date.now(); pProg(); } },
+    addFrameworkAttempt(rec) {
+      const f = ensureFw();
+      f.attempts.unshift(rec);
+      f.attempts = f.attempts.slice(0, 100);
+      if (rec.level != null && (!(rec.level in f.best) || rec.score > f.best[rec.level])) f.best[rec.level] = rec.score;
+      pProg();
+      if (typeof Backend !== "undefined") Backend.logActivity("practice", rec.scenarioId || null, { framework: rec.level, score: rec.score });
     },
     flush() { if (neon && _pushTimer) { clearTimeout(_pushTimer); const b = Object.assign({}, _pending); for (const k in _pending) delete _pending[k]; return Backend.putState(b); } },
   };
@@ -734,5 +757,7 @@ function enrichRecord(rec) {
   rec.lifecycle = rec.lifecycle || deriveLifecycle(rec);
   rec.whenToUse = rec.whenToUse || deriveWhenToUse(rec);
   rec.whyItWorks = rec.whyItWorks || deriveWhyItWorks(rec);
+  // Prompt-framework fit — derived, never persisted (see part_framework.js).
+  if (typeof deriveFrameworkLevel === "function" && rec.frameworkLevel === undefined) deriveFrameworkLevel(rec);
   return rec;
 }

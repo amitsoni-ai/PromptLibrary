@@ -40,9 +40,36 @@ function resolveAccessCode(raw) {
   }
   return resolveStaticAccessCode(raw);
 }
+// Learner-account (part_auth.js) scoping. Returns null for non-user sessions so
+// the classic access-code logic below is used unchanged.
+function userLibraryMode() {
+  const s = Store.getSession && Store.getSession();
+  if (!s || !s.user) return null;
+  const a = (typeof userAccess === "function" && userAccess()) || s.access || null;
+  const acc = a && a.access;
+  if (acc && acc.active && acc.scopeType === "full") return { mode: "full" };
+  if (acc && acc.active && (acc.scopeType === "program" || acc.scopeType === "track")) {
+    const ids = Array.isArray(a.programs) ? a.programs : [];
+    return { mode: "program", programIds: ids };
+  }
+  return { mode: "preview" };   // unverified / no entitlement / suspended
+}
+function userPreviewLibrary() {
+  return ALL_PROMPTS
+    .filter((r) => r.lifecycle !== "Archived" && !(r.flags && r.flags.modelSpecific))
+    .slice()
+    .sort((a, b) => (b.qualityScore || 0) - (a.qualityScore || 0))
+    .slice(0, 24);
+}
 function currentScope() {
   const s = Store.getSession();
   if (!s) return null;
+  if (s.user) {
+    const org = { id: s.orgId || "org-user", name: s.orgName || "Your organization", shortName: s.orgName || "" };
+    const m = userLibraryMode();
+    const programs = (m && m.mode === "program" ? m.programIds : []).map((id) => ORG_INDEX.programs[id]).filter(Boolean);
+    return { session: s, user: s, org, program: programs.length === 1 ? programs[0] : null, programs, cohort: null };
+  }
   if (s.kind === "admin") {
     const programs = (s.programIds || []).map((id) => ORG_INDEX.programs[id]).filter(Boolean);
     return {
@@ -113,6 +140,17 @@ function programPromptIds(programId) {
    scope "program" -> only the program's categories + explicitly linked prompts. */
 function scopedLibrary() {
   const s = Store.getSession();
+  const um = userLibraryMode();
+  if (um) {
+    if (um.mode === "full") return ALL_PROMPTS;
+    if (um.mode === "preview") return userPreviewLibrary();
+    const linked = new Set();
+    (um.programIds || []).forEach((pid) => programPromptIds(pid).forEach((id) => linked.add(id)));
+    const cats = new Set();
+    (um.programIds || []).forEach((pid) => ((ORG_INDEX.programs[pid] || {}).categories || []).forEach((c) => cats.add(c)));
+    const out = ALL_PROMPTS.filter((r) => cats.has(r.category) || linked.has(r.id));
+    return out.length ? out : userPreviewLibrary();
+  }
   if (s && s.kind === "admin") {
     const cats = adminScopeCategories(s);
     if (!cats || cats.size === 0) return ALL_PROMPTS;
@@ -132,6 +170,8 @@ function scopedLibrary() {
 }
 function isScopeRestricted() {
   const s = Store.getSession();
+  const um = userLibraryMode();
+  if (um) return um.mode !== "full";
   if (s && s.kind === "admin") {
     const cats = adminScopeCategories(s);
     return !!(cats && cats.size > 0);
@@ -189,26 +229,30 @@ function renderQualityPill(score) {
 function renderDifficulty(d) { return `<span class="diff-dot diff-${d}"><i></i>${d}</span>`; }
 function renderLifecycle(lc) { return `<span class="lc-badge lc-${lc}">${escapeHtml(lc)}</span>`; }
 
+/* Simplified card: title + one-line intent + a calm meta line. The quality
+   score, variable count and layer details live in the detail drawer
+   (progressive disclosure). Save is the only on-card action; "Use" happens
+   in the detail. */
 function promptCardHtml(rec, opts) {
   opts = opts || {};
   const isFav = Store.isFavorite(rec.id);
-  const varBadge = rec.isTemplate ? `<span class="chip" title="${rec.variables.length} variable(s)">${icon("slider", "")} ${rec.variables.length} var</span>` : "";
+  const srcTag = opts.showSource && rec.source && rec.source !== "Original Library"
+    ? `<span class="chip chip-accent">${escapeHtml(rec.source === "Modified" || rec.source === "Optimized" ? "My version" : rec.source)}</span>` : "";
   return `
   <article class="prompt-card" data-id="${rec.id}" role="button" tabindex="0" aria-label="Open ${escapeHtml(rec.title)}">
     <div class="prompt-card-top">
       <div class="prompt-card-title">${escapeHtml(rec.title)}</div>
       <div class="prompt-card-actions">
-        <button class="fav-btn ${isFav ? "is-fav" : ""}" data-action="fav" data-id="${rec.id}" aria-label="${isFav ? "Remove favorite" : "Add favorite"}" title="Favorite (F)">${isFav ? icon("starFilled") : icon("star")}</button>
-        <button class="fav-btn" data-action="copy" data-id="${rec.id}" aria-label="Copy prompt" title="Copy (C)">${icon("copy")}</button>
+        <button class="fav-btn ${isFav ? "is-fav" : ""}" data-action="fav" data-id="${rec.id}" aria-label="${isFav ? "Remove from Saved" : "Save"}" title="Save (F)">${isFav ? icon("starFilled") : icon("star")}</button>
       </div>
     </div>
     <div class="prompt-card-desc">${escapeHtml(rec.description)}</div>
     <div class="prompt-card-meta">
       <span class="chip">${escapeHtml(rec.category)}</span>
       ${renderDifficulty(rec.difficulty)}
-      ${renderQualityPill(rec.qualityScore)}
-      ${varBadge}
-      ${opts.showSource && rec.source !== "Original Library" ? `<span class="chip chip-accent">${escapeHtml(rec.source)}</span>` : ""}
+      ${rec.isTemplate ? `<span class="chip" title="Reusable template with ${rec.variables.length} fill-in field${rec.variables.length === 1 ? "" : "s"}">Template</span>` : ""}
+      ${typeof fwLevelBadge === "function" ? fwLevelBadge(rec) : ""}
+      ${srcTag}
     </div>
   </article>`;
 }
@@ -273,6 +317,7 @@ function passesFilters(rec, f) {
   if (f.aiTool && rec.aiTool !== f.aiTool) return false;
   if (f.source && rec.source !== f.source) return false;
   if (f.hasVariables && !rec.isTemplate) return false;
+  if (f.fwLevel && String(rec.frameworkLevel || "") !== String(f.fwLevel)) return false;
   if (f.favoritesOnly && !Store.isFavorite(rec.id)) return false;
   return true;
 }
@@ -300,10 +345,11 @@ function computeResults(query, filters, sort, baseCorpus) {
   if (!q && sort === "relevance") results = results.slice().sort((a, b) => b.qualityScore - a.qualityScore);
   return results;
 }
-const FILTER_LABELS = { category: "Category", skill: "Skill", promptType: "Prompt Type", role: "Role", difficulty: "Difficulty", aiTool: "AI Tool", source: "Source" };
+const FILTER_LABELS = { category: "Category", skill: "Skill", promptType: "Prompt Type", role: "Role", difficulty: "Difficulty", aiTool: "AI Tool", source: "Source", fwLevel: "Framework" };
 function activeFilterEntries(f) {
   const out = [];
   for (const k of ["category", "skill", "promptType", "role", "difficulty", "aiTool", "source"]) if (f[k]) out.push([k, f[k]]);
+  if (f.fwLevel) out.push(["fwLevel", "Level " + f.fwLevel]);
   if (f.hasVariables) out.push(["hasVariables", "Has Variables"]);
   if (f.favoritesOnly) out.push(["favoritesOnly", "Favorites Only"]);
   return out;
@@ -319,23 +365,30 @@ function renderFilterBar(state) {
   const activeChips = activeFilterEntries(f).map(([k, v]) => `
     <span class="filter-tag">${escapeHtml(FILTER_LABELS[k] || "")}${FILTER_LABELS[k] ? ": " : ""}${escapeHtml(v)}
       <button data-clear-filter="${k}" aria-label="Remove filter">${icon("x")}</button></span>`).join("");
+  const hasAdvanced = f.skill || f.role || f.promptType || f.hasVariables;
   return `
   <div class="filter-bar">
     <select data-filter="category" aria-label="Category"><option value="">All categories</option>${categories.map((c) => `<option value="${escapeHtml(c)}" ${f.category === c ? "selected" : ""}>${escapeHtml(c)}</option>`).join("")}</select>
-    <select data-filter="skill" aria-label="Skill"><option value="">All skills</option>${skills.map((c) => `<option value="${escapeHtml(c)}" ${f.skill === c ? "selected" : ""}>${escapeHtml(c)}</option>`).join("")}</select>
-    <select data-filter="role" aria-label="Role"><option value="">All roles</option>${roles.map((c) => `<option value="${escapeHtml(c)}" ${f.role === c ? "selected" : ""}>${escapeHtml(c)}</option>`).join("")}</select>
-    <select data-filter="difficulty" aria-label="Difficulty"><option value="">Any difficulty</option>${["Beginner", "Intermediate", "Advanced"].map((c) => `<option value="${c}" ${f.difficulty === c ? "selected" : ""}>${c}</option>`).join("")}</select>
-    <select data-filter="promptType" aria-label="Prompt type"><option value="">All types</option>${promptTypes.map((c) => `<option value="${escapeHtml(c)}" ${f.promptType === c ? "selected" : ""}>${escapeHtml(c)}</option>`).join("")}</select>
-    <label class="chip" style="cursor:pointer;"><input type="checkbox" id="filter-vars" style="margin-right:5px" ${f.hasVariables ? "checked" : ""}/> Has Variables</label>
-    <label class="chip" style="cursor:pointer;"><input type="checkbox" id="filter-favs" style="margin-right:5px" ${f.favoritesOnly ? "checked" : ""}/> Favorites</label>
+    <select data-filter="difficulty" aria-label="Difficulty"><option value="">Any level</option>${["Beginner", "Intermediate", "Advanced"].map((c) => `<option value="${c}" ${f.difficulty === c ? "selected" : ""}>${c}</option>`).join("")}</select>
+    <select data-filter="fwLevel" aria-label="Framework level"><option value="">Any framework</option>${(typeof FRAMEWORK !== "undefined" ? FRAMEWORK.levels : []).map((L) => `<option value="${L.level}" ${String(f.fwLevel) === String(L.level) ? "selected" : ""}>Level ${L.level} · ${escapeHtml(L.code)}</option>`).join("")}</select>
+    <label class="chip" style="cursor:pointer;"><input type="checkbox" id="filter-favs" style="margin-right:5px" ${f.favoritesOnly ? "checked" : ""}/> Saved only</label>
     <div class="spacer"></div>
     <select data-sort aria-label="Sort by">
-      <option value="relevance" ${state.sort === "relevance" ? "selected" : ""}>Sort: Relevance</option>
-      <option value="quality" ${state.sort === "quality" ? "selected" : ""}>Highest Quality</option>
-      <option value="used" ${state.sort === "used" ? "selected" : ""}>Most Used</option>
-      <option value="recent" ${state.sort === "recent" ? "selected" : ""}>Recently Added</option>
+      <option value="relevance" ${state.sort === "relevance" ? "selected" : ""}>Sort: Best match</option>
+      <option value="quality" ${state.sort === "quality" ? "selected" : ""}>Highest quality</option>
+      <option value="used" ${state.sort === "used" ? "selected" : ""}>Most used</option>
+      <option value="recent" ${state.sort === "recent" ? "selected" : ""}>Recently added</option>
       <option value="az" ${state.sort === "az" ? "selected" : ""}>A–Z</option>
     </select>
+    <details class="filter-more" ${hasAdvanced ? "open" : ""} style="width:100%;order:9;">
+      <summary style="cursor:pointer;font-size:12px;color:var(--accent-strong);font-weight:600;padding:2px 0;">More filters</summary>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;">
+        <select data-filter="skill" aria-label="Skill"><option value="">All skills</option>${skills.map((c) => `<option value="${escapeHtml(c)}" ${f.skill === c ? "selected" : ""}>${escapeHtml(c)}</option>`).join("")}</select>
+        <select data-filter="role" aria-label="Role"><option value="">All roles</option>${roles.map((c) => `<option value="${escapeHtml(c)}" ${f.role === c ? "selected" : ""}>${escapeHtml(c)}</option>`).join("")}</select>
+        <select data-filter="promptType" aria-label="Prompt type"><option value="">All types</option>${promptTypes.map((c) => `<option value="${escapeHtml(c)}" ${f.promptType === c ? "selected" : ""}>${escapeHtml(c)}</option>`).join("")}</select>
+        <label class="chip" style="cursor:pointer;"><input type="checkbox" id="filter-vars" style="margin-right:5px" ${f.hasVariables ? "checked" : ""}/> Templates only</label>
+      </div>
+    </details>
   </div>
   ${activeChips ? `<div style="display:flex;flex-wrap:wrap;gap:6px;margin:-6px 0 12px;">${activeChips}<button class="btn btn-sm btn-ghost" data-clear-all-filters>Clear all</button></div>` : ""}`;
 }
@@ -371,10 +424,11 @@ function wireCardActions(el) {
     btn.__wired = true;
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
+      if (typeof blockIfLocked === "function" && blockIfLocked("prompt.save")) return;
       const now = Store.toggleFavorite(btn.dataset.id);
       btn.classList.toggle("is-fav", now);
       btn.innerHTML = now ? icon("starFilled") : icon("star");
-      showToast(now ? "Added to favorites" : "Removed from favorites");
+      showToast(now ? "Saved" : "Removed from Saved");
       renderSidebarFooter();
     });
   });
@@ -383,6 +437,7 @@ function wireCardActions(el) {
     btn.__wired = true;
     btn.addEventListener("click", async (e) => {
       e.stopPropagation();
+      if (typeof blockIfLocked === "function" && blockIfLocked("prompt.copy")) return;
       const rec = findPromptById(btn.dataset.id);
       if (!rec) return;
       const ok = await copyText(rec.originalPrompt);

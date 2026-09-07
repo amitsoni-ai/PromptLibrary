@@ -1,15 +1,16 @@
-<title>Synottic Prompt Library</title>
+<title>Synottic Prompt Intelligence</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="icon" type="image/png" href="{{FAVICON_DATA_URI}}">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta name="theme-color" content="#0E7C6B">
-<meta name="description" content="A learner-first AI prompt platform — learn, find, practice, customize, copy, improve and save prompts.">
+<meta name="description" content="Don't just use AI. Think with it. Your AI workspace for better thinking and better work — find the right prompt, build better workflows, practice new AI skills, and apply them to real work.">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Synottic Prompt Library">
-<meta property="og:description" content="A learner-first AI prompt platform — learn, find, practice, customize, copy, improve and save prompts.">
+<meta property="og:title" content="Synottic Prompt Intelligence">
+<meta property="og:description" content="Don't just use AI. Think with it. Your AI workspace for better thinking and better work.">
 <meta property="og:image" content="/og-image.png">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Synottic Prompt Library">
-<meta name="twitter:description" content="A learner-first AI prompt platform powered by a trusted central prompt library.">
+<meta name="twitter:title" content="Synottic Prompt Intelligence">
+<meta name="twitter:description" content="Don't just use AI. Think with it. Your AI workspace for better thinking and better work.">
 <meta name="twitter:image" content="/og-image.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -142,7 +143,7 @@ body.previewing .topbar{top:var(--pbh);}
 .brand{display:flex; align-items:center; gap:10px; padding:18px 16px 12px;}
 .brand-mark{width:30px; height:26px; background:var(--logo) center/contain no-repeat; flex:none;}
 .brand-mark svg{width:17px; height:17px;}
-.brand-name{font-family:var(--font-display); font-weight:700; font-size:14.5px; letter-spacing:-0.01em; line-height:1.2;}
+.brand-name{font-family:var(--font-display); font-weight:700; font-size:13.5px; letter-spacing:-0.01em; line-height:1.25;}
 .brand-sub{font-size:10.5px; color:var(--text-faint); letter-spacing:.04em; text-transform:uppercase; margin-top:1px;}
 
 .learner-box{margin:2px 12px 6px; padding:9px 11px; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--surface-2);}
@@ -150,13 +151,14 @@ body.previewing .topbar{top:var(--pbh);}
 .learner-box .lb-meta{font-size:11px; color:var(--text-faint); margin-top:1px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
 .learner-box .lb-signout{margin-top:6px; font-size:11px; color:var(--accent-strong); background:none; border:none; padding:0; font-weight:600;}
 
-.nav{padding:4px 10px; display:flex; flex-direction:column; gap:1px;}
-.nav-group-label{font-size:10px; text-transform:uppercase; letter-spacing:.07em; color:var(--text-faint); padding:12px 10px 4px;}
+.nav{padding:8px 10px; display:flex; flex-direction:column; gap:2px;}
+.nav-primary{display:flex; flex-direction:column; gap:2px;}
+.nav-group-label{font-size:10px; text-transform:uppercase; letter-spacing:.07em; color:var(--text-faint); padding:16px 10px 4px; margin-top:8px; border-top:1px solid var(--border);}
 .nav-item{
-  display:flex; align-items:center; gap:10px; padding:7px 10px; border-radius:var(--radius-sm);
-  color:var(--text-muted); font-weight:500; font-size:13px; background:none; border:none; text-align:left; width:100%;
+  display:flex; align-items:center; gap:11px; padding:9px 10px; border-radius:var(--radius-sm);
+  color:var(--text-muted); font-weight:500; font-size:13.5px; background:none; border:none; text-align:left; width:100%;
 }
-.nav-item svg{width:16px; height:16px; flex:none; opacity:.85;}
+.nav-item svg{width:17px; height:17px; flex:none; opacity:.85;}
 .nav-item:hover{background:var(--surface-2); color:var(--text);}
 .nav-item.active{background:var(--accent-soft); color:var(--accent-strong); font-weight:600;}
 .nav-item.active svg{opacity:1;}
@@ -459,6 +461,206 @@ textarea{resize:vertical; font-family:var(--font-mono); line-height:1.55; font-s
   .bar-row .bar-label{width:120px;}
   .rubric-row{grid-template-columns:100px 1fr 38px;}
   .rubric-note{padding-left:0;}
+  .me-grid{grid-template-columns:1fr;}
+  .home-cols{grid-template-columns:1fr;}
+}
+
+/* ---------- v2: simplified surfaces ---------- */
+.home-cols{display:grid; grid-template-columns:1.4fr 1fr; gap:26px; align-items:start;}
+.home-block{margin-bottom:26px;}
+.continue-card{display:flex; align-items:center; gap:14px; padding:16px 18px; border:1px solid var(--border); border-radius:var(--radius-lg); background:linear-gradient(150deg,var(--accent-soft),var(--surface) 72%); cursor:pointer; margin-bottom:22px;}
+.continue-card:hover{border-color:var(--accent);}
+.continue-card .cc-ico{width:38px; height:38px; border-radius:10px; background:var(--surface); display:flex; align-items:center; justify-content:center; flex:none; color:var(--accent-strong);}
+.continue-card .cc-ico svg{width:19px; height:19px;}
+.continue-card h3{font-size:14.5px; margin-bottom:2px;}
+.continue-card p{font-size:12.5px; color:var(--text-muted);}
+.continue-card .cc-go{margin-left:auto; color:var(--text-faint); flex:none;}
+
+/* Library landing */
+.lib-landing{max-width:760px; margin:8px auto 4px;}
+.lib-landing h1{font-size:24px; letter-spacing:-0.015em; margin-bottom:14px; text-align:center;}
+.lib-quicklinks{display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-top:14px;}
+
+/* Detail: action-first */
+.detail-hero-actions{display:flex; flex-direction:column; gap:10px; margin:4px 0 20px;}
+.btn-use{display:inline-flex; align-items:center; justify-content:center; gap:9px; width:100%; padding:13px 18px;
+  border-radius:var(--radius); border:1px solid var(--accent); background:var(--accent); color:var(--accent-text-on);
+  font-weight:600; font-size:14.5px; font-family:var(--font-display);}
+.btn-use:hover{background:var(--accent-strong); border-color:var(--accent-strong);}
+.btn-use svg{width:17px; height:17px;}
+.detail-secondary{display:flex; gap:8px; flex-wrap:wrap;}
+.detail-secondary .btn{flex:1; min-width:120px; justify-content:center;}
+.detail-outcome{display:flex; gap:10px; padding:12px 14px; border-radius:var(--radius); background:var(--accent-soft); color:var(--accent-strong); font-size:13px; line-height:1.55; margin-bottom:18px;}
+.detail-outcome svg{width:16px; height:16px; flex:none; margin-top:2px;}
+details.detail-expand{border:1px solid var(--border); border-radius:var(--radius); margin-bottom:14px; background:var(--surface);}
+details.detail-expand > summary{list-style:none; cursor:pointer; padding:12px 14px; font-weight:600; font-size:13px; display:flex; align-items:center; gap:8px;}
+details.detail-expand > summary::-webkit-details-marker{display:none;}
+details.detail-expand > summary .chev{margin-left:auto; transition:transform .15s; color:var(--text-faint);}
+details.detail-expand[open] > summary .chev{transform:rotate(90deg);}
+details.detail-expand > summary:hover{background:var(--surface-2);}
+details.detail-expand .expand-body{padding:4px 16px 16px; border-top:1px solid var(--border);}
+.quality-line{display:flex; align-items:baseline; gap:8px; font-size:13px; color:var(--text-muted);}
+.quality-line b{font-family:var(--font-mono); font-size:20px; font-weight:600; color:var(--text);}
+
+/* Me dashboard */
+.me-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:24px;}
+.me-stat{padding:14px 16px; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface);}
+.me-stat .num{font-family:var(--font-mono); font-size:24px; font-weight:600;}
+.me-stat .label{font-size:11.5px; color:var(--text-muted); margin-top:2px;}
+.seg{display:inline-flex; padding:3px; gap:2px; background:var(--surface-2); border-radius:99px; border:1px solid var(--border); margin-bottom:16px; flex-wrap:wrap;}
+.seg button{border:none; background:none; padding:6px 14px; border-radius:99px; font-size:12.5px; font-weight:600; color:var(--text-muted);}
+.seg button.active{background:var(--surface); color:var(--text); box-shadow:var(--shadow);}
+
+/* ---------- Prompt Framework ---------- */
+.fw-module{border:1px solid var(--border); border-radius:var(--radius-lg); background:linear-gradient(150deg,var(--accent-soft),var(--surface) 72%); padding:18px 20px; margin-bottom:24px;}
+.fw-module-head{display:flex; align-items:flex-start; gap:12px; margin-bottom:14px;}
+.fw-module-head h2{font-size:16px;}
+.fw-module-head p{font-size:12.8px; color:var(--text-muted); margin-top:2px;}
+.fw-module-head .chip{margin-left:auto; flex:none;}
+.fw-levels{display:flex; flex-direction:column; gap:8px;}
+.fw-level-row{display:flex; align-items:center; gap:14px; padding:12px 14px; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); text-align:left; width:100%;}
+.fw-level-row:hover{border-color:var(--accent);}
+.fw-level-code{font-family:var(--font-mono); font-weight:600; font-size:12px; letter-spacing:.03em; color:var(--accent-strong); background:var(--accent-soft); padding:5px 8px; border-radius:6px; flex:none; min-width:150px; text-align:center;}
+.fw-level-meta{display:flex; flex-direction:column; gap:1px; flex:1; min-width:0;}
+.fw-level-meta b{font-size:13px;}
+.fw-level-meta span{font-size:12px; color:var(--text-muted);}
+.fw-level-prog{display:flex; align-items:center; gap:8px; flex:none; width:120px;}
+.fw-level-prog .progress-track{flex:1; margin-top:0;}
+.fw-level-pct{font-size:11px; font-family:var(--font-mono); color:var(--text-faint); width:30px; text-align:right;}
+.fw-level-row > svg{width:16px; height:16px; color:var(--text-faint); flex:none;}
+
+.fw-hero-visual{display:flex; flex-wrap:wrap; gap:8px; margin:14px 0 20px;}
+.fw-tile{display:flex; flex-direction:column; align-items:center; gap:3px; padding:10px 12px; border:1px solid var(--border-strong); border-radius:var(--radius); background:var(--surface); min-width:78px;}
+.fw-tile.lit{border-color:var(--accent); background:var(--accent-soft);}
+.fw-tile .l{font-family:var(--font-display); font-weight:700; font-size:18px; color:var(--accent-strong);}
+.fw-tile .n{font-size:10.5px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.03em;}
+button.fw-tile:hover{border-color:var(--accent);}
+
+.fw-comp{border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); padding:16px 18px; margin-bottom:12px;}
+.fw-comp-head{display:flex; align-items:center; gap:10px; margin-bottom:6px;}
+.fw-comp-head h3{font-size:15px; flex:1;}
+.fw-letter{width:28px; height:28px; border-radius:8px; background:var(--accent-soft); color:var(--accent-strong); display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-weight:700; font-size:14px; flex:none;}
+.fw-comp-short{font-size:13px; color:var(--text); margin-bottom:10px;}
+.fw-comp-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:14px;}
+.fw-comp-grid h4{font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--text-faint); margin-bottom:4px; font-family:var(--font-body); font-weight:700;}
+.fw-comp-grid p{font-size:12.5px; color:var(--text-muted); line-height:1.55;}
+.fw-good,.fw-bad{font-family:var(--font-mono); font-size:12px; line-height:1.5; padding:8px 10px; border-radius:var(--radius-sm);}
+.fw-good{background:var(--accent-soft); color:var(--accent-strong);}
+.fw-bad{background:var(--warn-soft); color:var(--warn);}
+
+.fw-selector{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px;}
+.fw-selector button{padding:6px 12px; border-radius:99px; border:1px solid var(--border); background:var(--surface); font-size:12px; font-weight:600; color:var(--text-muted);}
+.fw-selector button.active{background:var(--accent-soft); color:var(--accent-strong); border-color:transparent;}
+
+.fw-cov-table{width:100%; border-collapse:collapse; font-size:12.5px; margin:6px 0 4px;}
+.fw-cov-table th{text-align:left; color:var(--text-faint); font-weight:600; font-size:10.5px; text-transform:uppercase; letter-spacing:.04em; padding:6px 8px; border-bottom:1px solid var(--border);}
+.fw-cov-table td{padding:7px 8px; border-bottom:1px solid var(--border); vertical-align:top;}
+.fw-status{display:inline-flex; align-items:center; gap:5px; font-weight:600; font-size:11.5px;}
+.fw-status.s-strong{color:var(--accent-strong);}
+.fw-status.s-weak{color:var(--warn);}
+.fw-status.s-missing{color:var(--danger);}
+.fw-status .dot{width:6px; height:6px; border-radius:50%; background:currentColor;}
+.fw-compare{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
+.fw-compare h4{font-size:12px; margin-bottom:6px;}
+
+@media (max-width:720px){
+  .fw-comp-grid{grid-template-columns:1fr;}
+  .fw-level-prog{display:none;}
+  .fw-compare{grid-template-columns:1fr;}
+  .fw-level-code{min-width:0;}
+}
+
+/* ---------- Account auth (part_auth.js) ---------- */
+.auth-card{width:min(460px,100%);}
+.auth-card h1{font-size:20px; letter-spacing:-0.01em; margin:16px 0 4px;}
+.auth-tabs{display:flex; gap:4px; background:var(--surface-2); border-radius:var(--radius-sm); padding:4px; margin:14px 0 18px;}
+.auth-tab{flex:1; border:0; background:transparent; padding:8px 10px; font-size:12.5px; font-weight:600; color:var(--text-muted); border-radius:calc(var(--radius-sm) - 2px); cursor:pointer;}
+.auth-tab.active{background:var(--surface); color:var(--text); box-shadow:var(--shadow-sm);}
+.auth-card form{display:block;}
+.auth-card .auth-select,.auth-card input.name-input{width:100%; padding:11px 13px; font-size:14px; border-radius:var(--radius-sm); border:1.5px solid var(--border-strong); background:var(--surface); color:var(--text); text-transform:none; letter-spacing:normal;}
+.auth-card .auth-select:focus,.auth-card input.name-input:focus{border-color:var(--accent); outline:none;}
+.auth-2col{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+.auth-row{display:flex; align-items:center; justify-content:space-between; margin:12px 0 2px; gap:10px; flex-wrap:wrap;}
+.auth-check{display:flex; align-items:center; gap:8px; font-size:12.5px; font-weight:500; color:var(--text-muted); text-transform:none;}
+.auth-check input{width:auto;}
+.auth-link{background:none; border:0; color:var(--accent-strong); font-size:12.5px; font-weight:600; padding:0; cursor:pointer;}
+.auth-link:hover{text-decoration:underline;}
+.auth-card .auth-error{color:var(--danger); font-size:12.5px; margin:10px 0 2px; min-height:16px;}
+.auth-card .btn-primary{width:100%; justify-content:center; padding:11px; margin-top:12px; font-size:14px;}
+.auth-2col .btn{width:100%; justify-content:center; padding:11px; margin-top:12px;}
+.auth-note{font-size:12.5px; color:var(--text-muted); background:var(--surface-2); border-radius:var(--radius-sm); padding:10px 12px; margin:12px 0;}
+.verify-banner{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+  background:var(--warn-soft,#fff7ed); color:var(--warn-strong,#9a3412); border-bottom:1px solid var(--border);
+  padding:9px 18px; font-size:12.5px; font-weight:500;}
+.verify-banner .vb-actions{display:flex; align-items:center; gap:8px;}
+.verify-banner .vb-btn{border:1px solid currentColor; background:transparent; color:inherit; font-size:12px; font-weight:600; padding:4px 10px; border-radius:6px; cursor:pointer;}
+.verify-banner .vb-x{border:0; background:transparent; color:inherit; font-size:13px; cursor:pointer; opacity:.7;}
+.verify-banner .vb-x:hover{opacity:1;}
+
+/* ============================================================================
+   Split-screen auth — "Synottic Prompt Intelligence"
+   Left = focused authentication. Right = brand composition (navy ground,
+   intelligence-wave motif, headline, value signals, framed product visual).
+   Applies to every auth screen (sign in / create account / access code /
+   forgot / reset / verify) and the classic access-code gate.
+   ========================================================================== */
+.gate.auth-layout{
+  display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.08fr);
+  align-items:stretch; gap:0; padding:0; min-height:100vh; background:var(--bg);
+}
+.auth-layout .auth-pane{
+  display:flex; align-items:center; justify-content:center;
+  padding:40px 34px; overflow-y:auto;
+}
+.gate.auth-layout .gate-card.auth-card{
+  width:min(400px,100%); max-width:400px; padding:0; border:0; background:none; box-shadow:none;
+}
+.auth-brandline{display:flex; align-items:center; gap:10px; margin-bottom:24px;}
+.auth-brandline .gate-mark{width:30px; height:30px; margin:0;}
+.auth-product{font-family:var(--font-display); font-weight:700; font-size:13.5px; letter-spacing:-0.01em; color:var(--text);}
+.auth-card h1{font-size:22px; margin:0 0 5px;}
+.auth-card .sub{color:var(--text-muted); font-size:13px; margin-bottom:18px;}
+
+/* password visibility toggle */
+.pw-wrap{position:relative;}
+.pw-wrap .name-input{padding-right:44px !important;}
+.pw-toggle{
+  position:absolute; right:6px; top:50%; transform:translateY(-50%);
+  width:32px; height:32px; display:flex; align-items:center; justify-content:center;
+  border:0; background:none; color:var(--text-faint); border-radius:6px;
+}
+.pw-toggle:hover{color:var(--text-muted); background:var(--surface-2);}
+.pw-toggle.is-on{color:var(--accent-strong);}
+.pw-toggle svg{width:18px; height:18px;}
+
+/* right-hand brand composition */
+/* Desktop / tablet — the artwork fills the whole right side, edge to edge */
+.auth-brand{position:relative; overflow:hidden; background:#022A4B; padding:0; display:block;}
+.auth-brand-img{
+  position:absolute; inset:0; width:100%; height:100%; display:block;
+  object-fit:cover; object-position:0% 38%;
+}
+.auth-brand-msg{display:none;}
+/* eyebrow / headline / sub — reused only by the mobile banner below the form */
+.auth-eyebrow{font-size:11px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:#66E0CF; margin:0 0 12px;}
+.auth-brand-headline{
+  font-family:var(--font-display); font-weight:700; font-size:24px; line-height:1.1;
+  letter-spacing:-0.02em; color:#FFFFFF; margin:0 0 10px; text-wrap:balance;
+}
+.auth-brand-sub{font-size:13px; line-height:1.6; color:rgba(241,246,249,0.82); margin:0;}
+
+/* Mobile — authentication first; artwork swapped for a compact text banner */
+@media (max-width:860px){
+  .gate.auth-layout{grid-template-columns:1fr; align-content:start;}
+  .auth-layout .auth-pane{order:1; padding:32px 22px 26px; align-items:flex-start;}
+  .auth-brand{
+    order:2; padding:24px 24px 28px;
+    background:
+      radial-gradient(560px 300px at 100% 0%, rgba(3,201,177,0.22), transparent 60%),
+      linear-gradient(158deg,#022A4B 4%, #011D35 88%);
+  }
+  .auth-brand-img{display:none;}
+  .auth-brand-msg{display:block;}
 }
 </style>
 
@@ -470,8 +672,8 @@ textarea{resize:vertical; font-family:var(--font-mono); line-height:1.55; font-s
     <div class="brand">
       <div class="brand-mark" role="img" aria-label="Synottic"></div>
       <div>
-        <div class="brand-name">Synottic Prompt Library</div>
-        <div class="brand-sub" id="brand-sub">3,367 prompts</div>
+        <div class="brand-name">Synottic Prompt Intelligence</div>
+        <div class="brand-sub" id="brand-sub">Prompt Intelligence</div>
       </div>
     </div>
     <div class="learner-box" id="learner-box"></div>
@@ -487,9 +689,9 @@ textarea{resize:vertical; font-family:var(--font-mono); line-height:1.55; font-s
       <div class="topbar-title" id="topbar-title">Home</div>
       <div class="topbar-search" id="topbar-search-wrap"></div>
       <div class="topbar-actions">
-        <button class="btn btn-primary btn-sm" onclick="openAddPrompt()">
+        <button class="btn btn-primary btn-sm" onclick="navigate('builder')" title="Create a new prompt">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-          Add Prompt
+          Create Prompt
         </button>
       </div>
     </header>

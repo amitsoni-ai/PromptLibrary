@@ -276,7 +276,7 @@ async function downloadBlob(blob, filename) {
 function exportPromptsXlsx(list, baseName, summary) {
   const { headers, rows } = promptsToRows(list);
   const meta = [
-    ["Synottic Prompt Library — export"],
+    ["Synottic Prompt Intelligence — export"],
     ["Selection", summary || ""],
     ["Prompts", list.length],
     ["Generated", new Date().toISOString()],
@@ -579,7 +579,7 @@ function renderAdminCodes(body) {
 
   body.querySelector("#admin-new").addEventListener("click", () => { ADMIN_STATE.editing = newCodeDraft(); ADMIN_STATE.tab = "edit"; renderAdminConsole(); });
   body.querySelector("#admin-copyall").addEventListener("click", async () => {
-    const lines = ["Synottic Prompt Library — access codes", "", "Admin console: " + AdminStore.key(), ""];
+    const lines = ["Synottic Prompt Intelligence — access codes", "", "Admin console: " + AdminStore.key(), ""];
     rows.forEach((r) => {
       lines.push(r.code + "  —  " + (r.orgName || "") +
         (r.programs && r.programs.length ? "  (" + r.programs.slice(0, 3).join(", ") + (r.programs.length > 3 ? ", +" + (r.programs.length - 3) : "") + ")" : "") +

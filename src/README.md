@@ -8,9 +8,27 @@ python3 build.py
 
 - `part_head.html` — `<title>`, `<style>`, gate + app markup
 - `part_orgmodel.json` — organizations / programs / cohorts / learners / access codes
-- `part_app_1..5.js` — the application (utils+store+search+metadata / org-model+cards+filters /
-  gate+home+search+categories+program+learn+practice / favorites+mylibrary+governance+builder+detail /
-  modals+shell+init)
+- `part_auth.js` — learner-account layer: the `AuthAPI` bridge to `/api/auth/*`,
+  the account screens (sign-in / 2-step sign-up / verify / forgot / reset /
+  `/admin/login`), the in-app status banner, and `featureAllowed()` /
+  `blockIfLocked()` feature gating. Loaded right after `part_backend.js` (before
+  `part_app_3`, which delegates the gate to it when `/api` is present). No-ops on
+  a static host. See `../AUTH.md`.
+- `part_app_1..5.js` — the application (utils+store+search+metadata / org-model+simplified-cards+filters /
+  gate+home+library-landing+categories+program+learn+practice / me(saved/recent/progress)+governance+builder+action-first-detail /
+  modals+shell+5-item-nav+init)
+- `part_framework.js` — the data-driven Prompt Framework: the `FRAMEWORKS` object
+  (levels → component keys → explanations/examples/detectors/builder), the
+  detection engine that powers AI feedback + the "my prompt vs model" compare +
+  the automatic mapping of every library prompt to a framework level, the
+  Framework detail view, and the Practice/Builder/Progress helpers. Loaded after
+  the admin module, before `part_app_5.js` (it only *defines* things). Hooks in
+  the other parts are all guarded with `typeof … === "function"`.
+
+Primary nav is exactly five: Home · Library · Learn · Practice · Me. Categories and
+Create Prompt live inside Library; My Program lives inside Learn; Saved / Recently used /
+Progress live inside Me (one "Saved" concept = favourites + created/improved). Governance
+and the Admin console are superadmin-only and never in the learner sidebar.
 - `data_blocks.html` — the three read-only `<script type="application/json">` data blocks
   (3,367 prompts, categories, stats) imported from `Prompt_Library_Catalog.xlsx`. Regenerate only
   if the Excel source changes.

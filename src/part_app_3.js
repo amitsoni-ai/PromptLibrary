@@ -1,12 +1,26 @@
 /* ---------- Access gate ---------- */
-function renderGate(prefillMsg) {
+function renderGate(prefillMsg, opts) {
+  // With the /api backend present, the account experience (part_auth.js) is the
+  // primary gate; this classic access-code card is the "Access code" tab and
+  // the static-host fallback. `opts.classic` forces this card.
+  if (!(opts && opts.classic) && typeof renderAuthGate === "function"
+      && typeof Backend !== "undefined" && Backend.isConfigured()) {
+    return renderAuthGate(prefillMsg);
+  }
   const root = document.getElementById("gate-root");
+  const tabs = (typeof authTabs === "function" && typeof Backend !== "undefined" && Backend.isConfigured())
+    ? authTabs("code") : "";
+  const aside = (typeof authBrandAside === "function") ? authBrandAside() : "";
   root.innerHTML = `
-  <div class="gate">
-    <div class="gate-card">
-      <div class="gate-mark" role="img" aria-label="Synottic"></div>
-      <h1>Synottic Prompt Library</h1>
+  <div class="gate auth-layout">
+    <div class="auth-pane"><div class="gate-card auth-card">
+      <div class="auth-brandline">
+        <div class="gate-mark" role="img" aria-label="Synottic"></div>
+        <span class="auth-product">Synottic Prompt Intelligence</span>
+      </div>
+      <h1>${tabs ? "Use an access code" : "Synottic Prompt Intelligence"}</h1>
       <p class="sub">Enter the access code from your program to open the library assigned to your cohort.</p>
+      ${tabs}
       <label for="gate-code">Access code</label>
       <input id="gate-code" type="text" autocomplete="off" spellcheck="false" placeholder="e.g. SYNOTTIC-AI-01" />
       <div id="gate-resolved"></div>
@@ -14,19 +28,12 @@ function renderGate(prefillMsg) {
         <label for="gate-name" style="margin-top:14px;">Your name <span style="font-weight:400;color:var(--text-faint)">(optional — for your saved work)</span></label>
         <input id="gate-name" class="name-input" type="text" autocomplete="name" placeholder="First Last" />
       </div>
-      <div class="gate-error" id="gate-error"></div>
+      <div class="gate-error" id="gate-error" role="alert" aria-live="polite"></div>
       <button class="btn btn-primary" id="gate-enter" disabled>Enter library</button>
-      <div class="gate-hint">
-        Try <code data-fill="SYNOTTIC-ALL">SYNOTTIC-ALL</code> (everything) ·
-        <code data-fill="SYNOTTIC-SALES">SYNOTTIC-SALES</code> (scoped course) ·
-        <code data-fill="SYNOTTIC-SUPERADMIN">SYNOTTIC-SUPERADMIN</code> ·
-        <code data-fill="DEMO-2026">DEMO-2026</code>
-      </div>
-      <div class="gate-hint" style="border:0;padding-top:6px;margin-top:0;">
-        <button class="gate-admin-link" id="gate-admin">Admin console →</button>
-      </div>
-    </div>
+    </div></div>
+    ${aside}
   </div>`;
+  if (tabs && typeof authNav === "function") authNav(root);
   const codeI = root.querySelector("#gate-code");
   const nameWrap = root.querySelector("#gate-name-wrap");
   const nameI = root.querySelector("#gate-name");
@@ -113,7 +120,6 @@ function renderGate(prefillMsg) {
   }
   const checkBackendDebounced = debounce(checkBackend, 260);
   codeI.addEventListener("input", () => { check(); checkBackendDebounced(); });
-  root.querySelectorAll("[data-fill]").forEach((c) => c.addEventListener("click", () => { codeI.value = c.dataset.fill; check(); checkBackend(); codeI.focus(); }));
 
   async function enter() {
     const val = codeI.value.trim();
@@ -168,14 +174,16 @@ function renderGate(prefillMsg) {
   enterBtn.addEventListener("click", enter);
   codeI.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); enter(); } });
   nameI.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); enter(); } });
-  const adminLink = root.querySelector("#gate-admin");
-  if (adminLink) adminLink.addEventListener("click", () => renderAdminGate());
   codeI.focus();
   if (prefillMsg) errEl.textContent = prefillMsg;
 }
 function signOut() {
-  Store.clearSession();
-  location.reload();
+  const s = Store.getSession && Store.getSession();
+  const done = () => { Store.clearSession();
+    try { sessionStorage.removeItem("prompt-lib:vbanner-dismissed"); } catch (e) {}
+    location.assign("/"); };
+  if (s && s.user && typeof AuthAPI !== "undefined") { AuthAPI.logout().then(done, done); }
+  else done();
 }
 
 /* ---------- Home ---------- */
@@ -220,6 +228,26 @@ function recommendedForYou(limit) {
   scored.sort((a, b) => b[0] - a[0]);
   return scored.slice(0, limit).map((x) => x[1]);
 }
+/* What the learner should pick back up — most recently opened module, else
+   their next unreviewed Learn principle, else a first-run nudge. */
+function continueLearning() {
+  const prog = Store.getProgress();
+  const sc = currentScope();
+  const progs = (sc && sc.programs && sc.programs.length) ? sc.programs : (sc && sc.program ? [sc.program] : []);
+  const touched = Object.entries(prog.modulesTouched || {}).sort((a, b) => b[1] - a[1]);
+  for (const [mid] of touched) {
+    for (const p of progs) {
+      const m = (p.modules || []).find((x) => x.id === mid);
+      if (m) return { kind: "module", title: m.name, sub: "Resume in " + p.name, nav: "program", programId: p.id };
+    }
+  }
+  if (typeof LESSONS !== "undefined") {
+    const next = LESSONS.find((L) => !prog.learnedLessons || !prog.learnedLessons[L.key]);
+    if (next) return { kind: "lesson", title: next.principle, sub: Object.keys(prog.learnedLessons || {}).length ? "Next principle in Learn" : "Start with the fundamentals", nav: "learn" };
+  }
+  if (progs.length) return { kind: "module", title: progs[0].name, sub: "Open your program", nav: "program", programId: progs[0].id };
+  return { kind: "lesson", title: "How good prompts are built", sub: "5 short principles", nav: "learn" };
+}
 function renderHome(container) {
   const q = STATE.query.trim();
   const s = Store.getSession();
@@ -230,7 +258,7 @@ function renderHome(container) {
     <h1>What do you want to accomplish?</h1>
     <div class="search-hero">
       ${icon("search", "icon-search")}
-      <input type="text" id="hero-search" placeholder="Search by goal, task, role, problem, outcome, or keyword…" value="${escapeHtml(STATE.query)}" autocomplete="off"/>
+      <input type="text" id="hero-search" placeholder="Describe your task in your own words — e.g. write a launch email to unhappy customers" value="${escapeHtml(STATE.query)}" autocomplete="off"/>
       ${q ? `<button class="icon-clear" id="hero-clear" aria-label="Clear search">${icon("x")}</button>` : ""}
     </div>
     ${!q ? `<div class="search-examples">${SEARCH_EXAMPLES.map((x) => `<button class="search-example-chip" data-example="${escapeHtml(x)}">${escapeHtml(x)}</button>`).join("")}</div>` : ""}
@@ -242,39 +270,41 @@ function renderHome(container) {
     renderResultsInto(container.querySelector("#home-results"), { compactFilters: true });
     wireHomeStatic(container);
   } else {
-    const potd = promptOfTheDay();
-    const recs = recommendedForYou(6);
+    const recs = recommendedForYou(4);
     const recent = Store.getUsage().recent.map((r) => findPromptById(r.id)).filter(Boolean).slice(0, 5);
+    const saved = Array.from(Store.getFavorites()).map(findPromptById).filter(Boolean).slice(0, 5);
+    const cont = continueLearning();
     html += `
-    <div class="quick-actions">
-      <button class="quick-action" data-nav="search">${icon("search")}<span class="quick-action-label">Prompt Library</span></button>
-      <button class="quick-action" data-nav="program">${icon("path")}<span class="quick-action-label">My Program</span></button>
-      <button class="quick-action" data-nav="learn">${icon("book")}<span class="quick-action-label">Learn</span></button>
-      <button class="quick-action" data-nav="practice">${icon("target")}<span class="quick-action-label">Practice</span></button>
-      <button class="quick-action" data-nav="myLibrary">${icon("folder")}<span class="quick-action-label">My Library</span></button>
-      <button class="quick-action" data-nav="favorites">${icon("star")}<span class="quick-action-label">Favorites</span></button>
+    <div class="continue-card" data-cont="1" role="button" tabindex="0">
+      <div class="cc-ico">${icon(cont.kind === "module" ? "path" : "book")}</div>
+      <div>
+        <h3>Continue: ${escapeHtml(cont.title)}</h3>
+        <p>${escapeHtml(cont.sub)}</p>
+      </div>
+      <span class="cc-go">${icon("chevronRight")}</span>
     </div>
 
-    ${potd ? `<div class="potd" data-id="${potd.id}" role="button" tabindex="0">
-      <div>
-        <div class="potd-badge">Prompt of the day</div>
-        <h3>${escapeHtml(potd.title)}</h3>
-        <p>${escapeHtml(potd.description)}</p>
-        <div style="margin-top:8px;">${renderDifficulty(potd.difficulty)} &nbsp; ${renderQualityPill(potd.qualityScore)}</div>
+    <div class="home-block">
+      <div class="section-title"><h2>Recommended for you</h2><button class="linklike" data-nav="${scopeProgramIds().length ? "program" : "search"}">Browse the library</button></div>
+      ${recs.length ? `<div class="rec-grid" id="rec-grid">${recs.map((r) => promptCardHtml(r)).join("")}</div>`
+        : `<div class="empty-mini">Save and use a few prompts and this list will sharpen. For now, browse the library or open your program.</div>`}
+    </div>
+
+    <div class="home-cols">
+      <div class="home-block">
+        <div class="section-title"><h2>Recently used</h2>${recent.length ? `<button class="linklike" data-nav="me">See all</button>` : ""}</div>
+        <div class="mini-list">
+          ${recent.length ? recent.map((r) => `<div class="mini-item" data-id="${r.id}" role="button" tabindex="0"><span class="mini-item-title">${escapeHtml(r.title)}</span><span class="chip">${escapeHtml(r.category)}</span></div>`).join("")
+            : `<div class="empty-mini">Prompts you open, copy, or use show up here.</div>`}
+        </div>
       </div>
-    </div>` : ""}
-
-    <div class="section-title"><h2>Recommended for you</h2><button class="linklike" data-nav="${scopeProgramIds().length ? "program" : "search"}">See more</button></div>
-    ${recs.length ? `<div class="rec-grid" id="rec-grid">${recs.map((r) => promptCardHtml(r)).join("")}</div>`
-      : `<div class="empty-mini">As you favorite and use prompts, recommendations will sharpen. For now, start from your program or a search.</div>`}
-
-    <div class="section-title"><h2>Explore by goal</h2></div>
-    <div class="goal-grid">${GOALS.map((g) => `<button class="goal-chip" data-goal="${escapeHtml(g.label)}">${escapeHtml(g.label)}</button>`).join("")}</div>
-
-    <div class="section-title"><h2>Recently used</h2>${recent.length ? `<button class="linklike" data-nav="favorites">See all</button>` : ""}</div>
-    <div class="mini-list" style="margin-bottom:24px;">
-      ${recent.length ? recent.map((r) => `<div class="mini-item" data-id="${r.id}" role="button" tabindex="0">${renderQualityPill(r.qualityScore)}<span class="mini-item-title">${escapeHtml(r.title)}</span></div>`).join("")
-        : `<div class="empty-mini">Prompts you open, copy, or test show up here.</div>`}
+      <div class="home-block">
+        <div class="section-title"><h2>Saved</h2>${saved.length ? `<button class="linklike" data-nav="me">See all</button>` : ""}</div>
+        <div class="mini-list">
+          ${saved.length ? saved.map((r) => `<div class="mini-item" data-id="${r.id}" role="button" tabindex="0"><span class="mini-item-title">${escapeHtml(r.title)}</span><span class="chip">${escapeHtml(r.category)}</span></div>`).join("")
+            : `<div class="empty-mini">Tap the star on any prompt to keep it here.</div>`}
+        </div>
+      </div>
     </div>`;
     container.innerHTML = html;
     wireHomeStatic(container);
@@ -299,8 +329,15 @@ function wireHomeStatic(container) {
     STATE.query = g.query || "";
     navigate("search");
   }));
+  const contEl = container.querySelector("[data-cont]");
+  if (contEl) {
+    const go = () => { const c = continueLearning(); if (c.programId) STATE.activeProgramId = c.programId; navigate(c.nav); };
+    contEl.addEventListener("click", go);
+    contEl.addEventListener("keydown", (e) => { if (e.key === "Enter") go(); });
+  }
   container.querySelectorAll("[data-nav]").forEach((el) => el.addEventListener("click", () => navigate(el.dataset.nav)));
   container.querySelectorAll(".mini-item, .potd").forEach((el) => {
+    if (!el.dataset.id) return;
     el.addEventListener("click", () => openDetail(el.dataset.id));
     el.addEventListener("keydown", (e) => { if (e.key === "Enter") openDetail(el.dataset.id); });
   });
@@ -318,8 +355,51 @@ function renderResultsInto(el, opts) {
   renderPaginatedList(el.querySelector("#results-list-target"), results, {});
 }
 function renderSearchView(container) {
-  container.innerHTML = `<div id="search-results"></div>`;
-  renderResultsInto(container.querySelector("#search-results"), {});
+  const q = STATE.query.trim();
+  const hasFilters = activeFilterEntries(STATE.filters).length > 0;
+  const catsHidden = !isViewAllowed("categories");
+  const active = q || hasFilters;
+  const lib = scopedLibrary();
+  container.innerHTML = `
+    <div class="lib-landing" ${active ? 'style="margin:0 0 14px;max-width:none;"' : ""}>
+      ${active ? "" : `<h1>Find a prompt for what you're doing</h1>`}
+      <div class="search-hero">
+        ${icon("search", "icon-search")}
+        <input type="text" id="lib-search" placeholder="Search by goal, task, role or keyword…" autocomplete="off" value="${escapeHtml(STATE.query)}"/>
+        ${q ? `<button class="icon-clear" id="lib-clear" aria-label="Clear search">${icon("x")}</button>` : ""}
+      </div>
+      ${active ? "" : `<div class="lib-quicklinks">
+        ${catsHidden ? "" : `<button class="btn btn-sm" data-nav="categories">${icon("grid")} Browse categories</button>`}
+        <button class="btn btn-sm" data-nav="builder">${icon("build")} Create a prompt</button>
+        <button class="btn btn-sm" data-nav="me">${icon("star")} Saved</button>
+        <button class="btn btn-sm" id="lib-ask">${icon("message")} Describe your situation</button>
+      </div>`}
+    </div>
+    <div id="search-results"></div>`;
+  const resultsEl = container.querySelector("#search-results");
+  if (active) {
+    renderResultsInto(resultsEl, {});
+  } else {
+    const top = lib.slice().sort((a, b) => b.qualityScore - a.qualityScore).slice(0, 8);
+    resultsEl.innerHTML = `
+      <div class="section-title" style="margin-top:22px;"><h2>Strong prompts to start from</h2>
+        <span style="font-size:12px;color:var(--text-faint)">${lib.length.toLocaleString()} prompts available to you</span></div>
+      <div class="rec-grid" id="lib-top"></div>`;
+    const listEl = resultsEl.querySelector("#lib-top");
+    listEl.innerHTML = top.map((r) => promptCardHtml(r)).join("");
+    wireCardActions(listEl);
+  }
+  container.querySelectorAll("[data-nav]").forEach((el) => el.addEventListener("click", () => navigate(el.dataset.nav)));
+  const askBtn = container.querySelector("#lib-ask");
+  if (askBtn) askBtn.addEventListener("click", () => openAskLibrary());
+  const si = container.querySelector("#lib-search");
+  if (si) {
+    si.focus();
+    si.setSelectionRange(si.value.length, si.value.length);
+    si.addEventListener("input", debounce((e) => { STATE.query = e.target.value; renderContent(); }, 160));
+  }
+  const clr = container.querySelector("#lib-clear");
+  if (clr) clr.addEventListener("click", () => { STATE.query = ""; renderContent(); });
 }
 
 /* ---------- Categories ---------- */
@@ -373,7 +453,7 @@ function renderProgramView(container) {
   const sc = currentScope();
   const progs = (sc && sc.programs && sc.programs.length) ? sc.programs : (sc && sc.program ? [sc.program] : []);
   if (!progs.length) {
-    container.innerHTML = emptyStateHtml("path", "No program assigned", "Your access code isn't linked to a program — browse everything from Prompt Library.");
+    container.innerHTML = emptyStateHtml("path", "No program assigned", "Your access code isn't linked to a program — browse everything in the Library.");
     return;
   }
   let prog = progs.length === 1 ? progs[0] : (STATE.activeProgramId ? progs.find((p) => p.id === STATE.activeProgramId) : null);
@@ -413,7 +493,7 @@ function renderProgramView(container) {
         <div><div class="potd-badge" style="color:var(--good-blue);">Course companion prompt</div>
         <h3>${escapeHtml(fp.title.replace(" — Course Companion Prompt", ""))}</h3>
         <p>${escapeHtml(fp.description)}</p>
-        <div style="margin-top:8px;">${renderDifficulty(fp.difficulty)} &nbsp; ${renderQualityPill(fp.qualityScore)} &nbsp; <span class="chip chip-blue">${escapeHtml(fp.source)}</span></div></div>
+        <div style="margin-top:8px;">${renderDifficulty(fp.difficulty)} &nbsp; <span class="chip chip-blue">${escapeHtml(fp.source)}</span></div></div>
       </div>`;
     })() : ""}
     <div class="section-title"><h2>Modules</h2><span style="font-size:12px;color:var(--text-faint)">Prompts recommended for this program</span></div>
@@ -483,14 +563,36 @@ function renderLearnView(container) {
   const lib = scopedLibrary();
   const progress = Store.getProgress();
   const done = Object.keys(progress.learnedLessons).length;
+  const sc = currentScope();
+  const progs = (sc && sc.programs && sc.programs.length) ? sc.programs : (sc && sc.program ? [sc.program] : []);
+  let programHtml = "";
+  if (progs.length) {
+    programHtml = `<div class="section-title"><h2>Your program</h2><button class="linklike" data-nav="program">Open</button></div>` +
+      progs.map((p) => {
+        const mods = p.modules || [];
+        const touched = mods.filter((m) => progress.modulesTouched[m.id]).length;
+        const pct = mods.length ? Math.round((touched / mods.length) * 100) : 0;
+        return `<div class="continue-card" data-nav="program" role="button" tabindex="0" style="background:linear-gradient(150deg,var(--good-blue-soft),var(--surface) 72%);">
+          <div class="cc-ico">${icon("path")}</div>
+          <div style="flex:1;">
+            <h3>${escapeHtml(p.name)}</h3>
+            <p>${touched} of ${mods.length} modules opened${pct ? " · " + pct + "%" : ""}</p>
+            <div class="progress-track" style="margin-top:8px;max-width:320px;"><i style="width:${pct}%"></i></div>
+          </div>
+          <span class="cc-go">${icon("chevronRight")}</span>
+        </div>`;
+      }).join("") + `<div style="height:14px;"></div>`;
+  }
   container.innerHTML = `
-    <div class="section-title"><h2>Learn</h2><span style="font-size:12px;color:var(--text-faint)">${done} of ${LESSONS.length} principles reviewed</span></div>
-    <p class="prose" style="max-width:640px;margin-bottom:20px;color:var(--text-muted);">Five things separate a prompt that works from one that doesn't. Each principle below is shown with real prompts from the library that demonstrate it well. Open any prompt to read its full <b>Why it works</b> breakdown, then try writing your own in <b>Practice</b>.</p>
+    ${typeof frameworkLearnModuleHtml === "function" ? frameworkLearnModuleHtml() : ""}
+    ${programHtml}
+    <div class="section-title"><h2>How good prompts are built</h2><span style="font-size:12px;color:var(--text-faint)">${done} of ${LESSONS.length} reviewed</span></div>
+    <p class="prose" style="max-width:640px;margin-bottom:20px;color:var(--text-muted);">Five things separate a prompt that works from one that doesn't. Each principle is shown with real prompts from the library that demonstrate it. Open any prompt to read its full <b>Why it works</b> breakdown, then try writing your own in <b>Practice</b>.</p>
     <div id="lesson-list"></div>
     <div class="section-title" style="margin-top:10px;"><h2>Keep going</h2></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
       <button class="btn" data-nav="practice">${icon("target")} Practice writing prompts</button>
-      <button class="btn" data-nav="builder">${icon("build")} Open the Prompt Builder</button>
+      <button class="btn" data-nav="builder">${icon("build")} Create a prompt</button>
     </div>`;
   const list = container.querySelector("#lesson-list");
   const usedIds = new Set();
@@ -507,7 +609,7 @@ function renderLearnView(container) {
       <div class="lesson-text">${escapeHtml(L.text)}</div>
       <div class="related-grid">
         ${examples.map((r) => `<div class="mini-item" data-id="${r.id}" role="button" tabindex="0" style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;">
-          ${renderQualityPill(r.qualityScore)}<span class="mini-item-title">${escapeHtml(r.title)}</span><span class="chip">${escapeHtml(r.category)}</span></div>`).join("")}
+          <span class="mini-item-title">${escapeHtml(r.title)}</span><span class="chip">${escapeHtml(r.category)}</span></div>`).join("")}
       </div>
       <button class="btn btn-sm ${progress.learnedLessons[L.key] ? "" : "btn-primary"}" data-lesson="${L.key}" style="margin-top:12px;">${progress.learnedLessons[L.key] ? icon("check") + " Reviewed" : "Mark as reviewed"}</button>
     </div>`;
@@ -515,6 +617,7 @@ function renderLearnView(container) {
   list.querySelectorAll("[data-id]").forEach((el) => el.addEventListener("click", () => openDetail(el.dataset.id)));
   list.querySelectorAll("[data-lesson]").forEach((b) => b.addEventListener("click", () => { Store.markLessonLearned(b.dataset.lesson); renderLearnView(container); }));
   container.querySelectorAll("[data-nav]").forEach((el) => el.addEventListener("click", () => navigate(el.dataset.nav)));
+  if (typeof wireFrameworkLearnModule === "function") wireFrameworkLearnModule(container);
 }
 
 /* ---------- Practice ---------- */
@@ -558,33 +661,48 @@ function modelAnswerFor(sc) {
   ].join("\n");
 }
 function renderPracticeView(container) {
-  if (!STATE.practice) STATE.practice = { scenarioId: SCENARIOS[0].id, draft: "", result: null, showModel: false };
+  if (!STATE.practice) STATE.practice = { scenarioId: SCENARIOS[0].id, draft: "", result: null, showModel: false, level: 0, compare: false };
   const P = STATE.practice;
-  const sc = SCENARIOS.find((s) => s.id === P.scenarioId) || SCENARIOS[0];
+  if (P.level == null) P.level = 0;
+  const fwOn = P.level > 0 && typeof FRAMEWORK !== "undefined";
+  const scenarios = fwOn ? fwScenarios() : SCENARIOS;
+  let sc = scenarios.find((s) => s.id === P.scenarioId);
+  if (!sc) { sc = scenarios[0]; P.scenarioId = sc.id; }
+  const scGoal = sc.goal || sc.task || "";
   const history = Store.getProgress().practice;
+  const levelBtns = typeof FRAMEWORK !== "undefined" ? `
+    <div class="fw-selector">
+      <button class="${P.level === 0 ? "active" : ""}" data-pr-level="0">Open rubric</button>
+      ${FRAMEWORK.levels.map((L) => `<button class="${P.level === L.level ? "active" : ""}" data-pr-level="${L.level}">Level ${L.level} · ${escapeHtml(L.code)}</button>`).join("")}
+    </div>` : "";
   container.innerHTML = `
     <div class="section-title"><h2>Practice</h2><span style="font-size:12px;color:var(--text-faint)">${history.length} attempt${history.length === 1 ? "" : "s"} logged</span></div>
+    <p class="prose" style="max-width:640px;color:var(--text-muted);margin-bottom:10px;">Pick a framework to practise against — your prompt is scored on that level's components — or use the open rubric.</p>
+    ${levelBtns}
+    ${fwOn ? `<div class="prose" style="font-size:12.5px;color:var(--text-muted);margin:-4px 0 12px;">Scoring against <b>Level ${P.level} · ${escapeHtml(fwLevel(P.level).code)}</b> — ${escapeHtml(fwLevel(P.level).useWhen)} <button class="linklike" data-fw-open="${P.level}" style="background:none;border:none;color:var(--accent-strong);font-weight:600;">Review the framework</button></div>` : ""}
     <div class="form-field" style="max-width:420px;">
       <label>Scenario</label>
-      <select id="pr-scenario">${SCENARIOS.map((s) => `<option value="${s.id}" ${s.id === P.scenarioId ? "selected" : ""}>${escapeHtml(s.title)}</option>`).join("")}</select>
+      <select id="pr-scenario">${scenarios.map((s) => `<option value="${s.id}" ${s.id === P.scenarioId ? "selected" : ""}>${escapeHtml(s.title)}</option>`).join("")}</select>
     </div>
     <div class="scenario-card">
       <div class="sc-role">${escapeHtml(sc.role)}</div>
       <h3>${escapeHtml(sc.title)}</h3>
       <p><b>Situation.</b> ${escapeHtml(sc.situation)}</p>
-      <p style="margin-top:6px;"><b>Your job.</b> Write the prompt you'd give an AI assistant. ${escapeHtml(sc.goal)}</p>
+      <p style="margin-top:6px;"><b>Your task.</b> ${escapeHtml(scGoal)}${fwOn ? ` Write it using <b>Level ${P.level} (${escapeHtml(fwLevel(P.level).code)})</b>.` : " Write the prompt you'd give an AI assistant."}</p>
     </div>
     <div class="form-field">
       <label>Your prompt</label>
-      <textarea id="pr-draft" rows="7" placeholder="Write your prompt here…">${escapeHtml(P.draft)}</textarea>
+      <textarea id="pr-draft" rows="8" placeholder="Write your prompt here…">${escapeHtml(P.draft)}</textarea>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
       <button class="btn btn-primary" id="pr-feedback">${icon("check")} Get feedback</button>
-      <button class="btn" id="pr-model">${P.showModel ? "Hide" : "Show"} a model answer</button>
+      <button class="btn" id="pr-model">${P.showModel ? "Hide" : "Show"} ${fwOn ? "model prompt" : "a model answer"}</button>
+      ${fwOn ? `<button class="btn" id="pr-compare">${P.compare ? "Hide" : "Show"} My prompt vs model</button>` : ""}
       <button class="btn btn-ghost" id="pr-reset">Clear</button>
     </div>
     <div id="pr-result" style="margin-top:18px;"></div>
-    ${P.showModel ? `<div class="detail-section" style="margin-top:16px;"><div class="block-header"><span class="label">One way to write it</span><button class="btn btn-sm" id="pr-copy-model">${icon("copy")} Copy</button></div><div class="prompt-block">${escapeHtml(modelAnswerFor(sc))}</div></div>` : ""}
+    <div id="pr-model-box" style="margin-top:16px;"></div>
+    <div id="pr-compare-box"></div>
     ${history.length ? `<div class="section-title" style="margin-top:24px;"><h2>Your recent attempts</h2></div>
       <div class="results-list">${history.slice(0, 6).map((h) => `<div class="mini-item" style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 12px;">
         <span class="quality-pill ${qualityClass(h.overall)}"><span class="quality-bar"><i style="width:${h.overall}%"></i></span>${h.overall}</span>
@@ -592,23 +710,62 @@ function renderPracticeView(container) {
         <span style="color:var(--text-faint);font-size:11px;flex:none;">${timeAgo(h.ts)}</span></div>`).join("")}</div>` : ""}`;
 
   const draftEl = container.querySelector("#pr-draft");
+  container.querySelectorAll("[data-pr-level]").forEach((b) => b.addEventListener("click", () => {
+    P.level = parseInt(b.dataset.prLevel, 10); P.result = null; P.scenarioId = null;
+    renderPracticeView(container); window.scrollTo({ top: 0 });
+  }));
+  container.querySelectorAll("[data-fw-open]").forEach((b) => b.addEventListener("click", () => { STATE.frameworkLevel = parseInt(b.dataset.fwOpen, 10); navigate("framework"); }));
   container.querySelector("#pr-scenario").addEventListener("change", (e) => { P.scenarioId = e.target.value; P.result = null; renderPracticeView(container); });
   draftEl.addEventListener("input", () => { P.draft = draftEl.value; });
   container.querySelector("#pr-model").addEventListener("click", () => { P.showModel = !P.showModel; renderPracticeView(container); });
+  const cmpBtn = container.querySelector("#pr-compare");
+  if (cmpBtn) cmpBtn.addEventListener("click", () => { P.compare = !P.compare; renderPracticeView(container); });
   container.querySelector("#pr-reset").addEventListener("click", () => { P.draft = ""; P.result = null; renderPracticeView(container); });
-  const copyModel = container.querySelector("#pr-copy-model");
-  if (copyModel) copyModel.addEventListener("click", async () => { const ok = await copyText(modelAnswerFor(sc)); showToast(ok ? "Copied" : "Couldn't copy"); });
+
+  function paintModel() {
+    const box = container.querySelector("#pr-model-box");
+    if (!P.showModel) { box.innerHTML = ""; return; }
+    const modelText = fwOn ? frameworkModelAnswer(sc, P.level) : modelAnswerFor(sc);
+    box.innerHTML = `<div class="detail-section"><div class="block-header"><span class="label">${fwOn ? "Model prompt · Level " + P.level : "One way to write it"}</span><button class="btn btn-sm" id="pr-copy-model">${icon("copy")} Copy</button></div><div class="prompt-block">${escapeHtml(modelText)}</div></div>`;
+    box.querySelector("#pr-copy-model").addEventListener("click", async () => { const ok = await copyText(modelText); showToast(ok ? "Copied" : "Couldn't copy"); });
+  }
+  function paintCompare() {
+    const box = container.querySelector("#pr-compare-box");
+    if (!fwOn || !P.compare) { box.innerHTML = ""; return; }
+    box.innerHTML = frameworkCompareHtml(P.draft.trim(), sc, P.level);
+    const cm = box.querySelector("#fw-copy-model");
+    if (cm) cm.addEventListener("click", async () => { const ok = await copyText(frameworkModelAnswer(sc, P.level)); showToast(ok ? "Copied model" : "Couldn't copy"); });
+  }
+  function paintResult() {
+    const box = container.querySelector("#pr-result");
+    if (!P.result) { box.innerHTML = ""; return; }
+    if (P.result.fw) {
+      box.innerHTML = practiceFrameworkFeedbackHtml(P.result.ev);
+      const cp = box.querySelector("#fw-copy-improved");
+      if (cp) cp.addEventListener("click", async () => { const ok = await copyText(P.result.ev.improved); showToast(ok ? "Copied improved prompt" : "Couldn't copy"); });
+    } else {
+      box.innerHTML = practiceFeedbackHtml(P.result);
+    }
+  }
   container.querySelector("#pr-feedback").addEventListener("click", () => {
     const text = draftEl.value.trim();
     if (text.length < 15) { showToast("Write a bit more first"); return; }
-    const r = rubricScore(text);
-    P.result = r;
-    Store.addPracticeAttempt({ ts: Date.now(), scenarioId: sc.id, scenarioTitle: sc.title, overall: r.overall, axes: r.axes });
-    const box = container.querySelector("#pr-result");
-    box.innerHTML = practiceFeedbackHtml(r);
+    if (fwOn) {
+      const ev = evaluateFramework(text, P.level);
+      P.result = { fw: true, ev };
+      Store.addFrameworkAttempt({ ts: Date.now(), level: P.level, scenarioId: sc.id, scenarioTitle: sc.title, score: ev.score });
+      Store.addPracticeAttempt({ ts: Date.now(), scenarioId: sc.id, scenarioTitle: sc.title + " · L" + P.level, overall: ev.score, axes: ev.axes });
+    } else {
+      P.result = rubricScore(text);
+      Store.addPracticeAttempt({ ts: Date.now(), scenarioId: sc.id, scenarioTitle: sc.title, overall: P.result.overall, axes: P.result.axes });
+    }
+    paintResult();
+    if (fwOn && P.compare) paintCompare();
     renderSidebarFooter();
   });
-  if (P.result) container.querySelector("#pr-result").innerHTML = practiceFeedbackHtml(P.result);
+  paintResult();
+  paintModel();
+  paintCompare();
 }
 function practiceFeedbackHtml(r) {
   const rows = [["goal", "Goal"], ["context", "Context"], ["specificity", "Specificity"], ["constraints", "Constraints"], ["output", "Output"]];

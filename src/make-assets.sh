@@ -23,7 +23,7 @@ h1{font-size:74px;margin:0 0 14px;color:#14181A;letter-spacing:-0.02em;line-heig
 p{font-size:30px;margin:0;color:#5B6660}
 .bar{width:64px;height:6px;background:#F5942B;border-radius:3px;margin:22px 0 0}</style>
 <img src="data:image/png;base64,$B64">
-<div><h1>Synottic<br>Prompt Library</h1><p>Learn &middot; Find &middot; Practice &middot; Customize &middot; Improve</p><div class="bar"></div></div>
+<div><h1>Synottic<br>Prompt Intelligence</h1><p>Don&rsquo;t just use AI. Think with it.</p><div class="bar"></div></div>
 EOF
 
 "$CHROME" --headless --disable-gpu --hide-scrollbars --default-background-color=00000000 \

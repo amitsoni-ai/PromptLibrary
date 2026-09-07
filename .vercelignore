@@ -1,6 +1,7 @@
 # build sources and dev-only tooling — not served, not needed at runtime
 src/
 migrate/
+api/dev/
 devserver.mjs
 *.md
 promptlibrary-push-package/

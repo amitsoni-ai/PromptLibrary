@@ -5,10 +5,17 @@
   "description": "Synottic Prompt Library — static frontend (index.html) + Vercel serverless API on Neon Postgres. index.html is prebuilt (src/build.py); Vercel runs no build step.",
   "scripts": {
     "migrate": "node migrate/run.mjs",
+    "migrate:v2": "node migrate/run_v2.mjs",
+    "make:admin": "node migrate/make_admin.mjs",
     "apitest": "node migrate/apitest.mjs",
-    "dev": "node devserver.mjs"
+    "authtest": "node migrate/authtest.mjs",
+    "dev": "node devserver.mjs",
+    "dev:auth": "node migrate/devserver_pglite.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^0.10.4"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8"
   }
 }

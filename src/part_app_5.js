@@ -130,9 +130,9 @@ function openAddPrompt() {
     });
     Store.saveMyPrompt(rec);
     close();
-    showToast("Prompt saved to My Library");
+    showToast("Prompt saved to your prompts");
     renderSidebarFooter();
-    if (STATE.view === "myLibrary") renderContent();
+    if (STATE.view === "me" || STATE.view === "myLibrary") renderContent();
   });
 }
 
@@ -370,38 +370,36 @@ function wireAskResult(box, close) {
   box.querySelectorAll("[data-id]").forEach((el) => el.addEventListener("click", () => { close(); openDetail(el.dataset.id); }));
 }
 
-/* ---------- App shell: state, router, nav, init ---------- */
-const NAV_GROUPS = [
-  { label: "Discover", items: [
-    { key: "home", label: "Home", icon: "home" },
-    { key: "search", label: "Prompt Library", icon: "search", kbd: "/" },
-    { key: "categories", label: "Categories", icon: "grid" },
-    { key: "program", label: "My Program", icon: "path" },
-  ]},
-  { label: "Learn", items: [
-    { key: "learn", label: "Learn", icon: "book" },
-    { key: "practice", label: "Practice", icon: "target" },
-    { key: "builder", label: "Prompt Builder", icon: "build" },
-  ]},
-  { label: "My Library", items: [
-    { key: "myLibrary", label: "My Library", icon: "folder" },
-    { key: "favorites", label: "Favorites", icon: "star" },
-  ]},
-  { label: "Manage", items: [
-    { key: "insights", label: "Library Governance", icon: "chart" },
-  ]},
+/* ---------- App shell: state, router, nav, init ----------
+   Primary navigation is deliberately five destinations. Everything else
+   (Categories, Create Prompt, My Program, Governance) is reached from
+   inside one of these, not from the sidebar. */
+const NAV_PRIMARY = [
+  { key: "home", label: "Home", icon: "home" },
+  { key: "search", label: "Library", icon: "search", kbd: "/" },
+  { key: "learn", label: "Learn", icon: "book" },
+  { key: "practice", label: "Practice", icon: "target" },
+  { key: "me", label: "Me", icon: "folder" },
 ];
 const VIEW_TITLES = {
-  home: "Home", search: "Prompt Library", categories: "Categories", categoryDetail: "Category",
-  program: "My Program", learn: "Learn", practice: "Practice", builder: "Prompt Builder",
-  myLibrary: "My Library", favorites: "Favorites", insights: "Library Governance",
+  home: "Home", search: "Library", categories: "Categories", categoryDetail: "Category",
+  program: "My Program", learn: "Learn", practice: "Practice", builder: "Create Prompt",
+  framework: "Prompt Framework",
+  myLibrary: "Saved", favorites: "Saved", me: "Me", insights: "Library Governance",
+};
+/* Which primary nav item lights up for a given (possibly nested) view. */
+const VIEW_PARENT = {
+  categories: "search", categoryDetail: "search", builder: "search",
+  program: "learn", framework: "learn",
+  myLibrary: "me", favorites: "me", insights: "me",
 };
 let STATE = {
   view: "home", query: "", filters: emptyFilters(), sort: "relevance",
   activeCategory: null, favoritesTab: "favorites", myLibTab: "mine", insightsTab: "overview",
+  meTab: "overview", savedFilter: "all", frameworkLevel: 1,
   detailId: null, detailLayer: "original", builder: null, practice: null, openModules: null, lcStage: "Recommended",
 };
-function emptyFilters() { return { category: null, skill: null, promptType: null, role: null, difficulty: null, aiTool: null, source: null, hasVariables: false, favoritesOnly: false }; }
+function emptyFilters() { return { category: null, skill: null, promptType: null, role: null, difficulty: null, aiTool: null, source: null, fwLevel: null, hasVariables: false, favoritesOnly: false }; }
 
 let ALL_PROMPTS = [], ALL_PROMPTS_BY_ID = {}, CATEGORIES = [], STATS = {};
 function findPromptById(id) {
@@ -415,12 +413,24 @@ const SCOPED_HIDDEN_VIEWS = new Set(["categories", "categoryDetail", "insights"]
 function isViewAllowed(view) {
   return !(isScopeRestricted() && SCOPED_HIDDEN_VIEWS.has(view));
 }
+const VIEW_FEATURE = { practice: "practice", learn: "learning", framework: "learning", program: "my_program" };
 function navigate(view) {
+  // Account-based feature gating (part_auth.js). Verified/entitled users pass
+  // straight through; others get a helpful nudge instead of a broken view.
+  if (typeof featureAllowed === "function" && VIEW_FEATURE[view] && !featureAllowed(VIEW_FEATURE[view])) {
+    if (typeof showToast === "function") showToast(lockMessage(VIEW_FEATURE[view]));
+    view = "home";
+  }
   if (!isViewAllowed(view)) view = "search";
   if (!(SHARED_QUERY_VIEWS.has(view) && SHARED_QUERY_VIEWS.has(STATE.view))) STATE.query = "";
   STATE.view = view;
   renderApp();
   window.scrollTo({ top: 0 });
+}
+function activeNavKey() {
+  const v = STATE.view;
+  if (NAV_PRIMARY.some((n) => n.key === v)) return v;
+  return VIEW_PARENT[v] || null;
 }
 function setQuery(q) {
   STATE.query = q;
@@ -430,21 +440,21 @@ function setQuery(q) {
 function renderNav() {
   const nav = document.getElementById("nav");
   const s = Store.getSession();
-  const groups = NAV_GROUPS
-    .map((g) => ({ label: g.label, items: g.items.filter((it) => isViewAllowed(it.key)) }))
-    .filter((g) => g.items.length);
-  if (s && s.superAdmin) {
-    groups.push({ label: "Admin", items: [{ key: "__admin", label: "Admin console", icon: "slider" }] });
-  }
-  nav.innerHTML = groups.map((g) => `
-    <div class="nav-group-label">${g.label}</div>
-    ${g.items.map((item) => `
-      <button class="nav-item ${STATE.view === item.key || (STATE.view === "categoryDetail" && item.key === "categories") ? "active" : ""}" data-nav="${item.key}">
+  const active = activeNavKey();
+  let html = `<div class="nav-primary">` + NAV_PRIMARY.map((item) => `
+      <button class="nav-item ${active === item.key ? "active" : ""}" data-nav="${item.key}">
         ${icon(item.icon)}<span>${item.label}</span>${item.kbd ? `<span class="nav-kbd">${item.kbd}</span>` : ""}
-      </button>`).join("")}`).join("");
+      </button>`).join("") + `</div>`;
+  if (s && s.superAdmin) {
+    html += `<div class="nav-group-label">Admin</div>
+      <button class="nav-item" data-nav="__insights">${icon("chart")}<span>Library Governance</span></button>
+      <button class="nav-item" data-nav="__admin">${icon("slider")}<span>Admin console</span></button>`;
+  }
+  nav.innerHTML = html;
   nav.querySelectorAll("[data-nav]").forEach((b) => b.addEventListener("click", () => {
     closeSidebar();
     if (b.dataset.nav === "__admin") { openAdmin(); return; }
+    if (b.dataset.nav === "__insights") { navigate("insights"); return; }
     navigate(b.dataset.nav);
   }));
 }
@@ -452,7 +462,8 @@ const TOPBAR_SEARCH_VIEWS = new Set(["search", "categories", "categoryDetail"]);
 function renderTopbar() {
   document.getElementById("topbar-title").textContent = VIEW_TITLES[STATE.view] || "";
   const wrap = document.getElementById("topbar-search-wrap");
-  if (!TOPBAR_SEARCH_VIEWS.has(STATE.view)) { wrap.innerHTML = ""; return; }
+  // Library keeps its own search hero mounted at all times — no topbar dup.
+  if (!TOPBAR_SEARCH_VIEWS.has(STATE.view) || STATE.view === "search") { wrap.innerHTML = ""; return; }
   const existing = wrap.querySelector("#topbar-search");
   if (existing && existing.dataset.view === STATE.view) {
     if (document.activeElement !== existing && existing.value !== STATE.query) existing.value = STATE.query;
@@ -465,11 +476,12 @@ function renderTopbar() {
 function renderContent() {
   const content = document.getElementById("content");
   if (!isViewAllowed(STATE.view)) STATE.view = "search";
-  content.className = "content" + (STATE.view === "insights" || STATE.view === "myLibrary" ? " wide" : "");
+  content.className = "content" + (STATE.view === "insights" || STATE.view === "myLibrary" || STATE.view === "me" ? " wide" : "");
   const map = {
     home: renderHome, search: renderSearchView, categories: renderCategoriesView, categoryDetail: renderCategoryDetail,
     program: renderProgramView, learn: renderLearnView, practice: renderPracticeView, builder: renderBuilderView,
-    myLibrary: renderMyLibraryView, favorites: renderFavoritesView, insights: renderInsightsView,
+    framework: renderFrameworkView,
+    myLibrary: renderMeView, favorites: renderMeView, me: renderMeView, insights: renderInsightsView,
   };
   (map[STATE.view] || renderHome)(content);
 }
@@ -489,23 +501,34 @@ function renderLearnerBox() {
     <button class="lb-signout" id="lb-signout">Sign out</button>`;
   box.querySelector("#lb-signout").addEventListener("click", signOut);
 }
+function libraryCount() { return scopedLibrary().length; }
 function renderSidebarFooter() {
-  const lib = scopedLibrary();
+  const n = libraryCount();
+  const restricted = isScopeRestricted();
   document.getElementById("sidebar-footer").innerHTML = `
-    <div class="stat-row"><span>Prompts in scope</span><b class="tabular">${lib.length.toLocaleString()}</b></div>
-    <div class="stat-row"><span>Favorites</span><b class="tabular">${Store.getFavorites().size}</b></div>
-    <div class="stat-row"><span>My prompts</span><b class="tabular">${Store.getMyPrompts().length}</b></div>
+    <div class="stat-row"><span>${restricted ? "Prompts in your program" : "Prompts available"}</span><b class="tabular">${n.toLocaleString()}</b></div>
+    <div class="stat-row"><span>Saved</span><b class="tabular">${Store.getFavorites().size + Store.getMyPrompts().length}</b></div>
     <div class="stat-row"><span>Practice attempts</span><b class="tabular">${Store.getProgress().practice.length}</b></div>
     <div class="stat-row" style="margin-top:6px;color:var(--text-faint)"><span>${Store.getBackendLabel()}</span></div>`;
-  document.getElementById("brand-sub").textContent = STATS.totalPrompts.toLocaleString() + " prompts";
+  document.getElementById("brand-sub").textContent = n.toLocaleString() + (restricted ? " in your program" : " prompts");
 }
 function renderApp() {
   if (typeof renderPreviewBanner === "function") renderPreviewBanner();
+  if (typeof renderVerifyBannerMount === "function") renderVerifyBannerMount();
   renderNav();
   renderLearnerBox();
   renderTopbar();
   renderSidebarFooter();
   renderContent();
+}
+function renderVerifyBannerMount() {
+  if (typeof verificationBannerHtml !== "function") return;
+  const main = document.querySelector("#app .main");
+  if (!main) return;
+  let slot = document.getElementById("verify-banner-slot");
+  if (!slot) { slot = document.createElement("div"); slot.id = "verify-banner-slot"; main.insertBefore(slot, main.firstChild); }
+  slot.innerHTML = verificationBannerHtml();
+  if (typeof wireVerificationBanner === "function") wireVerificationBanner();
 }
 function openSidebar() { document.getElementById("sidebar").classList.add("open"); document.getElementById("sidebar-overlay").classList.add("show"); }
 function closeSidebar() { document.getElementById("sidebar").classList.remove("open"); document.getElementById("sidebar-overlay").classList.remove("show"); }
@@ -577,13 +600,34 @@ async function bootApp() {
 }
 async function initApp() {
   loadData();
+
+  // Deep-link auth routes (/verify-email, /reset-password, /forgot-password,
+  // /admin/login) are handled before anything else.
+  try {
+    const aroute = typeof authRoute === "function" ? authRoute() : null;
+    if (aroute) { await handleAuthRoute(aroute); return; }
+  } catch (e) {}
+
   try { await AdminStore.init(); } catch (e) {}
   let adminOk = false;
   try { adminOk = sessionStorage.getItem("prompt-lib:admin-ok") === "1"; } catch (e) {}
   let session = null;
   try { const v = localStorage.getItem("prompt-lib:session"); session = v ? JSON.parse(v) : null; } catch (e) {}
-  // pure admin (key entered at the gate, no learner session) -> straight to console
-  if (adminOk && !session) { openAdmin(); return; }
+  // Admin (unified sign-in, or legacy key — no learner session) -> console.
+  // Re-validate the admin cookie so an expired session lands on sign-in.
+  if (adminOk && !session) {
+    let ok = true;
+    try {
+      if (typeof AuthAPI !== "undefined" && AuthAPI.isConfigured()) {
+        const am = await AuthAPI.adminMe().catch(() => null);
+        ok = !!(am && am.authenticated);
+      }
+    } catch (e) {}
+    if (ok) { openAdmin(); return; }
+    try { sessionStorage.removeItem("prompt-lib:admin-ok"); sessionStorage.removeItem("prompt-lib:admin-role"); } catch (e) {}
+    renderAuthGate("Your admin session expired — sign in again.");
+    return;
+  }
   // Backend session: Store.init() re-validates the token/code with Neon and
   // bootApp() bounces to the gate if it's revoked.
   if (session && session.preview) {
@@ -596,6 +640,26 @@ async function initApp() {
     renderGate();
     return;
   }
+  // Learner account session: re-validate the cookie with /api/auth/me every
+  // load so a revoked session / suspended account bounces to the gate.
+  if (session && session.user) {
+    let me = null;
+    try { me = typeof AuthAPI !== "undefined" ? await AuthAPI.me() : null; } catch (e) {}
+    if (me && me.authenticated) { applyUserSession(me); bootApp(); return; }
+    Store.clearSession();
+    try { localStorage.removeItem("prompt-lib:session"); } catch (e) {}
+    renderAuthGate("Please sign in again.");
+    return;
+  }
+  // No local session but the backend is live -> account gate.
+  if (!session && typeof AuthAPI !== "undefined" && AuthAPI.isConfigured()) {
+    let me = null;
+    try { me = await AuthAPI.me(); } catch (e) {}
+    if (me && me.authenticated) { applyUserSession(me); bootApp(); return; }
+    renderAuthGate();
+    return;
+  }
+
   if (session && session.backend) { Store.setSession(session); bootApp(); return; }
   const r = session && resolveAccessCode(session.code);
   if (session && r && !r.disabled) {

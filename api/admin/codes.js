@@ -4,7 +4,8 @@
 //   PATCH  { id, ...fields }  -> { code }        (partial update, merge)
 //   DELETE ?id=<id>           -> { ok }
 import { db, json, readBody } from "../_db.js";
-import { verify, bearer, sessionSecret } from "../_auth.js";
+import { requireAdmin } from "../_session.js";
+import { checkCsrf } from "../_http.js";
 
 // accept camelCase (frontend) or snake_case
 function normalize(rec) {
@@ -48,8 +49,11 @@ async function upsertRow(sql, row) {
 export default async function handler(req, res) {
   let sql;
   try { sql = db(); } catch { return json(res, 503, { error: "no-backend" }); }
-  const tok = verify(bearer(req), sessionSecret());
-  if (!tok || tok.t !== "a") return json(res, 401, { error: "auth" });
+  const gate = await requireAdmin(sql, req, req.method === "GET" ? "access.read" : "access.write");
+  if (gate.error) return json(res, gate.error, { error: gate.code });
+  // CSRF only matters for the cookie-auth (unified-login) path; a Bearer token
+  // isn't sent ambiently so the legacy console key is exempt.
+  if (req.method !== "GET" && !req.headers.authorization && !checkCsrf(req)) return json(res, 403, { error: "bad-csrf" });
 
   if (req.method === "GET") {
     const rows = await sql`select * from admin_codes order by seeded desc, created_at desc`;

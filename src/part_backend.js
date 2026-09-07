@@ -11,15 +11,17 @@ const Backend = (function () {
   try { sessionToken = sessionStorage.getItem("prompt-lib:token") || null; } catch (e) {}
   try { adminToken = sessionStorage.getItem("prompt-lib:admin-token") || null; } catch (e) {}
 
+  function csrfCookie() {
+    try { return (document.cookie.match(/(?:^|;\s*)syn_csrf=([^;]+)/) || [])[1] || null; } catch (e) { return null; }
+  }
   async function call(path, { method = "GET", body, token } = {}) {
     if (!BASE || available === false) { const e = new Error("no-backend"); e.soft = true; throw e; }
     let res;
     try {
-      res = await fetch(BASE + path, {
-        method,
-        headers: Object.assign({ "content-type": "application/json" }, token ? { authorization: "Bearer " + token } : {}),
-        body: body ? JSON.stringify(body) : undefined,
-      });
+      const headers = Object.assign({ "content-type": "application/json" }, token ? { authorization: "Bearer " + token } : {});
+      if (method !== "GET") { const c = csrfCookie(); if (c) headers["x-csrf-token"] = decodeURIComponent(c); }
+      res = await fetch(BASE + path, { method, headers, credentials: "same-origin",
+        body: body ? JSON.stringify(body) : undefined });
     } catch (netErr) {
       available = false; const e = new Error("network"); e.soft = true; throw e;
     }
@@ -88,8 +90,18 @@ const Backend = (function () {
       try { sessionStorage.setItem("prompt-lib:admin-token", adminToken); } catch (e) {}
       return true;
     },
-    adminAuthed: () => !!adminToken,
-    clearAdmin() { adminToken = null; try { sessionStorage.removeItem("prompt-lib:admin-token"); } catch (e) {} },
+    // true for the legacy HMAC token OR the unified-login admin cookie
+    // (marked in sessionStorage; the httpOnly cookie itself isn't readable).
+    adminAuthed() {
+      if (adminToken) return true;
+      try { return sessionStorage.getItem("prompt-lib:admin-ok") === "1"; } catch (e) { return false; }
+    },
+    clearAdmin() {
+      adminToken = null;
+      try { sessionStorage.removeItem("prompt-lib:admin-token"); } catch (e) {}
+      try { sessionStorage.removeItem("prompt-lib:admin-ok"); } catch (e) {}
+      try { sessionStorage.removeItem("prompt-lib:admin-role"); } catch (e) {}
+    },
     async adminCodes() {
       const d = await call("/admin/codes", { token: adminToken });
       return (d && d.codes) || [];

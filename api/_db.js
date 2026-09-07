@@ -1,7 +1,20 @@
 // Neon serverless client + small helpers shared by the API routes.
-import { neon } from "@neondatabase/serverless";
+import { neon as neonHttp } from "@neondatabase/serverless";
+
+// DEV/TEST: `DATABASE_URL=pglite://memory` (or `pglite:///path`) swaps in an
+// in-process Postgres with the same call surface. Production (a real
+// postgres:// URL) always uses the Neon HTTP driver — the branch below is the
+// only difference.
+async function makeSql(url) {
+  if (/^pglite:/i.test(url)) {
+    const { neon } = await import("./_pglite.js");
+    return neon(url);
+  }
+  return neonHttp(url);
+}
 
 let _sql = null;
+let _sqlPromise = null;
 export function db() {
   if (!process.env.DATABASE_URL) {
     const e = new Error("DATABASE_URL is not set");
@@ -9,7 +22,11 @@ export function db() {
     throw e;
   }
   if (!_sql) {
-    const raw = neon(process.env.DATABASE_URL);
+    // The Neon HTTP driver constructs synchronously; the pglite shim needs a
+    // dynamic import. Resolve once, reuse. The retry wrapper awaits it.
+    if (!_sqlPromise) _sqlPromise = makeSql(process.env.DATABASE_URL);
+    let _raw = null;
+    const raw = async (...args) => (_raw || (_raw = await _sqlPromise))(...args);
     // Neon computes scale to zero; the first query after a cold start can
     // "fetch failed". Retry a couple of times with a short backoff.
     _sql = async function (...args) {
@@ -33,6 +50,7 @@ export function json(res, status, body) {
   res.setHeader("content-type", "application/json; charset=utf-8");
   res.setHeader("cache-control", "no-store");
   res.status(status).send(JSON.stringify(body));
+  return res;   // so `if (x) return x;` works when a helper does `return json(...)`
 }
 
 export async function readBody(req) {
