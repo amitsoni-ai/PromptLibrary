@@ -114,6 +114,22 @@ button{cursor:pointer;}
 .checkgrid label{display:flex; gap:7px; align-items:flex-start; font-size:12.5px; font-weight:400; color:var(--text); cursor:pointer; line-height:1.4;}
 .checkgrid input{margin-top:2px;}
 .role-fn-group{grid-column:1/-1; font-size:10px; text-transform:uppercase; letter-spacing:.05em; color:var(--text-faint); font-weight:700; margin:8px 0 2px;}
+
+/* ---------- "View as" preview banner ---------- */
+body.previewing{--pbh:38px;}
+#preview-banner{position:fixed; top:0; left:0; right:0; height:var(--pbh); z-index:85;
+  display:flex; align-items:center; gap:12px; padding:0 14px; background:var(--warn); color:#1c1300;
+  font-size:12.5px; font-weight:600; box-shadow:0 2px 10px rgba(0,0,0,.18);}
+#preview-banner svg{width:15px; height:15px; flex:none;}
+#preview-banner span{white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+#preview-banner select{background:rgba(255,255,255,.9); border:none; border-radius:6px; padding:4px 8px;
+  font-weight:600; color:#1c1300; max-width:260px; margin-left:auto;}
+#preview-banner .pb-x{background:#1c1300; color:var(--warn); border:none; border-radius:6px;
+  padding:6px 12px; font-weight:700; cursor:pointer; flex:none;}
+body.previewing #app{margin-top:var(--pbh);}
+body.previewing .sidebar{top:var(--pbh); height:calc(100vh - var(--pbh));}
+body.previewing .topbar{top:var(--pbh);}
+@media (max-width:880px){ #preview-banner select{max-width:118px;} #preview-banner .pb-scope{display:none;} }
 .gate-resolved{margin-top:10px; padding:10px 12px; background:var(--accent-soft); color:var(--accent-strong); border-radius:var(--radius-sm); font-size:12.5px;}
 
 /* ---------- App shell ---------- */

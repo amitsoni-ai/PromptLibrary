@@ -116,6 +116,22 @@ button{cursor:pointer;}
 .checkgrid label{display:flex; gap:7px; align-items:flex-start; font-size:12.5px; font-weight:400; color:var(--text); cursor:pointer; line-height:1.4;}
 .checkgrid input{margin-top:2px;}
 .role-fn-group{grid-column:1/-1; font-size:10px; text-transform:uppercase; letter-spacing:.05em; color:var(--text-faint); font-weight:700; margin:8px 0 2px;}
+
+/* ---------- "View as" preview banner ---------- */
+body.previewing{--pbh:38px;}
+#preview-banner{position:fixed; top:0; left:0; right:0; height:var(--pbh); z-index:85;
+  display:flex; align-items:center; gap:12px; padding:0 14px; background:var(--warn); color:#1c1300;
+  font-size:12.5px; font-weight:600; box-shadow:0 2px 10px rgba(0,0,0,.18);}
+#preview-banner svg{width:15px; height:15px; flex:none;}
+#preview-banner span{white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+#preview-banner select{background:rgba(255,255,255,.9); border:none; border-radius:6px; padding:4px 8px;
+  font-weight:600; color:#1c1300; max-width:260px; margin-left:auto;}
+#preview-banner .pb-x{background:#1c1300; color:var(--warn); border:none; border-radius:6px;
+  padding:6px 12px; font-weight:700; cursor:pointer; flex:none;}
+body.previewing #app{margin-top:var(--pbh);}
+body.previewing .sidebar{top:var(--pbh); height:calc(100vh - var(--pbh));}
+body.previewing .topbar{top:var(--pbh);}
+@media (max-width:880px){ #preview-banner select{max-width:118px;} #preview-banner .pb-scope{display:none;} }
 .gate-resolved{margin-top:10px; padding:10px 12px; background:var(--accent-soft); color:var(--accent-strong); border-radius:var(--radius-sm); font-size:12.5px;}
 
 /* ---------- App shell ---------- */
@@ -11603,6 +11619,7 @@ const ICONS = {
   target: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg>',
   path: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/><path d="M8 16.5c8-1 9-2 8-9"/></svg>',
   logout: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>',
+  eye: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>',
 };
 function icon(name, cls) { return (ICONS[name] || "").replace("<svg ", `<svg class="${cls || ""}" `); }
 
@@ -13312,6 +13329,89 @@ function openAdmin() {
   root.hidden = false;
   renderAdminConsole();
 }
+
+/* ---------- "View as" — preview the library exactly as a learner on a
+   given code sees it, then jump back to the console. --------------------- */
+function previewAs(code) {
+  const norm = String(code || "").toUpperCase().trim();
+  const adm = AdminStore.getCode(norm);
+  const stat = adm ? null : resolveStaticAccessCode(norm);
+  if (!adm && !stat) { showToast("Couldn't resolve " + code); return; }
+
+  // stash the current (real) session once — switching preview→preview keeps
+  // the original stashed.
+  const cur = Store.getSession();
+  if (!(cur && cur.preview)) {
+    try { sessionStorage.setItem("prompt-lib:realsession", JSON.stringify(cur || null)); } catch (e) {}
+  }
+
+  let s;
+  if (adm) {
+    s = {
+      code: adm.code, kind: "admin", preview: true, superAdmin: true,
+      orgId: "adm-" + adm.id, orgName: adm.orgName, domain: adm.domain || "", industry: adm.industry || "",
+      functions: adm.functions || [], roles: adm.roles || [],
+      programIds: adm.programIds || [], fullLibrary: !!adm.fullLibrary,
+      subject: "preview:" + adm.code, name: "Preview", startedAt: Date.now(),
+    };
+  } else {
+    s = {
+      code: stat.code, preview: true, superAdmin: true,
+      orgId: stat.org ? stat.org.id : null,
+      programId: stat.program ? stat.program.id : null,
+      cohortId: stat.cohort ? stat.cohort.id : null,
+      learnerId: stat.learner ? stat.learner.id : null,
+      subject: "preview:" + stat.code, name: "Preview", startedAt: Date.now(),
+    };
+  }
+  Store.setSession(s);
+  const ar = document.getElementById("admin-root");
+  if (ar) ar.hidden = true;
+  bootApp();
+}
+function exitPreview() {
+  let real = null;
+  try { real = JSON.parse(sessionStorage.getItem("prompt-lib:realsession") || "null"); } catch (e) {}
+  try { sessionStorage.removeItem("prompt-lib:realsession"); } catch (e) {}
+  if (real) Store.setSession(real); else Store.clearSession();
+  document.body.classList.remove("previewing");
+  const b = document.getElementById("preview-banner");
+  if (b) b.remove();
+  openAdmin();
+}
+function previewCodeList() {
+  const admin = AdminStore.getCodes().map((c) => ({
+    code: c.code, label: c.code + " · " + (c.orgName || "") + (c.fullLibrary ? " · full" : (c.functions || []).length ? " · " + c.functions.join("/") : ""),
+  }));
+  const stat = (ORG_MODEL.accessCodes || []).map((a) => {
+    const r = resolveStaticAccessCode(a.code);
+    return { code: a.code, label: a.code + " · " + (r && r.org ? r.org.name : "") + (r && r.program ? " · " + r.program.name : "") };
+  });
+  return { admin, stat };
+}
+function renderPreviewBanner() {
+  const s = Store.getSession();
+  const on = !!(s && s.preview);
+  document.body.classList.toggle("previewing", on);
+  let b = document.getElementById("preview-banner");
+  if (!on) { if (b) b.remove(); return; }
+  if (!b) { b = document.createElement("div"); b.id = "preview-banner"; document.body.appendChild(b); }
+  const scope = s.kind === "admin"
+    ? (s.fullLibrary ? "full library" : ((s.functions || []).join(", ") || (s.programIds || []).length + " program(s)"))
+    : "programme code";
+  const { admin, stat } = previewCodeList();
+  b.innerHTML = `
+    ${icon("eye")}
+    <span>Previewing as <b>${escapeHtml(s.code)}</b><span class="pb-scope"> — ${escapeHtml(scope)}</span></span>
+    <select id="pb-switch" title="Switch preview">
+      <option value="">Switch to…</option>
+      <optgroup label="Organisation codes">${admin.map((c) => `<option value="${escapeHtml(c.code)}" ${c.code === s.code ? "selected" : ""}>${escapeHtml(c.label)}</option>`).join("")}</optgroup>
+      <optgroup label="Built-in">${stat.map((c) => `<option value="${escapeHtml(c.code)}" ${c.code === s.code ? "selected" : ""}>${escapeHtml(c.label)}</option>`).join("")}</optgroup>
+    </select>
+    <button class="pb-x" id="pb-exit">Exit preview →</button>`;
+  b.querySelector("#pb-exit").addEventListener("click", exitPreview);
+  b.querySelector("#pb-switch").addEventListener("change", (e) => { if (e.target.value) previewAs(e.target.value); });
+}
 function newCodeDraft() {
   return { id: uid("adm"), code: "", orgName: "", domain: "", industry: "", functions: [], roles: [], programIds: [], fullLibrary: false, enabled: true, note: "", createdAt: new Date().toISOString() };
 }
@@ -13420,6 +13520,7 @@ function renderAdminCodes(body) {
             <td>${escapeHtml((r.programs || []).join(", ") || "—")}</td>
             <td>${r.builtIn ? `<span class="chip" style="font-size:10px;">always</span>` : `<button class="switch ${r.enabled ? "on" : ""}" data-toggle="${r.id}" aria-label="Toggle"><i></i></button>`}</td>
             <td style="white-space:nowrap;">
+              <button class="btn btn-sm btn-ghost" data-viewas="${escapeHtml(r.code)}" title="Open the library as a learner on this code">${icon("eye")}</button>
               <button class="btn btn-sm btn-ghost" data-copy="${escapeHtml(r.code)}" title="Copy code">${icon("copy")}</button>
               ${r.builtIn ? "" : `<button class="btn btn-sm btn-ghost" data-edit="${r.id}" title="Edit">${icon("slider")}</button>`}
               <button class="btn btn-sm btn-ghost" data-dl="${r.id || ""}" data-dlcode="${escapeHtml(r.code)}" title="Download prompts">${icon("download")}</button>
@@ -13449,6 +13550,7 @@ function renderAdminCodes(body) {
   body.querySelectorAll("[data-copy]").forEach((b) => b.addEventListener("click", async () => {
     await copyText(b.dataset.copy); showToast("Code copied");
   }));
+  body.querySelectorAll("[data-viewas]").forEach((b) => b.addEventListener("click", () => previewAs(b.dataset.viewas)));
   body.querySelectorAll("[data-edit]").forEach((b) => b.addEventListener("click", () => {
     ADMIN_STATE.editing = Object.assign(newCodeDraft(), JSON.parse(JSON.stringify(AdminStore.getById(b.dataset.edit))));
     ADMIN_STATE.tab = "edit"; renderAdminConsole();
@@ -14138,6 +14240,7 @@ function renderSidebarFooter() {
   document.getElementById("brand-sub").textContent = STATS.totalPrompts.toLocaleString() + " prompts";
 }
 function renderApp() {
+  if (typeof renderPreviewBanner === "function") renderPreviewBanner();
   renderNav();
   renderLearnerBox();
   renderTopbar();
@@ -14223,6 +14326,16 @@ async function initApp() {
   if (adminOk && !session) { openAdmin(); return; }
   // Backend session: Store.init() re-validates the token/code with Neon and
   // bootApp() bounces to the gate if it's revoked.
+  if (session && session.preview) {
+    // a preview only makes sense with its stashed real session (sessionStorage,
+    // gone when the tab closed) — otherwise drop it.
+    let hasStash = false;
+    try { hasStash = sessionStorage.getItem("prompt-lib:realsession") !== null; } catch (e) {}
+    if (hasStash) { Store.setSession(session); bootApp(); return; }
+    Store.clearSession();
+    renderGate();
+    return;
+  }
   if (session && session.backend) { Store.setSession(session); bootApp(); return; }
   const r = session && resolveAccessCode(session.code);
   if (session && r && !r.disabled) {

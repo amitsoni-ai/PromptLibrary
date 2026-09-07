@@ -500,6 +500,7 @@ function renderSidebarFooter() {
   document.getElementById("brand-sub").textContent = STATS.totalPrompts.toLocaleString() + " prompts";
 }
 function renderApp() {
+  if (typeof renderPreviewBanner === "function") renderPreviewBanner();
   renderNav();
   renderLearnerBox();
   renderTopbar();
@@ -585,6 +586,16 @@ async function initApp() {
   if (adminOk && !session) { openAdmin(); return; }
   // Backend session: Store.init() re-validates the token/code with Neon and
   // bootApp() bounces to the gate if it's revoked.
+  if (session && session.preview) {
+    // a preview only makes sense with its stashed real session (sessionStorage,
+    // gone when the tab closed) — otherwise drop it.
+    let hasStash = false;
+    try { hasStash = sessionStorage.getItem("prompt-lib:realsession") !== null; } catch (e) {}
+    if (hasStash) { Store.setSession(session); bootApp(); return; }
+    Store.clearSession();
+    renderGate();
+    return;
+  }
   if (session && session.backend) { Store.setSession(session); bootApp(); return; }
   const r = session && resolveAccessCode(session.code);
   if (session && r && !r.disabled) {
