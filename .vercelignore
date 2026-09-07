@@ -1,0 +1,7 @@
+# build sources and dev-only tooling — not served, not needed at runtime
+src/
+migrate/
+devserver.mjs
+*.md
+promptlibrary-push-package/
+prompt-library-vercel.zip
