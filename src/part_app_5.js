@@ -397,6 +397,7 @@ let STATE = {
   view: "home", query: "", filters: emptyFilters(), sort: "relevance",
   activeCategory: null, favoritesTab: "favorites", myLibTab: "mine", insightsTab: "overview",
   meTab: "overview", savedFilter: "all", frameworkLevel: 1,
+  libBrowseAll: false, libOpenModules: null,
   detailId: null, detailLayer: "original", builder: null, practice: null, openModules: null, lcStage: "Recommended",
 };
 function emptyFilters() { return { category: null, skill: null, promptType: null, role: null, difficulty: null, aiTool: null, source: null, fwLevel: null, hasVariables: false, favoritesOnly: false }; }
@@ -412,10 +413,15 @@ const SHARED_QUERY_VIEWS = new Set(["home", "search"]);
 const SCOPED_HIDDEN_VIEWS = new Set(["categories", "categoryDetail", "insights"]);
 function isViewAllowed(view) {
   if (!isScopeRestricted()) return true;
-  // Function / org-collection learners keep a filtered Categories browse; only
-  // the whole-library views (Insights) stay hidden for them.
-  if ((view === "categories" || view === "categoryDetail")
-      && typeof scopeShowsCategories === "function" && scopeShowsCategories()) return true;
+  // Any scope that spans 2+ categories keeps a filtered Categories browse
+  // (functions, org collections, multi-category access codes); only the
+  // whole-library governance view stays hidden. Single-program scopes have no
+  // grid — they get a modules-first Library instead.
+  if (view === "categories" || view === "categoryDetail") {
+    if (typeof scopeShowsCategories === "function" && scopeShowsCategories()) return true;
+    if (typeof scopeInfo === "function" && scopeInfo().gridEligible) return true;
+    return false;
+  }
   return !SCOPED_HIDDEN_VIEWS.has(view);
 }
 const VIEW_FEATURE = { practice: "practice", learn: "learning", framework: "learning", program: "my_program" };
@@ -428,6 +434,11 @@ function navigate(view) {
   }
   if (!isViewAllowed(view)) view = "search";
   if (!(SHARED_QUERY_VIEWS.has(view) && SHARED_QUERY_VIEWS.has(STATE.view))) STATE.query = "";
+  // Arriving at Library from anywhere other than Home/Search opens a clean
+  // landing (category grid / modules) — a stuck category filter or a prior
+  // "Browse all" shouldn't drop the visitor straight into a filtered list.
+  if (view === "search" && !SHARED_QUERY_VIEWS.has(STATE.view)) { STATE.filters = emptyFilters(); STATE.libBrowseAll = false; }
+  if (view !== "search") STATE.libBrowseAll = false;
   STATE.view = view;
   renderApp();
   window.scrollTo({ top: 0 });
@@ -506,7 +517,7 @@ function renderLearnerBox() {
     <button class="lb-signout" id="lb-signout">Sign out</button>`;
   box.querySelector("#lb-signout").addEventListener("click", signOut);
 }
-function libraryCount() { return scopedLibrary().length; }
+function libraryCount() { return (typeof scopeInfo === "function" ? scopeInfo().total : scopedLibrary().length); }
 function renderSidebarFooter() {
   const n = libraryCount();
   const restricted = isScopeRestricted();

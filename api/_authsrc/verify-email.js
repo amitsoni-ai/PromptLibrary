@@ -57,12 +57,22 @@ export default async function handler(req, res) {
   const uRows = await sql`select * from users where id = ${t.user_id} limit 1`;
   const u = uRows[0];
 
+  // ── Collection short-signup: the learner entered a collection access code at
+  //    sign-up. Turn it into the collection-scoped entitlement now (claiming a
+  //    seat), instead of the function auto-grant. Falls through to the function
+  //    grant if the code went disabled / expired / full since sign-up.
+  const cur = (await sql`select * from entitlements where user_id = ${u.id} limit 1`)[0];
+  let collectionGranted = false;
+  if (cur && cur.source === "collection_signup" && cur.access_code
+      && (cur.scope_type === "none" || cur.status !== "active")) {
+    collectionGranted = await grantCollectionOnVerify(sql, u, cur.access_code, req);
+  }
+
   // ── Auto-entitlement (spec: no access code). The function chosen at sign-up
   //    (stored in users.role) decides the library scope. Only touch entitlements
   //    that are still self-serve — never overwrite an admin assignment.
-  const cur = (await sql`select * from entitlements where user_id = ${u.id} limit 1`)[0];
-  const selfServe = !cur || ["self_signup", "auto_function", "none"].includes(cur.source || "none");
-  if (selfServe && (!cur || cur.scope_type === "none" || cur.status !== "active")) {
+  const selfServe = !cur || ["self_signup", "auto_function", "none", "collection_signup"].includes(cur.source || "none");
+  if (!collectionGranted && selfServe && (!cur || cur.scope_type === "none" || cur.status !== "active")) {
     const grant = entitlementForFunction(u.role);
     const fn = functionByKey(u.role);
     const fs = grant.scopeType === "function"
@@ -106,4 +116,50 @@ export default async function handler(req, res) {
   issueCsrf(res, req);
 
   return json(res, 200, { ok: true, status: "verified", access });
+}
+
+// Consume a collection access code recorded at sign-up: atomic seat claim (same
+// WHERE-guard as /api/auth/redeem-code) then swap the placeholder entitlement
+// for the collection snapshot. Returns false (→ caller falls back to the
+// function grant) if the code is no longer usable or the seat claim loses.
+async function grantCollectionOnVerify(sql, u, rawCode, req) {
+  const rows = await sql`select * from access_codes where upper(code) = ${String(rawCode || "").toUpperCase()} limit 1`;
+  const c = rows[0];
+  if (!c || c.enabled === false || c.scope_type !== "collection") return false;
+  if (c.expires_at && new Date(c.expires_at) < new Date()) return false;
+
+  const claim = await sql`update access_codes
+      set redemptions = redemptions + 1, updated_at = now()
+    where id = ${c.id}
+      and enabled = true
+      and (expires_at is null or expires_at > now())
+      and (max_redemptions is null or redemptions < max_redemptions)
+    returning redemptions`;
+  if (!claim.length) return false;
+
+  try {
+    await sql`update entitlements set
+        source = 'access_code', access_code = ${c.code}, scope_type = 'collection',
+        program_ids = ${JSON.stringify(c.program_ids || [])},
+        category_ids = ${JSON.stringify(c.category_ids || [])},
+        prompt_ids = ${JSON.stringify(c.prompt_ids || [])},
+        feature_flags = ${JSON.stringify(c.feature_flags || {})},
+        license_type = ${c.license_type || "standard"},
+        org_name = ${c.org_name || u.org_name}, status = 'active', granted_by = 'self',
+        expires_at = ${c.expires_at || null}, note = 'Collection sign-up', updated_at = now()
+      where user_id = ${u.id}`;
+    for (const pid of (c.program_ids || [])) {
+      await sql`insert into program_enrollments (id, user_id, program_id, status, enrolled_by)
+                values (${newId("enr")}, ${u.id}, ${pid}, 'active', 'self')
+                on conflict (user_id, program_id) do update set status = 'active'`;
+    }
+    entitlementEvent(sql, { userId: u.id, actor: "self", action: "code_redeemed",
+      detail: { code: c.code, scope: "collection", via: "verify_email" } });
+    auditLog(sql, { actorType: "user", actorId: u.id, actorLabel: u.email, action: "access.code_redeemed",
+      targetType: "user", targetId: u.id, detail: { code: c.code, via: "signup_collection" }, req });
+    return true;
+  } catch (e) {
+    await sql`update access_codes set redemptions = greatest(redemptions - 1, 0), updated_at = now() where id = ${c.id}`.catch(() => {});
+    return false;
+  }
 }

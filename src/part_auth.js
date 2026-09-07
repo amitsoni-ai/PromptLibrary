@@ -183,6 +183,7 @@ function pendingAccessCode() {
 }
 function clearPendingAccessCode() {
   try { sessionStorage.removeItem("prompt-lib:pending-code"); } catch (e) {}
+  try { sessionStorage.removeItem("prompt-lib:pending-code-org"); } catch (e) {}
 }
 // Apply an access code to the current signed-in learner. Returns { ok, access }
 // or { ok:false, error }. Used by the in-app "Add an access code" banner form
@@ -332,6 +333,13 @@ function renderSignIn(msg) {
 function renderSignUp() {
   const st = renderSignUp._state || (renderSignUp._state = { step: 1, data: {} });
   const d = st.data;
+
+  // Collection access code entered on the "Access code" tab → short signup:
+  // step 1 only. Organisation / function / AI level come from the collection,
+  // server-side, and step 2 is skipped entirely.
+  const pendCode = (typeof pendingAccessCode === "function") ? pendingAccessCode() : null;
+  if (pendCode && !st.forceFull) return renderSignUpCollection(st, pendCode);
+
   if (st.step === 1) {
     const root = authShell(`
       <h1>Create your account</h1>
@@ -426,6 +434,85 @@ function renderSignUp() {
     }
   });
 }
+// Short signup for a learner who entered a collection access code. One step:
+// first/last name, email, password + terms. Organisation, function, role and AI
+// level are set server-side from the collection — the learner never sees them.
+function renderSignUpCollection(st, code) {
+  const d = st.data;
+  let org = "";
+  try { org = sessionStorage.getItem("prompt-lib:pending-code-org") || ""; } catch (e) {}
+  const orgLabel = org ? escapeHtml(org) + "’s" : "your organisation’s";
+  const root = authShell(`
+    <h1>Create your account</h1>
+    <p class="sub">Enter your details and the code <b>${escapeHtml(code)}</b> opens ${orgLabel} library.</p>
+    ${authTabs("signup")}
+    <form id="suc" novalidate>
+      <div class="auth-2col">
+        <div><label for="suc-first">First name</label><input id="suc-first" class="name-input" autocomplete="given-name" value="${escapeHtml(d.firstName || "")}" /></div>
+        <div><label for="suc-last">Last name</label><input id="suc-last" class="name-input" autocomplete="family-name" value="${escapeHtml(d.lastName || "")}" /></div>
+      </div>
+      <label for="suc-email" style="margin-top:12px;">Work email</label>
+      <input id="suc-email" class="name-input" type="email" autocomplete="email" inputmode="email" value="${escapeHtml(d.email || "")}" placeholder="you@company.com" />
+      <label for="suc-pass" style="margin-top:12px;">Password</label>
+      ${pwField("suc-pass", "new-password", "At least 5 characters")}
+      <label for="suc-pass2" style="margin-top:12px;">Confirm password</label>
+      ${pwField("suc-pass2", "new-password", "Re-enter your password")}
+      <label class="auth-check" style="margin-top:14px;"><input type="checkbox" id="suc-terms" ${d.agreeTerms ? "checked" : ""}/> I agree to the Terms &amp; Privacy Policy</label>
+      <div class="auth-error" role="alert" aria-live="polite"></div>
+      <button class="btn btn-primary" id="suc-go" type="submit">Create account</button>
+    </form>
+    <div class="gate-hint" style="text-align:center;">Already have an account? <button class="auth-link" data-authtab="signin">Sign in</button></div>`);
+  authNav(root);
+  root.querySelector("#suc").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    d.firstName = root.querySelector("#suc-first").value.trim();
+    d.lastName = root.querySelector("#suc-last").value.trim();
+    d.email = root.querySelector("#suc-email").value.trim();
+    d.password = root.querySelector("#suc-pass").value;
+    const pass2 = root.querySelector("#suc-pass2").value;
+    d.agreeTerms = root.querySelector("#suc-terms").checked;
+    if (!d.firstName || !d.lastName) return fieldErr(root, "Enter your first and last name.");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(d.email)) return fieldErr(root, "Enter a valid work email.");
+    if (d.password.length < 5) return fieldErr(root, "Password must be at least 5 characters.");
+    if (d.password !== pass2) return fieldErr(root, "Passwords don't match.");
+    if (!d.agreeTerms) return fieldErr(root, "Please accept the Terms & Privacy Policy to continue.");
+    const btn = root.querySelector("#suc-go"); btn.disabled = true; btn.textContent = "Creating…";
+    try {
+      const resp = await AuthAPI.signup({
+        firstName: d.firstName, lastName: d.lastName, email: d.email,
+        password: d.password, confirmPassword: d.password,
+        code, agreeTerms: true,
+      });
+      const email = d.email;
+      // The server now owns the code — clear the stash so the post-verify
+      // "add access code" banner / auto-redeem don't double-handle it.
+      clearPendingAccessCode();
+      renderSignUp._state = null;
+      if (resp && resp.signedIn) {
+        const me = await AuthAPI.me().catch(() => null);
+        if (me && me.authenticated) { applyUserSession(me); bootApp(); return; }
+      }
+      renderVerifyPending(email, { afterSignup: true });
+    } catch (err) {
+      btn.disabled = false; btn.textContent = "Create account";
+      if (err.status === 422 && err.data && err.data.error === "invalid-collection-code") {
+        // The code lapsed between the gate check and submit — drop it and fall
+        // back to the normal two-step signup, keeping what they've typed.
+        clearPendingAccessCode();
+        st.forceFull = true; st.step = 2;
+        renderSignUp();
+        fieldErr(document.getElementById("gate-root"), "That access code is no longer valid — continue and tell us a little about you.");
+        return;
+      }
+      if (err.status === 422 && err.data) fieldErr(root, humanizeValidation(err.data));
+      else if (err.status === 429) fieldErr(root, "Too many sign-ups from here. Try again later.");
+      else if (err.soft) fieldErr(root, "Couldn't reach the server. Try again.");
+      else fieldErr(root, "Something went wrong creating your account.");
+    }
+  });
+  root.querySelector("#suc-first").focus();
+}
+
 function humanizeValidation(data) {
   const m = {
     "invalid-email": "Enter a valid work email.",
@@ -628,13 +715,16 @@ function verificationBannerHtml() {
       <span>Your library is being set up. If it doesn't appear shortly, contact your programme lead.</span>
       <span class="vb-actions"><button class="vb-btn" id="vb-refresh">Refresh</button></span></div>`;
   }
-  // Verified + active. Offer an "add an access code" affordance unless the
-  // learner already has full-library scope or has dismissed it. Always shown
+  // Verified + active. Offer an "add an access code" affordance to a plain
+  // self-signup (function-scoped) learner who might also hold an org code.
+  // Hide it once they have full-library scope, already joined via an access
+  // code / collection (source 'access_code'), or dismissed it. Always shown
   // when a code is pending (e.g. redeem failed pre-verify and needs a retry).
   const scopeType = a.access && a.access.scopeType;
+  const fromCode = a.access && (a.access.source === "access_code" || scopeType === "collection");
   let dismissed = false;
   try { dismissed = sessionStorage.getItem("prompt-lib:addcode-dismissed") === "1"; } catch (e) {}
-  if (!pend && (scopeType === "full" || dismissed)) return "";
+  if (!pend && (scopeType === "full" || fromCode || dismissed)) return "";
   return `<div class="verify-banner" id="verify-banner" style="background:var(--accent-soft);color:var(--accent-strong);">
     <span>${pend
       ? `Apply your organisation access code <b>${escapeHtml(pend)}</b> to open its library.`

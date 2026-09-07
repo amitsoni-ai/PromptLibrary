@@ -632,12 +632,12 @@ function renderAdminCollections(body) {
         </tbody>
       </table></div>`;
     body.querySelector("#col-new").addEventListener("click", () => {
-      st.editing = { id: null, name: "", orgName: "", categoryIds: [], programIds: [], promptIds: [], enabled: true };
+      st.editing = { id: null, name: "", orgName: "", categoryIds: [], programIds: [], promptIds: [], defaultFunction: "", defaultAiLevel: "", enabled: true };
       paint();
     });
     body.querySelectorAll("[data-coledit]").forEach((b) => b.addEventListener("click", () => {
       const c = st.list.find((x) => x.id === b.dataset.coledit);
-      st.editing = { id: c.id, name: c.name, orgName: c.orgName || "", categoryIds: c.categoryIds.slice(), programIds: c.programIds.slice(), promptIds: c.promptIds.slice(), enabled: c.enabled };
+      st.editing = { id: c.id, name: c.name, orgName: c.orgName || "", categoryIds: c.categoryIds.slice(), programIds: c.programIds.slice(), promptIds: c.promptIds.slice(), defaultFunction: c.defaultFunction || "", defaultAiLevel: c.defaultAiLevel || "", enabled: c.enabled };
       paint();
     }));
     body.querySelectorAll("[data-colcodes]").forEach((b) => b.addEventListener("click", () => {
@@ -655,6 +655,14 @@ function renderAdminCollections(body) {
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
           <div class="form-field"><label>Collection name *</label><input type="text" id="col-name" value="${escapeHtml(d.name)}" placeholder="ABC onboarding library"/></div>
           <div class="form-field"><label>Organisation</label><input type="text" id="col-org" value="${escapeHtml(d.orgName)}" placeholder="ABC Corporation"/></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+          <div class="form-field"><label>Default function / department <span style="font-weight:400;color:var(--text-faint)">— joiners skip step 2; this becomes their function &amp; role</span></label>
+            <select id="col-fn"><option value="">— none (learner is asked at step 2) —</option>${(typeof SIGNUP_FUNCTIONS !== "undefined" ? SIGNUP_FUNCTIONS : []).map(([v, l]) => `<option value="${v}" ${d.defaultFunction === v ? "selected" : ""}>${escapeHtml(l)}</option>`).join("")}</select>
+          </div>
+          <div class="form-field"><label>Default AI level</label>
+            <select id="col-lvl"><option value="">— default (Beginner) —</option>${(typeof SIGNUP_LEVELS !== "undefined" ? SIGNUP_LEVELS : []).map(([v, l]) => `<option value="${v}" ${d.defaultAiLevel === v ? "selected" : ""}>${escapeHtml(l)}</option>`).join("")}</select>
+          </div>
         </div>
         <label class="auth-check" style="margin:2px 0 12px;"><input type="checkbox" id="col-enabled" ${d.enabled ? "checked" : ""}/> Active</label>
         <div class="form-field"><label>Categories</label>
@@ -678,6 +686,8 @@ function renderAdminCollections(body) {
     const read = () => {
       d.name = body.querySelector("#col-name").value.trim();
       d.orgName = body.querySelector("#col-org").value.trim();
+      d.defaultFunction = body.querySelector("#col-fn").value;
+      d.defaultAiLevel = body.querySelector("#col-lvl").value;
       d.enabled = body.querySelector("#col-enabled").checked;
       d.categoryIds = [...body.querySelectorAll("[data-colcat]:checked")].map((x) => x.value);
       d.programIds = [...body.querySelectorAll("[data-colprog]:checked")].map((x) => x.value);
@@ -718,7 +728,7 @@ function renderAdminCollections(body) {
     body.innerHTML = `
       <button class="btn btn-ghost btn-sm" id="cc-back" style="margin-bottom:10px;">← All collections</button>
       <div class="section-title" style="margin-bottom:4px;"><h2 style="font-size:18px;">${escapeHtml(fresh.name)} — access codes</h2></div>
-      <div style="color:var(--text-muted);font-size:12.5px;margin-bottom:14px;">${escapeHtml(fresh.orgName || "No organisation")} · ${scopeResolveCount(fresh.categoryIds, fresh.programIds, fresh.promptIds).toLocaleString()} prompts in scope</div>
+      <div style="color:var(--text-muted);font-size:12.5px;margin-bottom:14px;">${escapeHtml(fresh.orgName || "No organisation")} · ${scopeResolveCount(fresh.categoryIds, fresh.programIds, fresh.promptIds).toLocaleString()} prompts in scope${fresh.defaultFunction ? " · joiners: " + escapeHtml((AU_FUNCTIONS.find((f) => f[0] === fresh.defaultFunction) || [null, fresh.defaultFunction])[1]) + (fresh.defaultAiLevel ? " / " + escapeHtml(fresh.defaultAiLevel) : "") : ""}</div>
       <div style="overflow-x:auto;">
       <table class="admin-table">
         <thead><tr><th>Code</th><th>Label</th><th>Redemptions</th><th>Seat limit</th><th>Expires</th><th>Enabled</th><th></th></tr></thead>

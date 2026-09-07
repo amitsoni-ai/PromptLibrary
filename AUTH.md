@@ -215,6 +215,22 @@ writes an `access_code`-source entitlement carrying `category_ids` / `prompt_ids
 `collectionId`). Deleting a collection is blocked once any of its codes has been
 redeemed (disable instead). The tab shows only when the console reaches `/api`.
 
+**Short signup via a collection code.** A collection also carries
+`default_function` / `default_ai_level` (schema_v3, additive; snapshotted onto
+each generated code and re-synced on `update`, editable in the Collections
+editor). When a learner enters a collection code on the **Access code** gate the
+UI routes to a **one-step** signup (`renderSignUpCollection`, `src/part_auth.js`)
+— first/last name, email, password, terms only. `POST /api/auth/signup` takes the
+`code`, derives organisation (`= collection org`), function/role and AI level
+from the code row, and **ignores** any `function` / `role` / `organization` /
+`aiLevel` the client sent (spec §4). The placeholder entitlement is stamped
+`source = 'collection_signup'`; on `verify-email` it is turned into the
+`collection` scope (atomic seat claim, same guard as `redeem-code`) instead of
+the function auto-grant. If the code lapsed since signup, verify falls back to
+the function scope for `users.role`. A bad/expired/disabled code at signup →
+`422 invalid-collection-code` and the UI drops back to the normal two-step flow.
+Signup with no `code` is unchanged (step 1 + step 2).
+
 **Local verify (dev).** Verification only completes when the learner opens the
 emailed link. With `EMAIL_TRANSPORT=console` (recommended for local runs:
 `EMAIL_TRANSPORT=console node migrate/devserver_pglite.mjs`) the link is in the

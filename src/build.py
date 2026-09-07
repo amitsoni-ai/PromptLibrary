@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Assemble ../index.html from the parts in this directory.
 Run: python3 build.py   (from prompt-library/src/)"""
-import base64, json, os
+import base64, json, os, re
 HERE = os.path.dirname(os.path.abspath(__file__))
 ASSETS = os.path.normpath(os.path.join(HERE, ".."))
 OUT = os.path.normpath(os.path.join(HERE, "..", "index.html"))
@@ -13,10 +13,32 @@ def data_uri(name):
     p = os.path.join(ASSETS, name)
     return "data:image/png;base64," + base64.b64encode(open(p, "rb").read()).decode("ascii")
 
+def merge_authored(data_blocks):
+    """Splice src/prompts_authored.json into the data-prompts block at build time.
+    data_blocks.html on disk is never touched. No-op if the file is absent/empty."""
+    path = os.path.join(HERE, "prompts_authored.json")
+    if not os.path.exists(path):
+        return data_blocks
+    authored = json.loads(open(path, encoding="utf-8").read())
+    if not authored:
+        return data_blocks
+    marker = ']</script>\n<script type="application/json" id="data-categories"'
+    assert marker in data_blocks, "data-prompts / data-categories boundary not found"
+    extra = ",".join(json.dumps(r, ensure_ascii=False) for r in authored)
+    data_blocks = data_blocks.replace(marker, "," + extra + marker, 1)
+    # keep data-stats.totalPrompts honest
+    data_blocks = re.sub(r'("totalPrompts":\s*)(\d+)',
+                         lambda m: m.group(1) + str(int(m.group(2)) + len(authored)),
+                         data_blocks, count=1)
+    print(f"  + merged {len(authored)} authored prompts from prompts_authored.json")
+    return data_blocks
+
+
 def main():
     data_blocks = read("data_blocks.html")
     assert data_blocks.startswith('<script type="application/json" id="data-prompts">')
     assert data_blocks.rstrip().endswith("</script>")
+    data_blocks = merge_authored(data_blocks)
     head = read("part_head.html")
     head = head.replace("{{LOGO_DATA_URI}}", data_uri("Synottic_Logo.png"))
     head = head.replace("{{FAVICON_DATA_URI}}", data_uri("favicon.png"))

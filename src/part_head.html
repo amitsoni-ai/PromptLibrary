@@ -250,7 +250,9 @@ textarea{resize:vertical; font-family:var(--font-mono); line-height:1.55; font-s
 .prompt-card-title{font-weight:600; font-size:14.5px; letter-spacing:-0.005em; flex:1; min-width:0;}
 .prompt-card-desc{color:var(--text-muted); font-size:12.8px; overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;}
 .prompt-card-meta{display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-top:2px;}
-.prompt-card-actions{display:flex; gap:4px; flex:none;}
+.prompt-card-actions{display:flex; gap:4px; flex:none; align-items:center;}
+.tmpl-glyph{font-family:var(--font-mono); font-size:12px; font-weight:600; color:var(--text-faint); padding:2px 4px; border:1px solid var(--border); border-radius:5px; line-height:1;}
+.prompt-card.is-starter{background:var(--surface-2);}
 .fav-btn{background:none; border:none; padding:5px; border-radius:6px; color:var(--text-faint); display:flex;}
 .fav-btn:hover{background:var(--surface-2); color:var(--warn);}
 .fav-btn.is-fav{color:var(--warn);}
@@ -476,6 +478,14 @@ textarea{resize:vertical; font-family:var(--font-mono); line-height:1.55; font-s
   .me-grid{grid-template-columns:1fr;}
   .home-cols{grid-template-columns:1fr;}
 }
+@media (max-width:640px){
+  .starter-strip{grid-auto-flow:column; grid-auto-columns:78%; grid-template-columns:none;
+    overflow-x:auto; scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch; padding-bottom:4px;}
+  .starter-strip .prompt-card{scroll-snap-align:start;}
+}
+@media (max-width:400px){
+  .category-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:8px;}
+}
 
 /* ---------- v2: simplified surfaces ---------- */
 .home-cols{display:grid; grid-template-columns:1.4fr 1fr; gap:26px; align-items:start;}
@@ -492,6 +502,24 @@ textarea{resize:vertical; font-family:var(--font-mono); line-height:1.55; font-s
 .lib-landing{max-width:760px; margin:8px auto 4px;}
 .lib-landing h1{font-size:24px; letter-spacing:-0.015em; margin-bottom:14px; text-align:center;}
 .lib-quicklinks{display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-top:14px;}
+
+/* Library scope banner + landing sections */
+.scope-banner{padding:14px 18px; border:1px solid var(--border); border-left:3px solid var(--accent);
+  border-radius:var(--radius); background:var(--surface); margin:6px 0 22px;}
+.scope-banner .sb-label{font-family:var(--font-display); font-weight:600; font-size:14px;}
+.scope-banner .sb-line{font-size:12.5px; color:var(--text-muted); margin:3px 0 6px;}
+.scope-banner .linklike{font-size:12px; color:var(--accent-strong); background:none; border:none; font-weight:600; padding:0;}
+.lib-scopeline{font-size:12.5px; color:var(--text-faint); margin:6px 0 20px;}
+.starter-strip{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; align-items:start;}
+.starter-strip .prompt-card{padding:12px 14px;}
+.starter-strip .prompt-card-title{display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;}
+.starter-strip .prompt-card-desc{-webkit-line-clamp:2;}
+.cat-group{font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-faint); font-weight:700; margin:2px 0 10px;}
+details.cat-more{margin-top:16px;}
+details.cat-more > summary{cursor:pointer; font-size:12.5px; font-weight:600; color:var(--accent-strong); list-style:none;}
+details.cat-more > summary::-webkit-details-marker{display:none;}
+.rec-reason{font-size:11.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--text-faint); font-weight:700; margin:14px 0 8px;}
+.rec-reason:first-child{margin-top:0;}
 
 /* Detail: action-first */
 .detail-hero-actions{display:flex; flex-direction:column; gap:10px; margin:4px 0 20px;}

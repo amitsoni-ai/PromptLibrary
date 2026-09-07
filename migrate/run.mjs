@@ -4,21 +4,26 @@
 // --reset drops all app tables first (destructive). Otherwise idempotent:
 // taxonomy / prompts / seed codes are upserted, built-in admin codes are
 // inserted only if absent, learner_state / activity are left untouched.
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { neon } from "@neondatabase/serverless";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const SRC = join(HERE, "..", "src");
 const RESET = process.argv.includes("--reset");
 
 if (!process.env.DATABASE_URL) {
-  console.error("Set DATABASE_URL (Neon pooled connection string).");
+  console.error("Set DATABASE_URL (Neon pooled connection string, or pglite://memory for local verification).");
   process.exit(1);
 }
-const sql = neon(process.env.DATABASE_URL);            // HTTP driver: one statement per call
+// Neon HTTP driver for postgres:// ; in-process PGlite for pglite:// (same as run_v2/run_v3).
+const url = process.env.DATABASE_URL;
+const { neon } = /^pglite:/i.test(url)
+  ? await import("../api/_pglite.js")
+  : await import("@neondatabase/serverless");
+const sql = neon(url);                                 // one statement per call
 const readJson = (p) => JSON.parse(readFileSync(join(SRC, p), "utf8"));
+const readJsonOpt = (p) => (existsSync(join(SRC, p)) ? readJson(p) : []);
 
 function extractDataBlock(id) {
   const html = readFileSync(join(SRC, "data_blocks.html"), "utf8");
@@ -102,8 +107,9 @@ async function run() {
         s.enabled !== false, s.note || null]);
   }
 
-  const allPrompts = libPrompts.concat(curriculum);
-  console.log(`→ prompts (${allPrompts.length}, batched)`);
+  const authored = readJsonOpt("prompts_authored.json");   // Synottic Programs kickstart prompts
+  const allPrompts = libPrompts.concat(authored).concat(curriculum);
+  console.log(`→ prompts (${allPrompts.length}: ${libPrompts.length} library + ${authored.length} authored + ${curriculum.length} curriculum, batched)`);
   const COLS = 9;
   const BATCH = 250;
   for (let i = 0; i < allPrompts.length; i += BATCH) {

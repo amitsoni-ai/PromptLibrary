@@ -151,17 +151,10 @@ function renderGate(prefillMsg, opts) {
         // code and route to sign-up; part_auth redeems it after verification.
         if (e.status === 409 && e.data && e.data.error === "account-required") {
           try { sessionStorage.setItem("prompt-lib:pending-code", val); } catch (_) {}
-          if (typeof renderSignUp === "function") {
-            renderSignUp();
-            const b = document.querySelector("#gate-root .auth-card");
-            if (b) {
-              const note = document.createElement("div");
-              note.className = "auth-note";
-              note.style.marginTop = "10px";
-              note.textContent = `Create your account (or use the Sign in tab) and the code ${val} unlocks ${(e.data.orgName ? e.data.orgName + "'s" : "your organisation's")} library automatically.`;
-              b.insertBefore(note, b.querySelector("form"));
-            }
-          }
+          try { sessionStorage.setItem("prompt-lib:pending-code-org", e.data.orgName || ""); } catch (_) {}
+          // part_auth's renderSignUp sees the pending code and shows the short
+          // signup (step 1 only); the code is applied server-side on verify.
+          if (typeof renderSignUp === "function") renderSignUp();
           return;
         }
         if (e.status === 403 && e.data && e.data.error === "code-expired") { errEl.textContent = "That access code has expired. Ask your programme lead for a new one."; return; }
@@ -239,36 +232,63 @@ function promptOfTheDay() {
   const day = Math.floor(Date.now() / 86400000);
   return pool[hashStr("potd" + day) % pool.length];
 }
+/* Function/category + activity driven, each pick carries a plain-language
+   reason. Curriculum "companion" prompts never enter this mix — they surface
+   in their own labelled row on Home. Returns [{rec, reason}]. */
 function recommendedForYou(limit) {
   limit = limit || 6;
   const usage = Store.getUsage();
   const seen = new Set(Object.keys(usage.counts));
   const favs = Store.getFavorites();
-  const sc = currentScope();
-  let pool;
-  const progIds = scopeProgramIds();
-  if (progIds.length) {
-    const ids = new Set();
-    progIds.forEach((pid) => programPromptIds(pid).forEach((id) => ids.add(id)));
-    pool = Array.from(ids).map(findPromptById).filter(Boolean);
-  } else pool = scopedLibrary().slice();
-  // skill-level bias: learners who've engaged little get Beginner/Intermediate first
+  const favRecs = Array.from(favs).map(findPromptById).filter(Boolean);
+  const recentRecs = (usage.recent || []).map((r) => findPromptById(r.id)).filter(Boolean);
+  const savedCats = new Set(favRecs.concat(recentRecs).map((r) => r.category));
+  const savedSkills = new Set(favRecs.map((r) => r.skill));
+
+  const si = (typeof scopeInfo === "function") ? scopeInfo() : { primaryCats: [], functionName: null, restricted: false };
+  const primary = new Set(si.primaryCats || []);
+  const fnCats = new Set();
+  if (si.functionName && typeof FUNCTIONS !== "undefined" && FUNCTIONS[si.functionName]) {
+    FUNCTIONS[si.functionName].categories.forEach((c) => fnCats.add(c));
+  }
+
   const engaged = seen.size + favs.size;
-  const levelRank = engaged < 4 ? { Beginner: 0, Intermediate: 1, Advanced: 2 } : engaged < 15 ? { Intermediate: 0, Beginner: 1, Advanced: 1 } : { Advanced: 0, Intermediate: 1, Beginner: 2 };
-  const scored = pool
-    .filter((r) => !seen.has(r.id))
-    .map((r) => {
-      let s = r.qualityScore * 0.4;
-      s -= (levelRank[r.difficulty] || 1) * 12;
-      // nudge toward categories/skills the learner already favorited
-      const favRecs = Array.from(favs).map(findPromptById).filter(Boolean);
-      if (favRecs.some((fr) => fr.category === r.category)) s += 10;
-      if (favRecs.some((fr) => fr.skill === r.skill)) s += 6;
-      s += (hashStr(r.id) % 7);
-      return [s, r];
-    });
-  scored.sort((a, b) => b[0] - a[0]);
-  return scored.slice(0, limit).map((x) => x[1]);
+  const levelRank = engaged < 4 ? { Beginner: 0, Intermediate: 1, Advanced: 2 }
+    : engaged < 15 ? { Intermediate: 0, Beginner: 1, Advanced: 1 }
+    : { Advanced: 0, Intermediate: 1, Beginner: 2 };
+
+  const pool = scopedLibrary().filter((r) =>
+    !seen.has(r.id) && r.lifecycle !== "Archived" && r.source === "Original Library" && !isCurriculumPrompt(r));
+
+  const scored = pool.map((r) => {
+    let s = (r.qualityScore || 0) * 0.25;
+    let reason = "Popular in your library";
+    const inFn = si.functionName && fnCats.has(r.category);
+    const inScopeFocus = si.restricted && !si.functionName && primary.has(r.category);
+    if (savedCats.has(r.category) || savedSkills.has(r.skill)) { s += 12; reason = "Based on what you saved"; }
+    if (inFn) {
+      s += 18;
+      if (reason === "Popular in your library") reason = "Because you work in " + si.functionName;
+    } else if (inScopeFocus) {
+      s += 10;
+      if (reason === "Popular in your library") reason = "Central to your library";
+    }
+    s -= (levelRank[r.difficulty] || 1) * 8;
+    s += (hashStr(r.id) % 7);
+    return { rec: r, reason, s: s };
+  });
+  scored.sort((a, b) => b.s - a.s);
+  return scored.slice(0, limit).map((x) => ({ rec: x.rec, reason: x.reason }));
+}
+function programCompanionPrompt() {
+  const ids = (typeof scopeProgramIds === "function") ? scopeProgramIds() : [];
+  for (const pid of ids) {
+    if (typeof PROGRAM_FLAGSHIP !== "undefined" && PROGRAM_FLAGSHIP[pid]) {
+      const rec = findPromptById(PROGRAM_FLAGSHIP[pid]);
+      if (rec) return rec;
+    }
+  }
+  return null;
 }
 /* What the learner should pick back up — most recently opened module, else
    their next unreviewed Learn principle, else a first-run nudge. */
@@ -312,10 +332,22 @@ function renderHome(container) {
     renderResultsInto(container.querySelector("#home-results"), { compactFilters: true });
     wireHomeStatic(container);
   } else {
-    const recs = recommendedForYou(4);
+    const recPicks = recommendedForYou(6);
+    const si = (typeof scopeInfo === "function") ? scopeInfo() : { restricted: false, mode: "full" };
+    const isNew = Store.getFavorites().size === 0 && Object.keys(Store.getUsage().counts).length === 0;
+    const companion = programCompanionPrompt();
     const recent = Store.getUsage().recent.map((r) => findPromptById(r.id)).filter(Boolean).slice(0, 5);
     const saved = Array.from(Store.getFavorites()).map(findPromptById).filter(Boolean).slice(0, 5);
     const cont = continueLearning();
+
+    // group consecutive picks that share a reason so each row gets one caption
+    const groups = [];
+    recPicks.forEach(({ rec, reason }) => {
+      const last = groups[groups.length - 1];
+      if (last && last.reason === reason) last.recs.push(rec);
+      else groups.push({ reason, recs: [rec] });
+    });
+
     html += `
     <div class="continue-card" data-cont="1" role="button" tabindex="0">
       <div class="cc-ico">${icon(cont.kind === "module" ? "path" : "book")}</div>
@@ -327,10 +359,25 @@ function renderHome(container) {
     </div>
 
     <div class="home-block">
-      <div class="section-title"><h2>Recommended for you</h2><button class="linklike" data-nav="${scopeProgramIds().length ? "program" : "search"}">Browse the library</button></div>
-      ${recs.length ? `<div class="rec-grid" id="rec-grid">${recs.map((r) => promptCardHtml(r)).join("")}</div>`
-        : `<div class="empty-mini">Save and use a few prompts and this list will sharpen. For now, browse the library or open your program.</div>`}
+      <div class="section-title"><h2>Recommended for you</h2><button class="linklike" data-nav="search">Browse the library</button></div>
+      ${isNew ? `<div class="empty-mini" style="margin-bottom:10px;">Tell us what you're working on and we'll tailor this. For now, here's a strong place to start.</div>` : ""}
+      ${groups.length ? groups.map((g) => `
+        <div class="rec-reason">${escapeHtml(g.reason)}</div>
+        <div class="rec-grid">${g.recs.map((r) => promptCardHtml(r)).join("")}</div>`).join("")
+        : `<div class="empty-mini">Save and use a few prompts and this list will sharpen.</div>`}
     </div>
+
+    ${companion ? `
+    <div class="home-block">
+      <div class="section-title"><h2>Your program's companion prompt</h2></div>
+      <div class="potd" data-id="${companion.id}" role="button" tabindex="0">
+        <div>
+          <div class="potd-badge">Course companion</div>
+          <h3>${escapeHtml(companion.title.replace(" — Course Companion Prompt", ""))}</h3>
+          <p>${escapeHtml(companion.description)}</p>
+        </div>
+      </div>
+    </div>` : ""}
 
     <div class="home-cols">
       <div class="home-block">
@@ -350,7 +397,7 @@ function renderHome(container) {
     </div>`;
     container.innerHTML = html;
     wireHomeStatic(container);
-    wireCardActions(container.querySelector("#rec-grid") || container);
+    wireCardActions(container);
   }
 
   const input = container.querySelector("#hero-search");
@@ -396,14 +443,124 @@ function renderResultsInto(el, opts) {
   wireFilterBar(el, () => renderResultsInto(el, opts));
   renderPaginatedList(el.querySelector("#results-list-target"), results, {});
 }
+/* Up to 3 gentle starters: the program companion prompt first, then the
+   highest-quality non-curriculum prompts in the learner's primary categories. */
+function starterPrompts(si) {
+  const out = [];
+  const comp = programCompanionPrompt();
+  if (comp) out.push(comp);
+  const base = scopedLibrary()
+    .filter((r) => r.source === "Original Library" && r.lifecycle !== "Archived" && !isCurriculumPrompt(r))
+    .sort((a, b) => (b.qualityScore || 0) - (a.qualityScore || 0));
+  const fnSet = new Set((si.functionCats && si.functionCats.length ? si.functionCats : si.primaryCats) || []);
+  const take = (r) => { if (out.length < 3 && !out.some((x) => x.id === r.id)) out.push(r); };
+  base.filter((r) => !fnSet.size || fnSet.has(r.category)).forEach(take);
+  base.forEach(take); // fill any remaining slots from the wider scope
+  return out.slice(0, 3);
+}
+function scopeSummaryLine(si) {
+  if (!si.restricted) {
+    const nCats = new Set(scopedLibrary().map((r) => r.category)).size;
+    return `${si.total.toLocaleString()} prompts across ${nCats} categories`;
+  }
+  const cats = si.primaryCats.slice(0, 4).join(" · ");
+  const more = si.primaryCats.length > 4 ? ` +${si.primaryCats.length - 4} more` : "";
+  return `${si.total.toLocaleString()} prompts · ${cats}${more}`;
+}
+
+/* Shared category grid — used by the Library landing and the Categories tab. */
+function renderCategoryGridInto(el, opts) {
+  opts = opts || {};
+  const lib = scopedLibrary();
+  const counts = {};
+  lib.forEach((r) => { counts[r.category] = (counts[r.category] || 0) + 1; });
+  const um = typeof userLibraryMode === "function" ? userLibraryMode() : null;
+  const onlyCats = um && um.mode === "collection" && Array.isArray(um.categories) && um.categories.length
+    ? new Set(um.categories) : null;
+  let cats = CATEGORIES.filter((c) => counts[c.name] && (!onlyCats || onlyCats.has(c.name)))
+    .map((c) => Object.assign({}, c, { count: counts[c.name] }));
+  const q = (opts.filter || "").trim().toLowerCase();
+  if (q) cats = cats.filter((c) => c.name.toLowerCase().includes(q) || (c.role || "").toLowerCase().includes(q));
+  const maxCount = Math.max(1, ...cats.map((c) => c.count));
+  const card = (c) => `
+    <button class="category-card" data-category="${escapeHtml(c.name)}">
+      <div class="category-card-name">${escapeHtml(c.name)}</div>
+      <div class="category-card-count">${c.count.toLocaleString()} prompt${c.count === 1 ? "" : "s"} · ${escapeHtml(c.role || CATEGORY_SKILL[c.name] || "")}</div>
+      <div class="category-card-bar"><i style="width:${(c.count / maxCount) * 100}%"></i></div>
+    </button>`;
+  const si = (typeof scopeInfo === "function") ? scopeInfo() : { functionName: null, functionCats: [] };
+  let html = "";
+  if (opts.grouped && !q && si.functionName && (si.functionCats || []).length) {
+    const primary = new Set(si.functionCats);
+    const inFn = cats.filter((c) => primary.has(c.name)).sort((a, b) => b.count - a.count);
+    const other = cats.filter((c) => !primary.has(c.name)).sort((a, b) => b.count - a.count);
+    html = `
+      <div class="cat-group">In ${escapeHtml(si.functionName)}</div>
+      <div class="category-grid">${inFn.map(card).join("")}</div>
+      ${other.length ? `<details class="cat-more"><summary>More categories in your library (${other.length})</summary>
+        <div class="category-grid" style="margin-top:12px;">${other.map(card).join("")}</div></details>` : ""}`;
+  } else {
+    cats.sort((a, b) => b.count - a.count);
+    html = `<div class="category-grid">${cats.map(card).join("")}</div>`;
+  }
+  el.innerHTML = html + (!cats.length ? emptyStateHtml("grid", "No categories match", "Try a different word, or clear the search.") : "");
+  el.querySelectorAll("[data-category]").forEach((x) => x.addEventListener("click", () => {
+    STATE.activeCategory = x.dataset.category;
+    STATE.query = "";
+    STATE.filters = emptyFilters();
+    STATE.filters.category = x.dataset.category;
+    navigate("categoryDetail");
+  }));
+}
+
+/* Modules-first Library body for a single-program scope (no category grid). */
+function renderModuleListInto(el, prog) {
+  const mods = prog.modules || [];
+  const progress = Store.getProgress();
+  const open = STATE.libOpenModules || (STATE.libOpenModules = {});
+  function paint() {
+    el.innerHTML = mods.map((m, i) => {
+      const ids = MODULE_PROMPTS[m.id] || [];
+      const isOpen = open[m.id];
+      return `
+      <div class="module-card">
+        <div class="module-head" data-mod="${m.id}">
+          <div class="module-num">${i + 1}</div>
+          <div style="flex:1;">
+            <div class="module-title">${escapeHtml(m.name)}</div>
+            <div style="font-size:12px;color:var(--text-muted);">${escapeHtml(m.summary)}</div>
+          </div>
+          <span class="nav-count">${ids.length} prompts</span>
+          ${progress.modulesTouched[m.id] ? `<span class="chip chip-accent">Opened</span>` : ""}
+          <span style="transform:rotate(${isOpen ? 90 : 0}deg);transition:transform .15s;color:var(--text-faint);">${icon("chevronRight")}</span>
+        </div>
+        ${isOpen ? `<div class="module-body" id="lib-mb-${m.id}"></div>` : ""}
+      </div>`;
+    }).join("");
+    el.querySelectorAll("[data-mod]").forEach((h) => h.addEventListener("click", () => {
+      const id = h.dataset.mod;
+      open[id] = !open[id];
+      if (open[id]) Store.markModuleViewed(id);
+      paint();
+    }));
+    mods.forEach((m) => {
+      if (!open[m.id]) return;
+      const body = el.querySelector("#lib-mb-" + m.id);
+      if (body) renderPaginatedList(body, (MODULE_PROMPTS[m.id] || []).map(findPromptById).filter(Boolean), {});
+    });
+  }
+  paint();
+}
+
 function renderSearchView(container) {
   const q = STATE.query.trim();
   const hasFilters = activeFilterEntries(STATE.filters).length > 0;
+  const active = q || hasFilters || STATE.libBrowseAll;
+  const si = (typeof scopeInfo === "function") ? scopeInfo() : { restricted: false, gridEligible: true, primaryCats: [], total: scopedLibrary().length, label: "Full library", functionName: null };
   const catsHidden = !isViewAllowed("categories");
-  const active = q || hasFilters;
-  const lib = scopedLibrary();
-  container.innerHTML = `
-    <div class="lib-landing" ${active ? 'style="margin:0 0 14px;max-width:none;"' : ""}>
+
+  const searchHero = `
+    <div class="lib-landing" ${active ? 'style="margin:0 0 12px;max-width:none;"' : ""}>
       ${active ? "" : `<h1>Find a prompt for what you're doing</h1>`}
       <div class="search-hero">
         ${icon("search", "icon-search")}
@@ -411,87 +568,88 @@ function renderSearchView(container) {
         ${q ? `<button class="icon-clear" id="lib-clear" aria-label="Clear search">${icon("x")}</button>` : ""}
       </div>
       ${active ? "" : `<div class="lib-quicklinks">
-        ${catsHidden ? "" : `<button class="btn btn-sm" data-nav="categories">${icon("grid")} Browse categories</button>`}
+        ${catsHidden ? "" : `<button class="btn btn-sm" data-nav="categories">${icon("grid")} All categories</button>`}
         <button class="btn btn-sm" data-nav="builder">${icon("build")} Create a prompt</button>
         <button class="btn btn-sm" data-nav="me">${icon("star")} Saved</button>
         <button class="btn btn-sm" id="lib-ask">${icon("message")} Describe your situation</button>
       </div>`}
-    </div>
-    <div id="search-results"></div>`;
-  const resultsEl = container.querySelector("#search-results");
+    </div>`;
+
+  let bodyHtml;
   if (active) {
-    renderResultsInto(resultsEl, {});
+    bodyHtml = `<div id="search-results"></div>`;
   } else {
-    const top = lib.slice().sort((a, b) => b.qualityScore - a.qualityScore).slice(0, 8);
-    resultsEl.innerHTML = `
-      <div class="section-title" style="margin-top:22px;"><h2>Strong prompts to start from</h2>
-        <span style="font-size:12px;color:var(--text-faint)">${lib.length.toLocaleString()} prompts available to you</span></div>
-      <div class="rec-grid" id="lib-top"></div>`;
-    const listEl = resultsEl.querySelector("#lib-top");
-    listEl.innerHTML = top.map((r) => promptCardHtml(r)).join("");
-    wireCardActions(listEl);
+    const starters = starterPrompts(si);
+    const banner = si.restricted
+      ? `<div class="scope-banner">
+           <div class="sb-label">${escapeHtml(si.label)}${si.functionName && si.functionName !== si.label ? " · " + escapeHtml(si.functionName) : ""}</div>
+           <div class="sb-line">${escapeHtml(scopeSummaryLine(si))}</div>
+           <button class="linklike" data-browse-all>Browse everything in scope →</button>
+         </div>`
+      : `<div class="lib-scopeline">${escapeHtml(scopeSummaryLine(si))}</div>`;
+    const starterBlock = starters.length ? `
+      <div class="home-block">
+        <div class="section-title"><h2>New to the library? Start with these</h2>
+          <button class="linklike" data-browse-all>See all ${si.total.toLocaleString()} prompts →</button></div>
+        <div class="starter-strip">${starters.map((r) => promptCardHtml(r, { starter: true })).join("")}</div>
+      </div>` : "";
+    let mainBody, browseAllBtn = "";
+    if (!si.gridEligible && si.programId && ORG_INDEX.programs[si.programId]) {
+      const prog = ORG_INDEX.programs[si.programId];
+      mainBody = `<div class="section-title"><h2>${escapeHtml(prog.name)} — modules</h2>
+        <span style="font-size:12px;color:var(--text-faint)">Prompts grouped by your program</span></div>
+        <div id="lib-modules"></div>`;
+      browseAllBtn = `<button class="btn" data-browse-all style="margin-top:14px;">${icon("layers")} Browse all ${si.total.toLocaleString()} prompts</button>`;
+    } else {
+      mainBody = `<div class="section-title"><h2>Browse by category</h2></div><div id="lib-grid"></div>`;
+    }
+    bodyHtml = banner + starterBlock + mainBody + browseAllBtn;
   }
+
+  container.innerHTML = searchHero + bodyHtml;
+
+  if (active) {
+    renderResultsInto(container.querySelector("#search-results"), {});
+  } else {
+    const gridEl = container.querySelector("#lib-grid");
+    if (gridEl) renderCategoryGridInto(gridEl, { grouped: si.restricted });
+    const modEl = container.querySelector("#lib-modules");
+    if (modEl && si.programId) renderModuleListInto(modEl, ORG_INDEX.programs[si.programId]);
+  }
+
   container.querySelectorAll("[data-nav]").forEach((el) => el.addEventListener("click", () => navigate(el.dataset.nav)));
+  container.querySelectorAll("[data-browse-all]").forEach((el) => el.addEventListener("click", () => { STATE.libBrowseAll = true; renderContent(); }));
   const askBtn = container.querySelector("#lib-ask");
   if (askBtn) askBtn.addEventListener("click", () => openAskLibrary());
-  const si = container.querySelector("#lib-search");
-  if (si) {
-    si.focus();
-    si.setSelectionRange(si.value.length, si.value.length);
-    si.addEventListener("input", debounce((e) => { STATE.query = e.target.value; renderContent(); }, 160));
+  const sInput = container.querySelector("#lib-search");
+  if (sInput) {
+    sInput.focus();
+    sInput.setSelectionRange(sInput.value.length, sInput.value.length);
+    sInput.addEventListener("input", debounce((e) => { STATE.query = e.target.value; renderContent(); }, 160));
   }
   const clr = container.querySelector("#lib-clear");
-  if (clr) clr.addEventListener("click", () => { STATE.query = ""; renderContent(); });
+  if (clr) clr.addEventListener("click", () => { STATE.query = ""; STATE.libBrowseAll = false; renderContent(); });
 }
 
 /* ---------- Categories ---------- */
 function renderCategoriesView(container) {
   const lib = scopedLibrary();
-  const counts = {};
-  lib.forEach((r) => { counts[r.category] = (counts[r.category] || 0) + 1; });
-  // A collection is "exactly this set" of categories — its programs' linked
-  // prompts stay reachable via search / recommendations, but they don't spawn
-  // extra category tiles the admin never chose.
-  const um = typeof userLibraryMode === "function" ? userLibraryMode() : null;
-  const onlyCats = um && um.mode === "collection" && Array.isArray(um.categories) && um.categories.length
-    ? new Set(um.categories) : null;
-  let cats = CATEGORIES.filter((c) => counts[c.name] && (!onlyCats || onlyCats.has(c.name)))
-    .map((c) => Object.assign({}, c, { count: counts[c.name] }));
-  const maxCount = Math.max(1, ...cats.map((c) => c.count));
-  const q = STATE.query.trim().toLowerCase();
-  const shown = q ? cats.filter((c) => c.name.toLowerCase().includes(q) || (c.role || "").toLowerCase().includes(q)) : cats;
+  const nCats = new Set(lib.map((r) => r.category)).size;
+  const q = STATE.query.trim();
   container.innerHTML = `
-    <div class="section-title"><h2>Categories</h2><span style="font-size:12px;color:var(--text-faint)">${q ? `${shown.length} of ${cats.length} match "${escapeHtml(STATE.query.trim())}"` : `${cats.length} categories${(typeof scopeShowsCategories === "function" && scopeShowsCategories()) ? " in your library" : isScopeRestricted() ? " in your program scope" : " · preserved from the source library"}`}</span></div>
-    <div class="category-grid">
-      ${shown.map((c) => `
-        <button class="category-card" data-category="${escapeHtml(c.name)}">
-          <div class="category-card-name">${escapeHtml(c.name)}</div>
-          <div class="category-card-count">${c.count.toLocaleString()} prompts · ${escapeHtml(c.role || CATEGORY_SKILL[c.name] || "")}</div>
-          <div class="category-card-bar"><i style="width:${(c.count / maxCount) * 100}%"></i></div>
-        </button>`).join("")}
-    </div>
-    ${!shown.length ? emptyStateHtml("grid", "No categories match", "Try a different word, or clear the search.") : ""}`;
-  container.querySelectorAll("[data-category]").forEach((el) => el.addEventListener("click", () => {
-    STATE.activeCategory = el.dataset.category;
-    STATE.query = "";
-    STATE.filters = emptyFilters();
-    STATE.filters.category = el.dataset.category;
-    navigate("categoryDetail");
-  }));
+    <div class="section-title"><h2>Categories</h2><span style="font-size:12px;color:var(--text-faint)">${q ? `matching “${escapeHtml(q)}”` : `${nCats} categories · ${lib.length.toLocaleString()} prompts`}</span></div>
+    <div id="cats-grid"></div>`;
+  renderCategoryGridInto(container.querySelector("#cats-grid"), { filter: q, grouped: isScopeRestricted() });
 }
 function renderCategoryDetail(container) {
   const cat = STATE.activeCategory;
   const meta = CATEGORIES.find((c) => c.name === cat);
   if (!meta) { navigate("categories"); return; }
   const inCat = scopedLibrary().filter((r) => r.category === cat);
-  const byType = {};
-  inCat.forEach((r) => { byType[r.promptType] = (byType[r.promptType] || 0) + 1; });
-  const topTypes = Object.entries(byType).sort((a, b) => b[1] - a[1]).slice(0, 4);
   container.innerHTML = `
     <button class="btn btn-ghost btn-sm" data-nav="categories" style="margin-bottom:12px;">← All categories</button>
-    <div class="section-title" style="margin-bottom:6px;"><h2 style="font-size:20px;">${escapeHtml(cat)}</h2></div>
-    <div style="color:var(--text-muted); font-size:13px; margin-bottom:14px;">${inCat.length.toLocaleString()} prompts · skill: ${escapeHtml(CATEGORY_SKILL[cat] || "General")} · typically used by a ${escapeHtml(meta.role)}</div>
-    <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:20px;">${topTypes.map(([t, n]) => `<span class="chip">${escapeHtml(t)} · ${n}</span>`).join("")}</div>
+    <div class="section-title" style="margin-bottom:4px;"><h2 style="font-size:20px;">${escapeHtml(cat)}</h2>
+      <span style="font-size:12px;color:var(--text-faint)">${inCat.length.toLocaleString()} prompts · for ${escapeHtml(meta.role || CATEGORY_SKILL[cat] || "any professional")}</span></div>
     <div id="cat-results"></div>`;
   container.querySelector("[data-nav]").addEventListener("click", () => { STATE.query = ""; navigate("categories"); });
   renderResultsInto(container.querySelector("#cat-results"), {});

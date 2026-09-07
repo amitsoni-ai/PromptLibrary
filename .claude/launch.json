@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "prompt-library",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["devserver.mjs"],
+      "port": 8790
+    }
+  ]
+}

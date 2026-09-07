@@ -217,6 +217,87 @@ function scopeProgramIds() {
   return [];
 }
 
+/* ---------- Unified scope description ----------
+   One shape the Library landing, Home recommendations, Categories tab and the
+   sidebar all read, so "what's in scope and how much" is stated the same way
+   everywhere. Folds together the three scoping paths: learner-account
+   function/collection (userLibraryMode), admin access codes (adminScopeCategories)
+   and classic program access codes (program.categories). */
+let __CURRICULUM_IDS = null;
+function isCurriculumPrompt(rec) {
+  if (!rec) return false;
+  if (__CURRICULUM_IDS === null) {
+    __CURRICULUM_IDS = new Set((typeof CURRICULUM_PROMPTS !== "undefined" ? CURRICULUM_PROMPTS : []).map((r) => r.id));
+  }
+  return __CURRICULUM_IDS.has(rec.id) || (!!rec.programId && rec.source && /curriculum|companion/i.test(rec.source));
+}
+function scopeInfo() {
+  const lib = scopedLibrary();
+  const total = lib.length;
+  const liveCounts = {};
+  lib.forEach((r) => { liveCounts[r.category] = (liveCounts[r.category] || 0) + 1; });
+  const orderByCount = (cats) => Array.from(cats).filter((c) => liveCounts[c]).sort((a, b) => liveCounts[b] - liveCounts[a]);
+
+  const s = Store.getSession();
+  const sc = currentScope();
+  const um = typeof userLibraryMode === "function" ? userLibraryMode() : null;
+
+  let mode = "full", label = "Full library", functionName = null, inScope = null, programId = null;
+
+  if (um) {
+    mode = um.mode;
+    if (um.mode === "full") { /* defaults */ }
+    else if (um.mode === "preview") { label = "Preview library"; }
+    else {
+      // function / collection / program user account
+      const fn = (s && s.role && typeof FUNCTION_SNAKE_TO_NAME !== "undefined") ? FUNCTION_SNAKE_TO_NAME[String(s.role).toLowerCase()] : null;
+      functionName = fn || null;
+      label = (s && s.orgName) || fn || (um.mode === "collection" ? "Your collection" : "Your library");
+      const cats = new Set(um.categories || []);
+      (um.programIds || []).forEach((pid) => ((ORG_INDEX.programs[pid] || {}).categories || []).forEach((c) => cats.add(c)));
+      if (!cats.size && fn && typeof FUNCTIONS !== "undefined" && FUNCTIONS[fn]) FUNCTIONS[fn].categories.forEach((c) => cats.add(c));
+      // fall back to whatever categories the scoped library actually contains
+      if (!cats.size) Object.keys(liveCounts).forEach((c) => cats.add(c));
+      inScope = cats;
+      if ((um.programIds || []).length === 1) programId = um.programIds[0];
+    }
+  } else if (s && s.kind === "admin") {
+    const cats = adminScopeCategories(s);
+    if (cats && cats.size) {
+      mode = "program";
+      label = s.orgName || "Your library";
+      functionName = (s.functions && s.functions.length === 1) ? s.functions[0] : null;
+      inScope = cats;
+      if ((s.programIds || []).length === 1) programId = s.programIds[0];
+    }
+  } else if (sc && sc.program && sc.program.scope === "program") {
+    mode = "program";
+    label = sc.program.name || (sc.org && sc.org.name) || "Your program";
+    inScope = new Set(sc.program.categories || Object.keys(liveCounts));
+    programId = sc.program.id;
+  }
+
+  // Categories that belong to the named function — the "In <Function>" group
+  // and the recommendation focus boost. Distinct from `inScope`, which can be
+  // wider (linked-prompt fallbacks pull in extra shelves).
+  let functionCats = [];
+  if (functionName && typeof FUNCTIONS !== "undefined" && FUNCTIONS[functionName]) {
+    functionCats = FUNCTIONS[functionName].categories.filter((c) => liveCounts[c]);
+  }
+  const inScopeList = inScope ? orderByCount(inScope) : orderByCount(Object.keys(liveCounts));
+  const fnSet = new Set(functionCats);
+  // primaryCats: function categories first (by count), then the rest of scope.
+  const primaryCats = orderByCount(functionCats).concat(inScopeList.filter((c) => !fnSet.has(c)));
+  return {
+    restricted: mode !== "full",
+    mode, label, functionName,
+    inScope, functionCats: orderByCount(functionCats), primaryCats,
+    gridEligible: mode === "full" || primaryCats.length >= 2,
+    programId,
+    total,
+  };
+}
+
 /* ---------- Inline icon set ---------- */
 const ICONS = {
   home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg>',
@@ -268,20 +349,22 @@ function promptCardHtml(rec, opts) {
   const isFav = Store.isFavorite(rec.id);
   const srcTag = opts.showSource && rec.source && rec.source !== "Original Library"
     ? `<span class="chip chip-accent">${escapeHtml(rec.source === "Modified" || rec.source === "Optimized" ? "My version" : rec.source)}</span>` : "";
+  const tmpl = rec.isTemplate
+    ? `<span class="tmpl-glyph" title="Reusable template with ${(rec.variables || []).length} fill-in field${(rec.variables || []).length === 1 ? "" : "s"}" aria-label="Template">{ }</span>` : "";
   return `
-  <article class="prompt-card" data-id="${rec.id}" role="button" tabindex="0" aria-label="Open ${escapeHtml(rec.title)}">
+  <article class="prompt-card${opts.starter ? " is-starter" : ""}" data-id="${rec.id}" role="button" tabindex="0" aria-label="Open ${escapeHtml(rec.title)}">
     <div class="prompt-card-top">
       <div class="prompt-card-title">${escapeHtml(rec.title)}</div>
       <div class="prompt-card-actions">
+        ${tmpl}
         <button class="fav-btn ${isFav ? "is-fav" : ""}" data-action="fav" data-id="${rec.id}" aria-label="${isFav ? "Remove from Saved" : "Save"}" title="Save (F)">${isFav ? icon("starFilled") : icon("star")}</button>
       </div>
     </div>
     <div class="prompt-card-desc">${escapeHtml(rec.description)}</div>
     <div class="prompt-card-meta">
+      ${opts.starter ? `<span class="chip chip-blue">Starter</span>` : ""}
       <span class="chip">${escapeHtml(rec.category)}</span>
       ${renderDifficulty(rec.difficulty)}
-      ${rec.isTemplate ? `<span class="chip" title="Reusable template with ${rec.variables.length} fill-in field${rec.variables.length === 1 ? "" : "s"}">Template</span>` : ""}
-      ${typeof fwLevelBadge === "function" ? fwLevelBadge(rec) : ""}
       ${srcTag}
     </div>
   </article>`;

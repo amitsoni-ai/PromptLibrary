@@ -753,6 +753,90 @@ section("12. Collection code on the anonymous gate + unknown/expired + seat-limi
   ok("re-redeeming a held code is idempotent (no extra seat consumed)", reapply.status === 200 && afterReapply === 5, `redemptions=${afterReapply}`);
 }
 
+section("13. Collection short signup: code at signup → step 1 only → verify → collection scope + derived org/function");
+{
+  await resetLimits();
+  const { aj, acsrf } = globalThis._admin;
+
+  // collection carries the joining defaults (org + function + AI level)
+  const create = await call(H.adminCols, { method: "POST", cookieJar: aj, csrf: acsrf, body: {
+    action: "create", name: "Derive Onboarding", orgName: "DeriveCorp",
+    defaultFunction: "finance", defaultAiLevel: "advanced",
+    categoryIds: ["Finance & Accounting", "Legal & Compliance"], programIds: [], promptIds: [] } });
+  ok("admin sets default function/AI level on the collection",
+    create.status === 200 && create.json.collection.defaultFunction === "finance" && create.json.collection.defaultAiLevel === "advanced",
+    JSON.stringify(create.json.collection));
+  const colId = create.json.collection.id;
+  const gen = await call(H.adminCols, { method: "POST", cookieJar: aj, csrf: acsrf, body: {
+    action: "generate_code", id: colId, label: "Join" } });
+  const code = gen.json.code.code;
+
+  // short signup: step-1 fields + the code. Client ALSO sends bogus function /
+  // organization / aiLevel — the server must ignore them (spec §4).
+  const j = jar(); const csrf = await getCsrf(j);
+  const signup = await call(H.signup, { method: "POST", cookieJar: j, csrf, body: {
+    firstName: "Colin", lastName: "Joiner", email: "colin@derivecorp.example",
+    password: "Der1veMe!!", confirmPassword: "Der1veMe!!", code,
+    function: "sales", organization: "CLIENT-SENT-ORG", aiLevel: "beginner", agreeTerms: true } });
+  ok("short signup accepted (201, signed in) with only step-1 fields + code",
+    signup.status === 201 && signup.json.pending === true && signup.json.signedIn === true, JSON.stringify(signup.json));
+
+  const preVerify = await call(H.me, { method: "GET", cookieJar: j });
+  ok("pre-verify: function + org already derived from the collection (client values ignored)",
+    preVerify.json.user.function === "finance" && preVerify.json.user.organization === "DeriveCorp" && preVerify.json.user.aiLevel === "advanced",
+    JSON.stringify(preVerify.json.user));
+  ok("pre-verify: no entitlement scope yet (settles on verification)",
+    preVerify.json.access.access.scopeType === "none", JSON.stringify(preVerify.json.access.access));
+
+  const token = tokenFromMail(lastMailTo("colin@derivecorp.example"));
+  const verify = await call(H.verify, { method: "POST", cookieJar: j, csrf, body: { token } });
+  ok("verify-email 200 verified", verify.status === 200 && verify.json.status === "verified", JSON.stringify(verify.json));
+
+  const me = await call(H.me, { method: "GET", cookieJar: j });
+  const acc = me.json.access.access;
+  ok("post-verify: entitlement is the COLLECTION scope, active",
+    acc.scopeType === "collection" && acc.active === true, JSON.stringify(acc));
+  ok("post-verify: categoryIds are the collection's set",
+    JSON.stringify((acc.categoryIds || []).slice().sort()) === JSON.stringify(["Finance & Accounting", "Legal & Compliance"]),
+    JSON.stringify(acc.categoryIds));
+  ok("post-verify: profile org = collection org, function = collection default",
+    me.json.access.org === "DeriveCorp" && me.json.access.role === "finance", JSON.stringify({ org: me.json.access.org, role: me.json.access.role }));
+  ok("post-verify: library.full + practice unlocked",
+    me.json.access.features["library.full"] === true && me.json.access.features["practice"] === true, JSON.stringify(me.json.access.features));
+
+  const colAfter = (await call(H.adminCols, { method: "GET", cookieJar: aj, query: {} }))
+    .json.collections.find((c) => c.id === colId);
+  ok("collection code seat claimed once on verification", colAfter.codes[0].redemptions === 1, JSON.stringify(colAfter.codes[0]));
+
+  // a bad / non-collection code at signup -> 422, client falls back to full flow
+  const bj = jar(); const bcsrf = await getCsrf(bj);
+  const bad = await call(H.signup, { method: "POST", cookieJar: bj, csrf: bcsrf, body: {
+    firstName: "Bad", lastName: "Code", email: "badcode@example.com",
+    password: "N0SuchC0de!!", confirmPassword: "N0SuchC0de!!", code: "NOPE-NOPE12", agreeTerms: true } });
+  ok("unknown code at signup -> 422 invalid-collection-code", bad.status === 422 && bad.json.error === "invalid-collection-code", JSON.stringify(bad.json));
+
+  // disabled collection code at signup -> also 422
+  const dgen = await call(H.adminCols, { method: "POST", cookieJar: aj, csrf: acsrf, body: {
+    action: "generate_code", id: colId, label: "Off", enabled: false } });
+  const dj = jar(); const dcsrf = await getCsrf(dj);
+  const dis = await call(H.signup, { method: "POST", cookieJar: dj, csrf: dcsrf, body: {
+    firstName: "Dis", lastName: "Abled", email: "disabled-code@example.com",
+    password: "D1sabledC0de!", confirmPassword: "D1sabledC0de!", code: dgen.json.code.code, agreeTerms: true } });
+  ok("disabled collection code at signup -> 422 invalid-collection-code", dis.status === 422 && dis.json.error === "invalid-collection-code", JSON.stringify(dis.json));
+
+  // normal signup (no code) still requires step-2 fields — function is mandatory
+  const nj = jar(); const ncsrf = await getCsrf(nj);
+  const noFn = await call(H.signup, { method: "POST", cookieJar: nj, csrf: ncsrf, body: {
+    firstName: "Nor", lastName: "Mal", email: "normal-nofn@example.com",
+    password: "N0rmalFl0w!!", confirmPassword: "N0rmalFl0w!!", organization: "Synottic", agreeTerms: true } });
+  ok("normal signup without a code still rejects a missing function (step 2 stays)",
+    noFn.status === 422 && (noFn.json.field === "function" || noFn.json.error === "missing"), JSON.stringify(noFn.json));
+  const normal = await call(H.signup, { method: "POST", cookieJar: nj, csrf: ncsrf, body: {
+    firstName: "Nor", lastName: "Mal", email: "normal-ok@example.com",
+    password: "N0rmalFl0w!!", confirmPassword: "N0rmalFl0w!!", function: "marketing", aiLevel: "beginner", organization: "Synottic", agreeTerms: true } });
+  ok("normal signup with step-2 fields still works unchanged", normal.status === 201 && normal.json.signedIn === true, JSON.stringify(normal.json));
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 console.log(`\n${pass}/${pass + fail} checks passed` + (fail ? `  (${fail} FAILED)` : "  ✓"));
 process.exit(fail ? 1 : 0);

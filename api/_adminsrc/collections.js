@@ -20,12 +20,24 @@ import { checkCsrf } from "../_http.js";
 import { requireAdmin } from "../_session.js";
 import { newId } from "../_crypto.js";
 import { auditLog } from "../_audit.js";
+import { FUNCTION_KEYS } from "../_functions.js";
+import { AI_LEVELS } from "../_validate.js";
 
 const MAX = 4000;
 const cleanList = (v, cap = MAX) =>
   Array.isArray(v)
     ? Array.from(new Set(v.map((x) => String(x || "").trim()).filter(Boolean))).slice(0, cap)
     : [];
+
+// Collection join defaults — the function / AI level a short-signup learner
+// inherits (see api/_authsrc/signup.js). `undefined` = leave unchanged on an
+// update; `null` / "" = clear; anything off the allow-list is rejected.
+function cleanEnum(v, allow) {
+  if (v === undefined) return undefined;
+  if (v === null || v === "") return null;
+  const s = String(v).trim().toLowerCase();
+  return allow.includes(s) ? s : { error: true };
+}
 
 function genCode(label) {
   const base = String(label || "ORG").toUpperCase().replace(/[^A-Z0-9]+/g, "").slice(0, 10) || "ORG";
@@ -34,6 +46,7 @@ function genCode(label) {
 const colOut = (c, codes) => ({
   id: c.id, name: c.name, orgName: c.org_name,
   programIds: c.program_ids || [], categoryIds: c.category_ids || [], promptIds: c.prompt_ids || [],
+  defaultFunction: c.default_function || null, defaultAiLevel: c.default_ai_level || null,
   enabled: c.enabled !== false, createdAt: c.created_at, updatedAt: c.updated_at,
   codes: (codes || []).map((k) => ({
     id: k.id, code: k.code, label: k.label, enabled: k.enabled !== false,
@@ -74,12 +87,18 @@ export default async function handler(req, res) {
   if (action === "create") {
     const name = String(b.name || "").trim();
     if (!name) return json(res, 422, { error: "name-required" });
+    const dfn = cleanEnum(b.defaultFunction, FUNCTION_KEYS);
+    const dlv = cleanEnum(b.defaultAiLevel, AI_LEVELS);
+    if (dfn && dfn.error) return json(res, 422, { error: "invalid-default-function" });
+    if (dlv && dlv.error) return json(res, 422, { error: "invalid-default-ai-level" });
     const id = newId("col");
     const row = (await sql`
-      insert into collections (id, org_name, name, program_ids, category_ids, prompt_ids, enabled, created_by)
+      insert into collections (id, org_name, name, program_ids, category_ids, prompt_ids,
+        default_function, default_ai_level, enabled, created_by)
       values (${id}, ${b.orgName || null}, ${name},
         ${JSON.stringify(cleanList(b.programIds))}, ${JSON.stringify(cleanList(b.categoryIds))},
-        ${JSON.stringify(cleanList(b.promptIds))}, ${b.enabled !== false}, ${admin.id})
+        ${JSON.stringify(cleanList(b.promptIds))}, ${dfn || null}, ${dlv || null},
+        ${b.enabled !== false}, ${admin.id})
       returning *`)[0];
     auditLog(sql, { ...actor, action: "collection.create", targetType: "collection", targetId: id, detail: { name, orgName: b.orgName || null } });
     return json(res, 200, { collection: colOut(row, []) });
@@ -89,25 +108,34 @@ export default async function handler(req, res) {
     if (!b.id) return json(res, 400, { error: "id-required" });
     const cur = (await sql`select * from collections where id = ${b.id} limit 1`)[0];
     if (!cur) return json(res, 404, { error: "not-found" });
+    const dfn = cleanEnum(b.defaultFunction, FUNCTION_KEYS);
+    const dlv = cleanEnum(b.defaultAiLevel, AI_LEVELS);
+    if (dfn && dfn.error) return json(res, 422, { error: "invalid-default-function" });
+    if (dlv && dlv.error) return json(res, 422, { error: "invalid-default-ai-level" });
     const m = {
       name: b.name != null ? String(b.name).trim() || cur.name : cur.name,
       org_name: b.orgName !== undefined ? (b.orgName || null) : cur.org_name,
       program_ids: b.programIds !== undefined ? cleanList(b.programIds) : cur.program_ids,
       category_ids: b.categoryIds !== undefined ? cleanList(b.categoryIds) : cur.category_ids,
       prompt_ids: b.promptIds !== undefined ? cleanList(b.promptIds) : cur.prompt_ids,
+      default_function: dfn === undefined ? cur.default_function : dfn,
+      default_ai_level: dlv === undefined ? cur.default_ai_level : dlv,
       enabled: b.enabled !== undefined ? !!b.enabled : cur.enabled,
     };
     const row = (await sql`
       update collections set name=${m.name}, org_name=${m.org_name},
         program_ids=${JSON.stringify(m.program_ids || [])}, category_ids=${JSON.stringify(m.category_ids || [])},
-        prompt_ids=${JSON.stringify(m.prompt_ids || [])}, enabled=${m.enabled}, updated_at=now()
+        prompt_ids=${JSON.stringify(m.prompt_ids || [])},
+        default_function=${m.default_function || null}, default_ai_level=${m.default_ai_level || null},
+        enabled=${m.enabled}, updated_at=now()
       where id=${b.id} returning *`)[0];
     // the collection is the source of truth: sync ALL its codes' scope snapshot
     // (per-code label / seat limit / expiry / enabled are left untouched).
     // Entitlements already granted keep their own snapshot from redeem time.
     await sql`update access_codes set program_ids=${JSON.stringify(m.program_ids || [])},
         category_ids=${JSON.stringify(m.category_ids || [])}, prompt_ids=${JSON.stringify(m.prompt_ids || [])},
-        org_name=${m.org_name}, updated_at=now()
+        org_name=${m.org_name}, default_function=${m.default_function || null},
+        default_ai_level=${m.default_ai_level || null}, updated_at=now()
       where collection_id=${b.id}`;
     const codes = await sql`select * from access_codes where collection_id = ${b.id} order by created_at desc`;
     auditLog(sql, { ...actor, action: "collection.update", targetType: "collection", targetId: b.id });
@@ -137,10 +165,11 @@ export default async function handler(req, res) {
     const id = newId("acc");
     const row = (await sql`
       insert into access_codes (id, code, label, org_name, scope_type, program_ids, category_ids, prompt_ids,
-        collection_id, license_type, max_redemptions, expires_at, enabled, note, created_by)
+        collection_id, default_function, default_ai_level, license_type, max_redemptions, expires_at, enabled, note, created_by)
       values (${id}, ${code}, ${b.label || col.name}, ${col.org_name}, 'collection',
         ${JSON.stringify(col.program_ids || [])}, ${JSON.stringify(col.category_ids || [])},
-        ${JSON.stringify(col.prompt_ids || [])}, ${col.id}, ${b.licenseType || "standard"},
+        ${JSON.stringify(col.prompt_ids || [])}, ${col.id}, ${col.default_function || null}, ${col.default_ai_level || null},
+        ${b.licenseType || "standard"},
         ${b.maxRedemptions ?? null}, ${b.expiresAt || null}, ${b.enabled !== false}, ${b.note || null}, ${admin.id})
       returning *`)[0];
     auditLog(sql, { ...actor, action: "collection.code_generate", targetType: "access_code", targetId: id,

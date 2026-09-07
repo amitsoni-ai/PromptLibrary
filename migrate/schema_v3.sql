@@ -20,6 +20,16 @@ alter table access_codes add column if not exists category_ids  jsonb not null d
 alter table access_codes add column if not exists prompt_ids    jsonb not null default '[]'::jsonb;
 alter table access_codes add column if not exists collection_id text;
 
+-- ── collection joining defaults (Piece 3, short signup) ─────────────────────
+-- When a learner signs up after entering a collection access code we show only
+-- step 1 (name / email / password) and take organisation + function + AI level
+-- from the collection. These ride on each generated code (snapshot, kept in
+-- sync by /api/admin/collections#update) so api/_authsrc/signup.js can derive
+-- them from the code row alone. Null = fall back to `general` / `beginner`.
+-- The matching `collections` columns are added after that table below.
+alter table access_codes add column if not exists default_function text;
+alter table access_codes add column if not exists default_ai_level text;
+
 -- ── function_scopes: admin overrides for per-function library scope ─────────
 -- Resolver: api/_funcscope.js#resolveFunctionScope. Falls back to the static
 -- catalogue in api/_functions.js when there is no row (or the row is empty /
@@ -55,6 +65,9 @@ create table if not exists collections (
   updated_at   timestamptz not null default now()
 );
 create index if not exists collections_enabled_idx on collections (enabled);
+-- joining defaults inherited by short-signup learners (see access_codes above)
+alter table collections add column if not exists default_function text;
+alter table collections add column if not exists default_ai_level text;
 
 -- ── access-code lookup paths (additive, idempotent) ───────────────────────────
 -- Redeem + the /api/session gate both match on upper(code); the plain `code`
