@@ -16,9 +16,20 @@ const server = createServer(async (req, res) => {
 
   if (url.pathname.startsWith("/api/")) {
     const rel = url.pathname.slice(5).replace(/[^a-zA-Z0-9/_-]/g, "");
+    req.query = Object.fromEntries(url.searchParams);
     try {
-      const mod = await import("./api/" + rel + ".js");
-      req.query = Object.fromEntries(url.searchParams);
+      let mod;
+      try {
+        mod = await import("./api/" + rel + ".js");
+      } catch (e) {
+        // Fall back to a catch-all: /api/auth/login -> ./api/auth/[action].js
+        // with req.query.action = "login" (mirrors Vercel dynamic routes).
+        const slash = rel.indexOf("/");
+        if (e.code === "ERR_MODULE_NOT_FOUND" && slash > 0) {
+          req.query.action = rel.slice(slash + 1);
+          mod = await import("./api/" + rel.slice(0, slash) + "/[action].js");
+        } else throw e;
+      }
       await mod.default(req, res);
     } catch (e) {
       console.error("api error", url.pathname, e);

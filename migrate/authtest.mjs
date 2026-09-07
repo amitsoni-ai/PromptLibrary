@@ -86,22 +86,25 @@ function jar() {
   };
 }
 
+// Handlers now live in api/_authsrc/ and api/_adminsrc/ (underscore = excluded
+// from Vercel's function count); /api/auth/* and /api/admin/* are served by the
+// [action].js catch-alls. The tests exercise the handlers directly.
 const H = {
-  csrf:      (await import("../api/auth/csrf.js")).default,
-  signup:    (await import("../api/auth/signup.js")).default,
-  verify:    (await import("../api/auth/verify-email.js")).default,
-  resend:    (await import("../api/auth/resend-verification.js")).default,
-  login:     (await import("../api/auth/login.js")).default,
-  logout:    (await import("../api/auth/logout.js")).default,
-  me:        (await import("../api/auth/me.js")).default,
-  forgot:    (await import("../api/auth/forgot-password.js")).default,
-  reset:     (await import("../api/auth/reset-password.js")).default,
-  redeem:    (await import("../api/auth/redeem-code.js")).default,
-  adminSession: (await import("../api/admin/session.js")).default,
-  adminUsers:   (await import("../api/admin/users.js")).default,
-  adminEnt:     (await import("../api/admin/entitlements.js")).default,
-  adminAudit:   (await import("../api/admin/audit.js")).default,
-  adminAnalytics: (await import("../api/admin/analytics.js")).default,
+  csrf:      (await import("../api/_authsrc/csrf.js")).default,
+  signup:    (await import("../api/_authsrc/signup.js")).default,
+  verify:    (await import("../api/_authsrc/verify-email.js")).default,
+  resend:    (await import("../api/_authsrc/resend-verification.js")).default,
+  login:     (await import("../api/_authsrc/login.js")).default,
+  logout:    (await import("../api/_authsrc/logout.js")).default,
+  me:        (await import("../api/_authsrc/me.js")).default,
+  forgot:    (await import("../api/_authsrc/forgot-password.js")).default,
+  reset:     (await import("../api/_authsrc/reset-password.js")).default,
+  redeem:    (await import("../api/_authsrc/redeem-code.js")).default,
+  adminSession: (await import("../api/_adminsrc/session.js")).default,
+  adminUsers:   (await import("../api/_adminsrc/users.js")).default,
+  adminEnt:     (await import("../api/_adminsrc/entitlements.js")).default,
+  adminAudit:   (await import("../api/_adminsrc/audit.js")).default,
+  adminAnalytics: (await import("../api/_adminsrc/analytics.js")).default,
 };
 
 async function call(handler, { method = "GET", query = {}, body = null, cookieJar, csrf } = {}) {
