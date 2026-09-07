@@ -34,11 +34,44 @@ function renderGate(prefillMsg) {
   const errEl = root.querySelector("#gate-error");
   const enterBtn = root.querySelector("#gate-enter");
   let resolved = null;
+  let bePreview = null;          // last Backend.previewCode result for the current input
+  let beReqId = 0;
+
+  function renderBackendPreview(r) {
+    errEl.textContent = "";
+    const scopeNote = r.superAdmin ? "Super-admin — full library and the admin console."
+      : r.fullLibrary ? "Full library — all categories, functions and programs."
+      : r.programScoped ? "Scoped access — only the prompts in the assigned program(s)."
+      : "Full library access.";
+    const line2 = r.kind === "admin"
+      ? escapeHtml([r.industry, r.domain].filter(Boolean).join(" · "))
+      : escapeHtml([r.programName, r.cohortName].filter(Boolean).join(" · "));
+    const progs = (r.programs && r.programs.length) ? "Programs: " + r.programs.map((p) => p.name).join(", ") + ". " : "";
+    resolvedEl.innerHTML = `<div class="gate-resolved"><b>${escapeHtml(r.orgName || "Access code")}</b><br>${line2}<br><span style="opacity:.8">${escapeHtml(progs)}${scopeNote}</span></div>`;
+    nameWrap.hidden = false;
+    enterBtn.disabled = false;
+  }
+
+  async function checkBackend() {
+    const val = codeI.value.trim();
+    if (!val || typeof Backend === "undefined" || !Backend.isConfigured()) return;
+    const my = ++beReqId;
+    const r = await Backend.previewCode(val);
+    if (my !== beReqId) return;             // superseded
+    if (r === undefined) return;            // backend absent — leave local result
+    if (r === null) {                       // backend up, code not found
+      bePreview = null;
+      if (!resolved) { resolvedEl.innerHTML = ""; nameWrap.hidden = true; enterBtn.disabled = true; errEl.textContent = "That code isn't recognised."; }
+      return;
+    }
+    bePreview = r;
+    renderBackendPreview(r);
+  }
 
   function check() {
     const val = codeI.value.trim();
     resolved = val ? resolveAccessCode(val) : null;
-    if (!val) { resolvedEl.innerHTML = ""; nameWrap.hidden = true; enterBtn.disabled = true; errEl.textContent = ""; return; }
+    if (!val) { resolvedEl.innerHTML = ""; nameWrap.hidden = true; enterBtn.disabled = true; errEl.textContent = ""; bePreview = null; return; }
     if (resolved && resolved.disabled) {
       resolvedEl.innerHTML = "";
       nameWrap.hidden = true;
@@ -47,10 +80,13 @@ function renderGate(prefillMsg) {
       return;
     }
     if (!resolved) {
-      resolvedEl.innerHTML = "";
-      nameWrap.hidden = true;
-      enterBtn.disabled = true;
-      errEl.textContent = "That code isn't recognised. Check with your program lead.";
+      // no local match — the backend probe (checkBackend) may still recognise it
+      if (!(typeof Backend !== "undefined" && Backend.isConfigured())) {
+        resolvedEl.innerHTML = "";
+        nameWrap.hidden = true;
+        enterBtn.disabled = true;
+        errEl.textContent = "That code isn't recognised. Check with your program lead.";
+      }
       return;
     }
     errEl.textContent = "";
@@ -75,9 +111,31 @@ function renderGate(prefillMsg) {
     if (resolved.learner && !nameI.value) nameI.value = resolved.learner.name;
     enterBtn.disabled = false;
   }
-  codeI.addEventListener("input", check);
-  root.querySelectorAll("[data-fill]").forEach((c) => c.addEventListener("click", () => { codeI.value = c.dataset.fill; check(); codeI.focus(); }));
-  function enter() {
+  const checkBackendDebounced = debounce(checkBackend, 260);
+  codeI.addEventListener("input", () => { check(); checkBackendDebounced(); });
+  root.querySelectorAll("[data-fill]").forEach((c) => c.addEventListener("click", () => { codeI.value = c.dataset.fill; check(); checkBackend(); codeI.focus(); }));
+
+  async function enter() {
+    const val = codeI.value.trim();
+    if (!val) return;
+    // Backend path: redeem through /api/session (authoritative, knows
+    // admin-created + disabled codes). Falls back to local on network failure.
+    if (typeof Backend !== "undefined" && Backend.isConfigured()) {
+      enterBtn.disabled = true;
+      try {
+        const session = await Backend.redeem(val, nameI.value.trim());
+        if (session.superAdmin) { try { sessionStorage.setItem("prompt-lib:admin-ok", "1"); } catch (e) {} }
+        Store.setSession(session);
+        bootApp();
+        return;
+      } catch (e) {
+        enterBtn.disabled = false;
+        if (e.status === 404) { errEl.textContent = "That code isn't recognised."; return; }
+        if (e.status === 403) { errEl.textContent = "That access code has been disabled."; return; }
+        if (!e.soft) { errEl.textContent = "Couldn't reach the server — try again."; return; }
+        // e.soft: backend absent -> fall through to local
+      }
+    }
     if (!resolved) { resolved = resolveAccessCode(codeI.value); check(); }
     if (!resolved || resolved.disabled) return;
     let s;

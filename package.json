@@ -1,0 +1,13 @@
+{
+  "name": "synottic-prompt-library",
+  "private": true,
+  "type": "module",
+  "description": "Synottic Prompt Library — static frontend + Vercel serverless API on Neon Postgres",
+  "scripts": {
+    "migrate": "node migrate/run.mjs",
+    "build": "cd src && python3 build.py"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^0.10.4"
+  }
+}

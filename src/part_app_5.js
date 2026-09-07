@@ -496,7 +496,7 @@ function renderSidebarFooter() {
     <div class="stat-row"><span>Favorites</span><b class="tabular">${Store.getFavorites().size}</b></div>
     <div class="stat-row"><span>My prompts</span><b class="tabular">${Store.getMyPrompts().length}</b></div>
     <div class="stat-row"><span>Practice attempts</span><b class="tabular">${Store.getProgress().practice.length}</b></div>
-    <div class="stat-row" style="margin-top:6px;color:var(--text-faint)"><span>${Store.getBackend() === "db" ? "Synced to your account" : "Saved in this browser"}</span></div>`;
+    <div class="stat-row" style="margin-top:6px;color:var(--text-faint)"><span>${Store.getBackendLabel()}</span></div>`;
   document.getElementById("brand-sub").textContent = STATS.totalPrompts.toLocaleString() + " prompts";
 }
 function renderApp() {
@@ -556,7 +556,14 @@ async function bootApp() {
   const adminRoot = document.getElementById("admin-root");
   if (adminRoot) adminRoot.hidden = true;
   document.getElementById("app").hidden = false;
-  await Store.init();
+  const info = await Store.init();
+  if (info && info.backend === "revoked") {
+    // the Neon backend says this session's code is gone/disabled
+    document.getElementById("app").hidden = true;
+    Store.clearSession();
+    renderGate("Your access code is no longer active. Ask your programme lead for a new one.");
+    return;
+  }
   Store.getMyPrompts().forEach((r) => enrichRecord(r));
   STATE.view = "home";
   renderApp();
@@ -564,6 +571,7 @@ async function bootApp() {
   const syncMenu = () => { menuBtn.style.display = window.innerWidth <= 880 ? "flex" : "none"; };
   syncMenu();
   window.addEventListener("resize", syncMenu);
+  window.addEventListener("pagehide", () => { try { Store.flush(); } catch (e) {} });
   document.getElementById("sidebar-overlay").addEventListener("click", closeSidebar);
 }
 async function initApp() {
@@ -573,9 +581,12 @@ async function initApp() {
   try { adminOk = sessionStorage.getItem("prompt-lib:admin-ok") === "1"; } catch (e) {}
   let session = null;
   try { const v = localStorage.getItem("prompt-lib:session"); session = v ? JSON.parse(v) : null; } catch (e) {}
-  const r = session && resolveAccessCode(session.code);
   // pure admin (key entered at the gate, no learner session) -> straight to console
   if (adminOk && !session) { openAdmin(); return; }
+  // Backend session: Store.init() re-validates the token/code with Neon and
+  // bootApp() bounces to the gate if it's revoked.
+  if (session && session.backend) { Store.setSession(session); bootApp(); return; }
+  const r = session && resolveAccessCode(session.code);
   if (session && r && !r.disabled) {
     Store.setSession(session);
     bootApp();

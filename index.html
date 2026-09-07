@@ -10647,6 +10647,19 @@ function qualityClass(score) { if (score >= 80) return "q-high"; if (score >= 55
    localStorage otherwise (per-browser only — the UI says which). Same API. */
 const Store = (function () {
   let db = null, downloads = null, sampleFn = null, backend = "local";
+  let neon = false;                  // true once the Neon /api backend is hydrating this session
+  const _pending = {};               // key -> value awaiting a debounced push to /api/state
+  let _pushTimer = null;
+  function pushState(key, value) {
+    if (!neon) return;
+    _pending[key] = value;
+    clearTimeout(_pushTimer);
+    _pushTimer = setTimeout(() => {
+      const batch = Object.assign({}, _pending);
+      for (const k in _pending) delete _pending[k];
+      Backend.putState(batch);
+    }, 450);
+  }
   let favorites = new Set();
   let usage = { counts: {}, recent: [], lastUsedTs: {} };
   let myPrompts = [];
@@ -10661,9 +10674,10 @@ const Store = (function () {
   }
   function lsSet(key, val) { try { localStorage.setItem("prompt-lib:" + key, JSON.stringify(val)); } catch (e) {} }
   function nsKey(key) {
-    // learner-owned collections are namespaced per learner/cohort so one
-    // browser shared by several test codes doesn't cross-contaminate.
-    const s = session ? (session.learnerId || session.cohortId || session.code) : "anon";
+    // learner-owned collections are namespaced so one browser shared by
+    // several test codes doesn't cross-contaminate. Neon sessions carry a
+    // server-issued `subject`; local sessions fall back to learner/cohort/code.
+    const s = session ? (session.subject || session.learnerId || session.cohortId || session.code) : "anon";
     return s + ":" + key;
   }
 
@@ -10676,6 +10690,33 @@ const Store = (function () {
       }
     } catch (e) { db = null; }
     session = lsGet("session", null);
+
+    // 1) Neon /api backend — the deployed source of truth. Only when this
+    //    session was redeemed through /api (session.backend) and a token exists.
+    if (typeof Backend !== "undefined" && Backend.isConfigured() && session && session.backend && Backend.hasSession()) {
+      const st = await Backend.getState(["favorites", "usage", "myPrompts", "improvements", "feedback", "progress"]);
+      if (st && st.__revoked) { return { backend: "revoked" }; }
+      if (st) {
+        neon = true;
+        backend = "neon";
+        db = null;   // Neon wins; don't also write to the claude-db capability
+        favorites = new Set(Array.isArray(st.favorites) ? st.favorites : []);
+        const u = st.usage;
+        usage = u ? { counts: u.counts || {}, recent: u.recent || [], lastUsedTs: u.lastUsedTs || {} } : usage;
+        myPrompts = Array.isArray(st.myPrompts) ? st.myPrompts : [];
+        improvements = st.improvements && typeof st.improvements === "object" ? st.improvements : {};
+        feedback = st.feedback && typeof st.feedback === "object" ? st.feedback : {};
+        progress = st.progress ? Object.assign({ modulesTouched: {}, practice: [], learnedLessons: {} }, st.progress) : progress;
+        // mirror to localStorage so an offline reload still has data
+        lsSet(nsKey("favorites"), Array.from(favorites));
+        lsSet(nsKey("usage"), usage); lsSet(nsKey("myPrompts"), myPrompts);
+        lsSet(nsKey("improvements"), improvements); lsSet(nsKey("feedback"), feedback);
+        lsSet(nsKey("progress"), progress);
+        return { backend, hasSample: false, hasDownloads: false };
+      }
+      // backend configured but unreachable -> fall through to local cache below
+    }
+
     if (db) {
       backend = "db";
       try {
@@ -10707,12 +10748,28 @@ const Store = (function () {
     return { backend, hasSample: !!sampleFn, hasDownloads: !!downloads };
   }
 
-  function pFav() { if (db) db.doc("state/" + nsKey("favorites")).set({ ids: Array.from(favorites) }).catch(() => {}); else lsSet(nsKey("favorites"), Array.from(favorites)); }
-  function pUsage() { if (db) db.doc("state/" + nsKey("usage")).set(usage).catch(() => {}); else lsSet(nsKey("usage"), usage); }
-  function pFb() { if (db) db.doc("state/" + nsKey("feedback")).set({ ratings: feedback }).catch(() => {}); else lsSet(nsKey("feedback"), feedback); }
-  function pMy() { if (!db) lsSet(nsKey("myPrompts"), myPrompts); }
-  function pImp() { if (!db) lsSet(nsKey("improvements"), improvements); }
-  function pProg() { if (db) db.doc("state/" + nsKey("progress")).set(progress).catch(() => {}); else lsSet(nsKey("progress"), progress); }
+  function pFav() {
+    lsSet(nsKey("favorites"), Array.from(favorites));
+    if (neon) pushState("favorites", Array.from(favorites));
+    else if (db) db.doc("state/" + nsKey("favorites")).set({ ids: Array.from(favorites) }).catch(() => {});
+  }
+  function pUsage() {
+    lsSet(nsKey("usage"), usage);
+    if (neon) pushState("usage", usage);
+    else if (db) db.doc("state/" + nsKey("usage")).set(usage).catch(() => {});
+  }
+  function pFb() {
+    lsSet(nsKey("feedback"), feedback);
+    if (neon) pushState("feedback", feedback);
+    else if (db) db.doc("state/" + nsKey("feedback")).set({ ratings: feedback }).catch(() => {});
+  }
+  function pMy() { lsSet(nsKey("myPrompts"), myPrompts); if (neon) pushState("myPrompts", myPrompts); }
+  function pImp() { lsSet(nsKey("improvements"), improvements); if (neon) pushState("improvements", improvements); }
+  function pProg() {
+    lsSet(nsKey("progress"), progress);
+    if (neon) pushState("progress", progress);
+    else if (db) db.doc("state/" + nsKey("progress")).set(progress).catch(() => {});
+  }
 
   return {
     init,
@@ -10724,11 +10781,21 @@ const Store = (function () {
 
     getSession: () => session,
     setSession(s) { session = s; lsSet("session", s); },
-    clearSession() { session = null; try { localStorage.removeItem("prompt-lib:session"); } catch (e) {} },
+    clearSession() {
+      session = null; neon = false;
+      try { localStorage.removeItem("prompt-lib:session"); } catch (e) {}
+      if (typeof Backend !== "undefined") Backend.clearSession();
+    },
+    getBackendLabel() { return neon ? "Synced to Neon" : backend === "db" ? "Synced to your account" : "Saved in this browser"; },
 
     isFavorite: (id) => favorites.has(id),
     getFavorites: () => favorites,
-    toggleFavorite(id) { if (favorites.has(id)) favorites.delete(id); else favorites.add(id); pFav(); return favorites.has(id); },
+    toggleFavorite(id) {
+      const now = favorites.has(id) ? (favorites.delete(id), false) : (favorites.add(id), true);
+      pFav();
+      if (typeof Backend !== "undefined") Backend.logActivity(now ? "favorited" : "unfavorited", id);
+      return now;
+    },
 
     getUsage: () => usage,
     recordUsage(id, action) {
@@ -10738,11 +10805,18 @@ const Store = (function () {
       usage.recent.unshift({ id, ts: Date.now(), action });
       usage.recent = usage.recent.slice(0, 60);
       pUsage();
+      if (typeof Backend !== "undefined" && ["opened", "copied", "tested"].includes(action)) Backend.logActivity(action, id);
     },
 
     getMyPrompts: () => myPrompts,
     getMyPrompt(id) { return myPrompts.find((p) => p.id === id); },
-    saveMyPrompt(o) { myPrompts.unshift(o); if (db) db.collection(nsKey("myPrompts")).doc(o.id).set(o).catch(() => {}); pMy(); return o.id; },
+    saveMyPrompt(o) {
+      myPrompts.unshift(o);
+      if (db) db.collection(nsKey("myPrompts")).doc(o.id).set(o).catch(() => {});
+      pMy();
+      if (typeof Backend !== "undefined") Backend.logActivity("created", o.id, { title: o.title });
+      return o.id;
+    },
     updateMyPrompt(id, patch) {
       const i = myPrompts.findIndex((p) => p.id === id);
       if (i === -1) return;
@@ -10753,7 +10827,12 @@ const Store = (function () {
     deleteMyPrompt(id) { myPrompts = myPrompts.filter((p) => p.id !== id); if (db) db.collection(nsKey("myPrompts")).doc(id).delete().catch(() => {}); pMy(); },
 
     getImprovement: (id) => improvements[id],
-    saveImprovement(id, data) { improvements[id] = data; if (db) db.collection(nsKey("improvements")).doc(id).set(data).catch(() => {}); pImp(); },
+    saveImprovement(id, data) {
+      improvements[id] = data;
+      if (db) db.collection(nsKey("improvements")).doc(id).set(data).catch(() => {});
+      pImp();
+      if (typeof Backend !== "undefined") Backend.logActivity("improved", id, { method: data && data.method });
+    },
 
     getFeedback: (id) => feedback[id],
     saveFeedback(id, rating) { feedback[id] = rating; pFb(); },
@@ -10761,7 +10840,13 @@ const Store = (function () {
     getProgress: () => progress,
     markModuleViewed(moduleId) { progress.modulesTouched[moduleId] = Date.now(); pProg(); },
     markLessonLearned(lessonKey) { progress.learnedLessons[lessonKey] = Date.now(); pProg(); },
-    addPracticeAttempt(rec) { progress.practice.unshift(rec); progress.practice = progress.practice.slice(0, 100); pProg(); },
+    addPracticeAttempt(rec) {
+      progress.practice.unshift(rec);
+      progress.practice = progress.practice.slice(0, 100);
+      pProg();
+      if (typeof Backend !== "undefined") Backend.logActivity("practice", rec.scenarioId || null, { overall: rec.overall });
+    },
+    flush() { if (neon && _pushTimer) { clearTimeout(_pushTimer); const b = Object.assign({}, _pending); for (const k in _pending) delete _pending[k]; return Backend.putState(b); } },
   };
 })();
 
@@ -11229,6 +11314,116 @@ function enrichRecord(rec) {
   return rec;
 }
 
+/* ---------- Backend bridge ----------
+   Talks to the Vercel /api functions (Neon Postgres) when they're reachable.
+   Everything is best-effort: if the API is missing (static-only host, file://,
+   offline) every method fails soft and the app falls back to the local
+   localStorage / claude-db paths exactly as before. */
+const Backend = (function () {
+  const BASE = (typeof location !== "undefined" && /^https?:$/.test(location.protocol)) ? "/api" : null;
+  let available = null;          // null = unknown, true/false once probed
+  let sessionToken = null;
+  let adminToken = null;
+  try { sessionToken = sessionStorage.getItem("prompt-lib:token") || null; } catch (e) {}
+  try { adminToken = sessionStorage.getItem("prompt-lib:admin-token") || null; } catch (e) {}
+
+  async function call(path, { method = "GET", body, token } = {}) {
+    if (!BASE || available === false) { const e = new Error("no-backend"); e.soft = true; throw e; }
+    let res;
+    try {
+      res = await fetch(BASE + path, {
+        method,
+        headers: Object.assign({ "content-type": "application/json" }, token ? { authorization: "Bearer " + token } : {}),
+        body: body ? JSON.stringify(body) : undefined,
+      });
+    } catch (netErr) {
+      available = false; const e = new Error("network"); e.soft = true; throw e;
+    }
+    const ct = res.headers.get("content-type") || "";
+    let data = null;
+    if (ct.includes("application/json")) { try { data = await res.json(); } catch (e) {} }
+    // A real API response is JSON. Anything else (Vercel/static 404 HTML, a
+    // 501 from a plain file server, a proxy error page) means "no backend".
+    if (!data) {
+      if (res.status === 202 || res.status === 204) { available = true; return {}; }
+      available = false; const e = new Error("no-backend"); e.soft = true; throw e;
+    }
+    available = true;
+    if (!res.ok) { const e = new Error(data.error || ("http-" + res.status)); e.status = res.status; e.data = data; throw e; }
+    return data;
+  }
+
+  return {
+    get available() { return available === true; },
+    isConfigured: () => !!BASE,
+    hasSession: () => !!sessionToken,
+    hasAdmin: () => !!adminToken,
+
+    async previewCode(code) {
+      try {
+        const d = await call("/session", { method: "POST", body: { code, preview: true } });
+        return d && d.resolved ? d.resolved : null;
+      } catch (e) { if (e.soft) return undefined; return null; }   // undefined => backend absent, null => unknown code
+    },
+
+    async redeem(code, name) {
+      const d = await call("/session", { method: "POST", body: { code, name } });
+      sessionToken = d.token;
+      try { sessionStorage.setItem("prompt-lib:token", sessionToken); } catch (e) {}
+      return d.session;
+    },
+    clearSession() {
+      sessionToken = null;
+      try { sessionStorage.removeItem("prompt-lib:token"); } catch (e) {}
+    },
+
+    async getState(keys) {
+      if (!sessionToken) return null;
+      try { return await call("/state?keys=" + encodeURIComponent((keys || []).join(",")), { token: sessionToken }); }
+      catch (e) { if (e.status === 401) return { __revoked: true }; return null; }
+    },
+    async putState(states) {
+      if (!sessionToken || !available) return false;
+      try { await call("/state", { method: "PUT", body: { states }, token: sessionToken }); return true; }
+      catch (e) { return false; }
+    },
+    logActivity(event, promptId, meta) {
+      if (!sessionToken || available === false || !BASE) return;
+      try {
+        fetch(BASE + "/activity", {
+          method: "POST", keepalive: true,
+          headers: { "content-type": "application/json", authorization: "Bearer " + sessionToken },
+          body: JSON.stringify({ event, promptId: promptId || null, meta: meta || {} }),
+        }).catch(() => {});
+      } catch (e) {}
+    },
+
+    async adminLogin(key) {
+      const d = await call("/admin/login", { method: "POST", body: { key } });
+      adminToken = d.token;
+      try { sessionStorage.setItem("prompt-lib:admin-token", adminToken); } catch (e) {}
+      return true;
+    },
+    adminAuthed: () => !!adminToken,
+    clearAdmin() { adminToken = null; try { sessionStorage.removeItem("prompt-lib:admin-token"); } catch (e) {} },
+    async adminCodes() {
+      const d = await call("/admin/codes", { token: adminToken });
+      return (d && d.codes) || [];
+    },
+    async adminSaveCode(rec, isNew) {
+      const d = await call("/admin/codes", { method: isNew ? "POST" : "PATCH", body: rec, token: adminToken });
+      return d && d.code;
+    },
+    async adminDeleteCode(id) {
+      await call("/admin/codes?id=" + encodeURIComponent(id), { method: "DELETE", token: adminToken });
+      return true;
+    },
+    async adminAnalytics(days) {
+      return call("/admin/analytics?days=" + (days || 30), { token: adminToken });
+    },
+  };
+})();
+
 /* ---------- Org model resolution ---------- */
 let ORG_MODEL = null;
 let ORG_INDEX = { orgs: {}, programs: {}, cohorts: {}, learners: {}, codes: {} };
@@ -11658,11 +11853,44 @@ function renderGate(prefillMsg) {
   const errEl = root.querySelector("#gate-error");
   const enterBtn = root.querySelector("#gate-enter");
   let resolved = null;
+  let bePreview = null;          // last Backend.previewCode result for the current input
+  let beReqId = 0;
+
+  function renderBackendPreview(r) {
+    errEl.textContent = "";
+    const scopeNote = r.superAdmin ? "Super-admin — full library and the admin console."
+      : r.fullLibrary ? "Full library — all categories, functions and programs."
+      : r.programScoped ? "Scoped access — only the prompts in the assigned program(s)."
+      : "Full library access.";
+    const line2 = r.kind === "admin"
+      ? escapeHtml([r.industry, r.domain].filter(Boolean).join(" · "))
+      : escapeHtml([r.programName, r.cohortName].filter(Boolean).join(" · "));
+    const progs = (r.programs && r.programs.length) ? "Programs: " + r.programs.map((p) => p.name).join(", ") + ". " : "";
+    resolvedEl.innerHTML = `<div class="gate-resolved"><b>${escapeHtml(r.orgName || "Access code")}</b><br>${line2}<br><span style="opacity:.8">${escapeHtml(progs)}${scopeNote}</span></div>`;
+    nameWrap.hidden = false;
+    enterBtn.disabled = false;
+  }
+
+  async function checkBackend() {
+    const val = codeI.value.trim();
+    if (!val || typeof Backend === "undefined" || !Backend.isConfigured()) return;
+    const my = ++beReqId;
+    const r = await Backend.previewCode(val);
+    if (my !== beReqId) return;             // superseded
+    if (r === undefined) return;            // backend absent — leave local result
+    if (r === null) {                       // backend up, code not found
+      bePreview = null;
+      if (!resolved) { resolvedEl.innerHTML = ""; nameWrap.hidden = true; enterBtn.disabled = true; errEl.textContent = "That code isn't recognised."; }
+      return;
+    }
+    bePreview = r;
+    renderBackendPreview(r);
+  }
 
   function check() {
     const val = codeI.value.trim();
     resolved = val ? resolveAccessCode(val) : null;
-    if (!val) { resolvedEl.innerHTML = ""; nameWrap.hidden = true; enterBtn.disabled = true; errEl.textContent = ""; return; }
+    if (!val) { resolvedEl.innerHTML = ""; nameWrap.hidden = true; enterBtn.disabled = true; errEl.textContent = ""; bePreview = null; return; }
     if (resolved && resolved.disabled) {
       resolvedEl.innerHTML = "";
       nameWrap.hidden = true;
@@ -11671,10 +11899,13 @@ function renderGate(prefillMsg) {
       return;
     }
     if (!resolved) {
-      resolvedEl.innerHTML = "";
-      nameWrap.hidden = true;
-      enterBtn.disabled = true;
-      errEl.textContent = "That code isn't recognised. Check with your program lead.";
+      // no local match — the backend probe (checkBackend) may still recognise it
+      if (!(typeof Backend !== "undefined" && Backend.isConfigured())) {
+        resolvedEl.innerHTML = "";
+        nameWrap.hidden = true;
+        enterBtn.disabled = true;
+        errEl.textContent = "That code isn't recognised. Check with your program lead.";
+      }
       return;
     }
     errEl.textContent = "";
@@ -11699,9 +11930,31 @@ function renderGate(prefillMsg) {
     if (resolved.learner && !nameI.value) nameI.value = resolved.learner.name;
     enterBtn.disabled = false;
   }
-  codeI.addEventListener("input", check);
-  root.querySelectorAll("[data-fill]").forEach((c) => c.addEventListener("click", () => { codeI.value = c.dataset.fill; check(); codeI.focus(); }));
-  function enter() {
+  const checkBackendDebounced = debounce(checkBackend, 260);
+  codeI.addEventListener("input", () => { check(); checkBackendDebounced(); });
+  root.querySelectorAll("[data-fill]").forEach((c) => c.addEventListener("click", () => { codeI.value = c.dataset.fill; check(); checkBackend(); codeI.focus(); }));
+
+  async function enter() {
+    const val = codeI.value.trim();
+    if (!val) return;
+    // Backend path: redeem through /api/session (authoritative, knows
+    // admin-created + disabled codes). Falls back to local on network failure.
+    if (typeof Backend !== "undefined" && Backend.isConfigured()) {
+      enterBtn.disabled = true;
+      try {
+        const session = await Backend.redeem(val, nameI.value.trim());
+        if (session.superAdmin) { try { sessionStorage.setItem("prompt-lib:admin-ok", "1"); } catch (e) {} }
+        Store.setSession(session);
+        bootApp();
+        return;
+      } catch (e) {
+        enterBtn.disabled = false;
+        if (e.status === 404) { errEl.textContent = "That code isn't recognised."; return; }
+        if (e.status === 403) { errEl.textContent = "That access code has been disabled."; return; }
+        if (!e.soft) { errEl.textContent = "Couldn't reach the server — try again."; return; }
+        // e.soft: backend absent -> fall through to local
+      }
+    }
     if (!resolved) { resolved = resolveAccessCode(codeI.value); check(); }
     if (!resolved || resolved.disabled) return;
     let s;
@@ -12739,17 +12992,31 @@ const ALL_ROLES = Array.from(new Set(FUNCTION_NAMES.flatMap((f) => FUNCTIONS[f].
 const ADMIN_KEY_DEFAULT = "SYNOTTIC-ADMIN";
 const AdminStore = (function () {
   let db = null;
+  let mode = "local";            // 'neon' | 'db' | 'local'
   let cfg = { codes: [], adminKey: ADMIN_KEY_DEFAULT };
+
   async function init() {
+    // 1) Neon /api — the deployed source of truth for admin codes.
+    if (typeof Backend !== "undefined" && Backend.isConfigured() && Backend.adminAuthed()) {
+      try {
+        cfg.codes = await Backend.adminCodes();
+        mode = "neon";
+        return;
+      } catch (e) { /* fall through to local */ }
+    }
+    // 2) claude db capability
     try { if (window.claude && typeof window.claude.use === "function") db = await window.claude.use("db"); }
     catch (e) { db = null; }
     if (db) {
-      try { const d = await db.doc("admin/config").get(); if (d.exists) cfg = Object.assign(cfg, d.data()); }
+      try { const d = await db.doc("admin/config").get(); if (d.exists) cfg = Object.assign(cfg, d.data()); mode = "db"; }
       catch (e) { db = null; }
     }
-    if (!db) { try { const v = localStorage.getItem("prompt-lib:admin"); if (v) cfg = Object.assign(cfg, JSON.parse(v)); } catch (e) {} }
+    if (mode === "local") {
+      try { const v = localStorage.getItem("prompt-lib:admin"); if (v) cfg = Object.assign(cfg, JSON.parse(v)); } catch (e) {}
+    }
     if (!Array.isArray(cfg.codes)) cfg.codes = [];
-    // Merge built-in seed codes (one per Synottic track) that aren't present yet.
+    // Merge the built-in seed codes not already present (local/db only — the
+    // migration seeds them into Neon).
     try {
       const el = document.getElementById("data-admin-seed");
       if (el) {
@@ -12757,28 +13024,46 @@ const AdminStore = (function () {
         const have = new Set(cfg.codes.map((c) => c.code.toUpperCase()));
         let added = false;
         seed.forEach((s) => { if (!have.has(s.code.toUpperCase())) { cfg.codes.push(s); added = true; } });
-        if (added) persist();
+        if (added) persistLocal();
       }
     } catch (e) {}
   }
-  function persist() {
+  async function reload() {
+    if (mode === "neon") { try { cfg.codes = await Backend.adminCodes(); } catch (e) {} }
+  }
+  function persistLocal() {
     if (db) db.doc("admin/config").set(cfg).catch(() => {});
     else { try { localStorage.setItem("prompt-lib:admin", JSON.stringify(cfg)); } catch (e) {} }
   }
+
   return {
-    init,
-    backend: () => (db ? "db" : "local"),
+    init, reload,
+    backend: () => mode,
     key: () => cfg.adminKey || ADMIN_KEY_DEFAULT,
     getCodes: () => cfg.codes.slice(),
     getCode: (code) => cfg.codes.find((c) => c.code.toUpperCase() === String(code || "").toUpperCase().trim()),
     getById: (id) => cfg.codes.find((c) => c.id === id),
     upsert(rec) {
       const i = cfg.codes.findIndex((c) => c.id === rec.id);
-      if (i >= 0) cfg.codes[i] = rec; else cfg.codes.unshift(rec);
-      persist();
+      const isNew = i < 0;
+      if (isNew) cfg.codes.unshift(rec); else cfg.codes[i] = rec;
+      if (mode === "neon") Backend.adminSaveCode(rec, isNew).then((saved) => {
+        if (saved) { const j = cfg.codes.findIndex((c) => c.id === saved.id || c.id === rec.id); if (j >= 0) cfg.codes[j] = saved; }
+      }).catch(() => showToast("Couldn't save to the server"));
+      else persistLocal();
     },
-    remove(id) { cfg.codes = cfg.codes.filter((c) => c.id !== id); persist(); },
-    setEnabled(id, on) { const c = cfg.codes.find((x) => x.id === id); if (c) { c.enabled = on; persist(); } },
+    remove(id) {
+      cfg.codes = cfg.codes.filter((c) => c.id !== id);
+      if (mode === "neon") Backend.adminDeleteCode(id).catch(() => showToast("Couldn't delete on the server"));
+      else persistLocal();
+    },
+    setEnabled(id, on) {
+      const c = cfg.codes.find((x) => x.id === id);
+      if (!c) return;
+      c.enabled = on;
+      if (mode === "neon") Backend.adminSaveCode({ id, enabled: on }, false).catch(() => showToast("Couldn't update on the server"));
+      else persistLocal();
+    },
   };
 })();
 
@@ -12970,15 +13255,36 @@ function renderAdminGate() {
     </div>
   </div>`;
   const inp = root.querySelector("#admin-key");
-  const go = () => {
-    if (inp.value.trim() && inp.value.trim().toUpperCase() === AdminStore.key().toUpperCase()) {
+  const errEl = root.querySelector("#admin-key-err");
+  const btn = root.querySelector("#admin-key-go");
+  const go = async () => {
+    const key = inp.value.trim();
+    if (!key) return;
+    errEl.textContent = "";
+    // Backend: verify server-side (the real ADMIN_SECRET never ships in the page).
+    if (typeof Backend !== "undefined" && Backend.isConfigured()) {
+      btn.disabled = true;
+      try {
+        await Backend.adminLogin(key);
+        try { sessionStorage.setItem("prompt-lib:admin-ok", "1"); } catch (e) {}
+        await AdminStore.init();
+        openAdmin();
+        return;
+      } catch (e) {
+        btn.disabled = false;
+        if (e.status === 401) { errEl.textContent = "Incorrect admin key."; return; }
+        if (!e.soft) { errEl.textContent = "Couldn't reach the server — try again."; return; }
+        // e.soft -> backend absent, fall through to local check
+      }
+    }
+    if (key.toUpperCase() === AdminStore.key().toUpperCase()) {
       try { sessionStorage.setItem("prompt-lib:admin-ok", "1"); } catch (e) {}
       openAdmin();
     } else {
-      root.querySelector("#admin-key-err").textContent = "Incorrect admin key.";
+      errEl.textContent = "Incorrect admin key.";
     }
   };
-  root.querySelector("#admin-key-go").addEventListener("click", go);
+  btn.addEventListener("click", go);
   inp.addEventListener("keydown", (e) => { if (e.key === "Enter") go(); });
   root.querySelector("#admin-back").addEventListener("click", () => renderGate());
   inp.focus();
@@ -12994,6 +13300,7 @@ function exitAdmin() {
     return;
   }
   try { sessionStorage.removeItem("prompt-lib:admin-ok"); } catch (e) {}
+  if (typeof Backend !== "undefined") Backend.clearAdmin();
   location.reload();
 }
 function openAdmin() {
@@ -13020,13 +13327,14 @@ function renderAdminConsole() {
       <div class="admin-top">
         <div class="brand-mark" style="width:36px;height:31px;" role="img" aria-label="Synottic"></div>
         <h1>Synottic — Admin Console</h1>
-        <span class="chip">${AdminStore.backend() === "db" ? "Synced to account" : "Saved in this browser"}</span>
+        <span class="chip">${AdminStore.backend() === "neon" ? "Synced to Neon" : AdminStore.backend() === "db" ? "Synced to account" : "Saved in this browser"}</span>
         <button class="btn btn-sm" id="admin-exit">${icon("logout")} ${(Store.getSession && Store.getSession() && Store.getSession().superAdmin) ? "Back to library" : "Exit"}</button>
       </div>
       <div class="tabs">
         <button class="tab-btn ${ADMIN_STATE.tab === "codes" ? "active" : ""}" data-atab="codes">Access codes</button>
         <button class="tab-btn ${ADMIN_STATE.tab === "edit" ? "active" : ""}" data-atab="edit">${ADMIN_STATE.editing && ADMIN_STATE.editing.code ? "Edit code" : "New code"}</button>
         <button class="tab-btn ${ADMIN_STATE.tab === "download" ? "active" : ""}" data-atab="download">Download prompts</button>
+        ${AdminStore.backend() === "neon" ? `<button class="tab-btn ${ADMIN_STATE.tab === "analytics" ? "active" : ""}" data-atab="analytics">Analytics</button>` : ""}
       </div>
       <div id="admin-body"></div>
     </div>`;
@@ -13039,7 +13347,41 @@ function renderAdminConsole() {
   const body = root.querySelector("#admin-body");
   if (ADMIN_STATE.tab === "codes") renderAdminCodes(body);
   else if (ADMIN_STATE.tab === "edit") renderAdminEdit(body);
+  else if (ADMIN_STATE.tab === "analytics") renderAdminAnalytics(body);
   else renderAdminDownload(body);
+}
+
+function renderAdminAnalytics(body) {
+  body.innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin:6px 0 14px;">
+      <div class="result-count" style="padding:0;">Learner activity, all organisations</div>
+      <div style="flex:1;"></div>
+      <select id="an-days">${[7, 30, 90, 365].map((d) => `<option value="${d}" ${d === (ADMIN_STATE.anDays || 30) ? "selected" : ""}>Last ${d} days</option>`).join("")}</select>
+    </div>
+    <div id="an-body"><div class="skel" style="height:120px;"></div></div>`;
+  body.querySelector("#an-days").addEventListener("change", (e) => { ADMIN_STATE.anDays = +e.target.value; renderAdminAnalytics(body); });
+  const target = body.querySelector("#an-body");
+  Backend.adminAnalytics(ADMIN_STATE.anDays || 30).then((d) => {
+    if (!d) { target.innerHTML = emptyStateHtml("chart", "No analytics yet", "Activity shows up here once learners start using their codes."); return; }
+    const t = d.totals || {};
+    const bar = (rows, labelKey, valKey, extra) => {
+      const max = Math.max(1, ...rows.map((r) => r[valKey]));
+      return rows.map((r) => `<div class="bar-row"><span class="bar-label">${escapeHtml(String(r[labelKey] ?? "—"))}</span><span class="bar-track"><i style="width:${(r[valKey] / max) * 100}%"></i></span><span class="bar-val tabular">${r[valKey]}${extra ? extra(r) : ""}</span></div>`).join("");
+    };
+    target.innerHTML = `
+      <div class="stat-grid">
+        <div class="stat-tile"><div class="num tabular">${(t.events || 0).toLocaleString()}</div><div class="label">Events</div></div>
+        <div class="stat-tile"><div class="num tabular">${(t.learners || 0).toLocaleString()}</div><div class="label">Active learners</div></div>
+        <div class="stat-tile"><div class="num tabular">${(t.codes || 0).toLocaleString()}</div><div class="label">Codes in use</div></div>
+        <div class="stat-tile"><div class="num tabular">${(d.signins || 0).toLocaleString()}</div><div class="label">Sign-ins</div></div>
+      </div>
+      <div class="section-title"><h2>By event</h2></div>
+      <div style="margin-bottom:24px;">${bar(d.byEvent || [], "event", "n")}</div>
+      <div class="section-title"><h2>By access code</h2></div>
+      <div style="margin-bottom:24px;">${bar((d.byCode || []).slice(0, 15), "code", "n", (r) => ` · ${r.learners} learner${r.learners === 1 ? "" : "s"}`)}</div>
+      <div class="section-title"><h2>Most-used prompts</h2></div>
+      <div>${bar((d.topPrompts || []).slice(0, 15), "title", "n")}</div>`;
+  }).catch(() => { target.innerHTML = emptyStateHtml("chart", "Couldn't load analytics", "Try again in a moment."); });
 }
 
 function allProgramsList() {
@@ -13792,7 +14134,7 @@ function renderSidebarFooter() {
     <div class="stat-row"><span>Favorites</span><b class="tabular">${Store.getFavorites().size}</b></div>
     <div class="stat-row"><span>My prompts</span><b class="tabular">${Store.getMyPrompts().length}</b></div>
     <div class="stat-row"><span>Practice attempts</span><b class="tabular">${Store.getProgress().practice.length}</b></div>
-    <div class="stat-row" style="margin-top:6px;color:var(--text-faint)"><span>${Store.getBackend() === "db" ? "Synced to your account" : "Saved in this browser"}</span></div>`;
+    <div class="stat-row" style="margin-top:6px;color:var(--text-faint)"><span>${Store.getBackendLabel()}</span></div>`;
   document.getElementById("brand-sub").textContent = STATS.totalPrompts.toLocaleString() + " prompts";
 }
 function renderApp() {
@@ -13852,7 +14194,14 @@ async function bootApp() {
   const adminRoot = document.getElementById("admin-root");
   if (adminRoot) adminRoot.hidden = true;
   document.getElementById("app").hidden = false;
-  await Store.init();
+  const info = await Store.init();
+  if (info && info.backend === "revoked") {
+    // the Neon backend says this session's code is gone/disabled
+    document.getElementById("app").hidden = true;
+    Store.clearSession();
+    renderGate("Your access code is no longer active. Ask your programme lead for a new one.");
+    return;
+  }
   Store.getMyPrompts().forEach((r) => enrichRecord(r));
   STATE.view = "home";
   renderApp();
@@ -13860,6 +14209,7 @@ async function bootApp() {
   const syncMenu = () => { menuBtn.style.display = window.innerWidth <= 880 ? "flex" : "none"; };
   syncMenu();
   window.addEventListener("resize", syncMenu);
+  window.addEventListener("pagehide", () => { try { Store.flush(); } catch (e) {} });
   document.getElementById("sidebar-overlay").addEventListener("click", closeSidebar);
 }
 async function initApp() {
@@ -13869,9 +14219,12 @@ async function initApp() {
   try { adminOk = sessionStorage.getItem("prompt-lib:admin-ok") === "1"; } catch (e) {}
   let session = null;
   try { const v = localStorage.getItem("prompt-lib:session"); session = v ? JSON.parse(v) : null; } catch (e) {}
-  const r = session && resolveAccessCode(session.code);
   // pure admin (key entered at the gate, no learner session) -> straight to console
   if (adminOk && !session) { openAdmin(); return; }
+  // Backend session: Store.init() re-validates the token/code with Neon and
+  // bootApp() bounces to the gate if it's revoked.
+  if (session && session.backend) { Store.setSession(session); bootApp(); return; }
+  const r = session && resolveAccessCode(session.code);
   if (session && r && !r.disabled) {
     Store.setSession(session);
     bootApp();

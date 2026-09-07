@@ -70,6 +70,19 @@ function qualityClass(score) { if (score >= 80) return "q-high"; if (score >= 55
    localStorage otherwise (per-browser only — the UI says which). Same API. */
 const Store = (function () {
   let db = null, downloads = null, sampleFn = null, backend = "local";
+  let neon = false;                  // true once the Neon /api backend is hydrating this session
+  const _pending = {};               // key -> value awaiting a debounced push to /api/state
+  let _pushTimer = null;
+  function pushState(key, value) {
+    if (!neon) return;
+    _pending[key] = value;
+    clearTimeout(_pushTimer);
+    _pushTimer = setTimeout(() => {
+      const batch = Object.assign({}, _pending);
+      for (const k in _pending) delete _pending[k];
+      Backend.putState(batch);
+    }, 450);
+  }
   let favorites = new Set();
   let usage = { counts: {}, recent: [], lastUsedTs: {} };
   let myPrompts = [];
@@ -84,9 +97,10 @@ const Store = (function () {
   }
   function lsSet(key, val) { try { localStorage.setItem("prompt-lib:" + key, JSON.stringify(val)); } catch (e) {} }
   function nsKey(key) {
-    // learner-owned collections are namespaced per learner/cohort so one
-    // browser shared by several test codes doesn't cross-contaminate.
-    const s = session ? (session.learnerId || session.cohortId || session.code) : "anon";
+    // learner-owned collections are namespaced so one browser shared by
+    // several test codes doesn't cross-contaminate. Neon sessions carry a
+    // server-issued `subject`; local sessions fall back to learner/cohort/code.
+    const s = session ? (session.subject || session.learnerId || session.cohortId || session.code) : "anon";
     return s + ":" + key;
   }
 
@@ -99,6 +113,33 @@ const Store = (function () {
       }
     } catch (e) { db = null; }
     session = lsGet("session", null);
+
+    // 1) Neon /api backend — the deployed source of truth. Only when this
+    //    session was redeemed through /api (session.backend) and a token exists.
+    if (typeof Backend !== "undefined" && Backend.isConfigured() && session && session.backend && Backend.hasSession()) {
+      const st = await Backend.getState(["favorites", "usage", "myPrompts", "improvements", "feedback", "progress"]);
+      if (st && st.__revoked) { return { backend: "revoked" }; }
+      if (st) {
+        neon = true;
+        backend = "neon";
+        db = null;   // Neon wins; don't also write to the claude-db capability
+        favorites = new Set(Array.isArray(st.favorites) ? st.favorites : []);
+        const u = st.usage;
+        usage = u ? { counts: u.counts || {}, recent: u.recent || [], lastUsedTs: u.lastUsedTs || {} } : usage;
+        myPrompts = Array.isArray(st.myPrompts) ? st.myPrompts : [];
+        improvements = st.improvements && typeof st.improvements === "object" ? st.improvements : {};
+        feedback = st.feedback && typeof st.feedback === "object" ? st.feedback : {};
+        progress = st.progress ? Object.assign({ modulesTouched: {}, practice: [], learnedLessons: {} }, st.progress) : progress;
+        // mirror to localStorage so an offline reload still has data
+        lsSet(nsKey("favorites"), Array.from(favorites));
+        lsSet(nsKey("usage"), usage); lsSet(nsKey("myPrompts"), myPrompts);
+        lsSet(nsKey("improvements"), improvements); lsSet(nsKey("feedback"), feedback);
+        lsSet(nsKey("progress"), progress);
+        return { backend, hasSample: false, hasDownloads: false };
+      }
+      // backend configured but unreachable -> fall through to local cache below
+    }
+
     if (db) {
       backend = "db";
       try {
@@ -130,12 +171,28 @@ const Store = (function () {
     return { backend, hasSample: !!sampleFn, hasDownloads: !!downloads };
   }
 
-  function pFav() { if (db) db.doc("state/" + nsKey("favorites")).set({ ids: Array.from(favorites) }).catch(() => {}); else lsSet(nsKey("favorites"), Array.from(favorites)); }
-  function pUsage() { if (db) db.doc("state/" + nsKey("usage")).set(usage).catch(() => {}); else lsSet(nsKey("usage"), usage); }
-  function pFb() { if (db) db.doc("state/" + nsKey("feedback")).set({ ratings: feedback }).catch(() => {}); else lsSet(nsKey("feedback"), feedback); }
-  function pMy() { if (!db) lsSet(nsKey("myPrompts"), myPrompts); }
-  function pImp() { if (!db) lsSet(nsKey("improvements"), improvements); }
-  function pProg() { if (db) db.doc("state/" + nsKey("progress")).set(progress).catch(() => {}); else lsSet(nsKey("progress"), progress); }
+  function pFav() {
+    lsSet(nsKey("favorites"), Array.from(favorites));
+    if (neon) pushState("favorites", Array.from(favorites));
+    else if (db) db.doc("state/" + nsKey("favorites")).set({ ids: Array.from(favorites) }).catch(() => {});
+  }
+  function pUsage() {
+    lsSet(nsKey("usage"), usage);
+    if (neon) pushState("usage", usage);
+    else if (db) db.doc("state/" + nsKey("usage")).set(usage).catch(() => {});
+  }
+  function pFb() {
+    lsSet(nsKey("feedback"), feedback);
+    if (neon) pushState("feedback", feedback);
+    else if (db) db.doc("state/" + nsKey("feedback")).set({ ratings: feedback }).catch(() => {});
+  }
+  function pMy() { lsSet(nsKey("myPrompts"), myPrompts); if (neon) pushState("myPrompts", myPrompts); }
+  function pImp() { lsSet(nsKey("improvements"), improvements); if (neon) pushState("improvements", improvements); }
+  function pProg() {
+    lsSet(nsKey("progress"), progress);
+    if (neon) pushState("progress", progress);
+    else if (db) db.doc("state/" + nsKey("progress")).set(progress).catch(() => {});
+  }
 
   return {
     init,
@@ -147,11 +204,21 @@ const Store = (function () {
 
     getSession: () => session,
     setSession(s) { session = s; lsSet("session", s); },
-    clearSession() { session = null; try { localStorage.removeItem("prompt-lib:session"); } catch (e) {} },
+    clearSession() {
+      session = null; neon = false;
+      try { localStorage.removeItem("prompt-lib:session"); } catch (e) {}
+      if (typeof Backend !== "undefined") Backend.clearSession();
+    },
+    getBackendLabel() { return neon ? "Synced to Neon" : backend === "db" ? "Synced to your account" : "Saved in this browser"; },
 
     isFavorite: (id) => favorites.has(id),
     getFavorites: () => favorites,
-    toggleFavorite(id) { if (favorites.has(id)) favorites.delete(id); else favorites.add(id); pFav(); return favorites.has(id); },
+    toggleFavorite(id) {
+      const now = favorites.has(id) ? (favorites.delete(id), false) : (favorites.add(id), true);
+      pFav();
+      if (typeof Backend !== "undefined") Backend.logActivity(now ? "favorited" : "unfavorited", id);
+      return now;
+    },
 
     getUsage: () => usage,
     recordUsage(id, action) {
@@ -161,11 +228,18 @@ const Store = (function () {
       usage.recent.unshift({ id, ts: Date.now(), action });
       usage.recent = usage.recent.slice(0, 60);
       pUsage();
+      if (typeof Backend !== "undefined" && ["opened", "copied", "tested"].includes(action)) Backend.logActivity(action, id);
     },
 
     getMyPrompts: () => myPrompts,
     getMyPrompt(id) { return myPrompts.find((p) => p.id === id); },
-    saveMyPrompt(o) { myPrompts.unshift(o); if (db) db.collection(nsKey("myPrompts")).doc(o.id).set(o).catch(() => {}); pMy(); return o.id; },
+    saveMyPrompt(o) {
+      myPrompts.unshift(o);
+      if (db) db.collection(nsKey("myPrompts")).doc(o.id).set(o).catch(() => {});
+      pMy();
+      if (typeof Backend !== "undefined") Backend.logActivity("created", o.id, { title: o.title });
+      return o.id;
+    },
     updateMyPrompt(id, patch) {
       const i = myPrompts.findIndex((p) => p.id === id);
       if (i === -1) return;
@@ -176,7 +250,12 @@ const Store = (function () {
     deleteMyPrompt(id) { myPrompts = myPrompts.filter((p) => p.id !== id); if (db) db.collection(nsKey("myPrompts")).doc(id).delete().catch(() => {}); pMy(); },
 
     getImprovement: (id) => improvements[id],
-    saveImprovement(id, data) { improvements[id] = data; if (db) db.collection(nsKey("improvements")).doc(id).set(data).catch(() => {}); pImp(); },
+    saveImprovement(id, data) {
+      improvements[id] = data;
+      if (db) db.collection(nsKey("improvements")).doc(id).set(data).catch(() => {});
+      pImp();
+      if (typeof Backend !== "undefined") Backend.logActivity("improved", id, { method: data && data.method });
+    },
 
     getFeedback: (id) => feedback[id],
     saveFeedback(id, rating) { feedback[id] = rating; pFb(); },
@@ -184,7 +263,13 @@ const Store = (function () {
     getProgress: () => progress,
     markModuleViewed(moduleId) { progress.modulesTouched[moduleId] = Date.now(); pProg(); },
     markLessonLearned(lessonKey) { progress.learnedLessons[lessonKey] = Date.now(); pProg(); },
-    addPracticeAttempt(rec) { progress.practice.unshift(rec); progress.practice = progress.practice.slice(0, 100); pProg(); },
+    addPracticeAttempt(rec) {
+      progress.practice.unshift(rec);
+      progress.practice = progress.practice.slice(0, 100);
+      pProg();
+      if (typeof Backend !== "undefined") Backend.logActivity("practice", rec.scenarioId || null, { overall: rec.overall });
+    },
+    flush() { if (neon && _pushTimer) { clearTimeout(_pushTimer); const b = Object.assign({}, _pending); for (const k in _pending) delete _pending[k]; return Backend.putState(b); } },
   };
 })();
 

@@ -55,17 +55,31 @@ const ALL_ROLES = Array.from(new Set(FUNCTION_NAMES.flatMap((f) => FUNCTIONS[f].
 const ADMIN_KEY_DEFAULT = "SYNOTTIC-ADMIN";
 const AdminStore = (function () {
   let db = null;
+  let mode = "local";            // 'neon' | 'db' | 'local'
   let cfg = { codes: [], adminKey: ADMIN_KEY_DEFAULT };
+
   async function init() {
+    // 1) Neon /api — the deployed source of truth for admin codes.
+    if (typeof Backend !== "undefined" && Backend.isConfigured() && Backend.adminAuthed()) {
+      try {
+        cfg.codes = await Backend.adminCodes();
+        mode = "neon";
+        return;
+      } catch (e) { /* fall through to local */ }
+    }
+    // 2) claude db capability
     try { if (window.claude && typeof window.claude.use === "function") db = await window.claude.use("db"); }
     catch (e) { db = null; }
     if (db) {
-      try { const d = await db.doc("admin/config").get(); if (d.exists) cfg = Object.assign(cfg, d.data()); }
+      try { const d = await db.doc("admin/config").get(); if (d.exists) cfg = Object.assign(cfg, d.data()); mode = "db"; }
       catch (e) { db = null; }
     }
-    if (!db) { try { const v = localStorage.getItem("prompt-lib:admin"); if (v) cfg = Object.assign(cfg, JSON.parse(v)); } catch (e) {} }
+    if (mode === "local") {
+      try { const v = localStorage.getItem("prompt-lib:admin"); if (v) cfg = Object.assign(cfg, JSON.parse(v)); } catch (e) {}
+    }
     if (!Array.isArray(cfg.codes)) cfg.codes = [];
-    // Merge built-in seed codes (one per Synottic track) that aren't present yet.
+    // Merge the built-in seed codes not already present (local/db only — the
+    // migration seeds them into Neon).
     try {
       const el = document.getElementById("data-admin-seed");
       if (el) {
@@ -73,28 +87,46 @@ const AdminStore = (function () {
         const have = new Set(cfg.codes.map((c) => c.code.toUpperCase()));
         let added = false;
         seed.forEach((s) => { if (!have.has(s.code.toUpperCase())) { cfg.codes.push(s); added = true; } });
-        if (added) persist();
+        if (added) persistLocal();
       }
     } catch (e) {}
   }
-  function persist() {
+  async function reload() {
+    if (mode === "neon") { try { cfg.codes = await Backend.adminCodes(); } catch (e) {} }
+  }
+  function persistLocal() {
     if (db) db.doc("admin/config").set(cfg).catch(() => {});
     else { try { localStorage.setItem("prompt-lib:admin", JSON.stringify(cfg)); } catch (e) {} }
   }
+
   return {
-    init,
-    backend: () => (db ? "db" : "local"),
+    init, reload,
+    backend: () => mode,
     key: () => cfg.adminKey || ADMIN_KEY_DEFAULT,
     getCodes: () => cfg.codes.slice(),
     getCode: (code) => cfg.codes.find((c) => c.code.toUpperCase() === String(code || "").toUpperCase().trim()),
     getById: (id) => cfg.codes.find((c) => c.id === id),
     upsert(rec) {
       const i = cfg.codes.findIndex((c) => c.id === rec.id);
-      if (i >= 0) cfg.codes[i] = rec; else cfg.codes.unshift(rec);
-      persist();
+      const isNew = i < 0;
+      if (isNew) cfg.codes.unshift(rec); else cfg.codes[i] = rec;
+      if (mode === "neon") Backend.adminSaveCode(rec, isNew).then((saved) => {
+        if (saved) { const j = cfg.codes.findIndex((c) => c.id === saved.id || c.id === rec.id); if (j >= 0) cfg.codes[j] = saved; }
+      }).catch(() => showToast("Couldn't save to the server"));
+      else persistLocal();
     },
-    remove(id) { cfg.codes = cfg.codes.filter((c) => c.id !== id); persist(); },
-    setEnabled(id, on) { const c = cfg.codes.find((x) => x.id === id); if (c) { c.enabled = on; persist(); } },
+    remove(id) {
+      cfg.codes = cfg.codes.filter((c) => c.id !== id);
+      if (mode === "neon") Backend.adminDeleteCode(id).catch(() => showToast("Couldn't delete on the server"));
+      else persistLocal();
+    },
+    setEnabled(id, on) {
+      const c = cfg.codes.find((x) => x.id === id);
+      if (!c) return;
+      c.enabled = on;
+      if (mode === "neon") Backend.adminSaveCode({ id, enabled: on }, false).catch(() => showToast("Couldn't update on the server"));
+      else persistLocal();
+    },
   };
 })();
 
@@ -286,15 +318,36 @@ function renderAdminGate() {
     </div>
   </div>`;
   const inp = root.querySelector("#admin-key");
-  const go = () => {
-    if (inp.value.trim() && inp.value.trim().toUpperCase() === AdminStore.key().toUpperCase()) {
+  const errEl = root.querySelector("#admin-key-err");
+  const btn = root.querySelector("#admin-key-go");
+  const go = async () => {
+    const key = inp.value.trim();
+    if (!key) return;
+    errEl.textContent = "";
+    // Backend: verify server-side (the real ADMIN_SECRET never ships in the page).
+    if (typeof Backend !== "undefined" && Backend.isConfigured()) {
+      btn.disabled = true;
+      try {
+        await Backend.adminLogin(key);
+        try { sessionStorage.setItem("prompt-lib:admin-ok", "1"); } catch (e) {}
+        await AdminStore.init();
+        openAdmin();
+        return;
+      } catch (e) {
+        btn.disabled = false;
+        if (e.status === 401) { errEl.textContent = "Incorrect admin key."; return; }
+        if (!e.soft) { errEl.textContent = "Couldn't reach the server — try again."; return; }
+        // e.soft -> backend absent, fall through to local check
+      }
+    }
+    if (key.toUpperCase() === AdminStore.key().toUpperCase()) {
       try { sessionStorage.setItem("prompt-lib:admin-ok", "1"); } catch (e) {}
       openAdmin();
     } else {
-      root.querySelector("#admin-key-err").textContent = "Incorrect admin key.";
+      errEl.textContent = "Incorrect admin key.";
     }
   };
-  root.querySelector("#admin-key-go").addEventListener("click", go);
+  btn.addEventListener("click", go);
   inp.addEventListener("keydown", (e) => { if (e.key === "Enter") go(); });
   root.querySelector("#admin-back").addEventListener("click", () => renderGate());
   inp.focus();
@@ -310,6 +363,7 @@ function exitAdmin() {
     return;
   }
   try { sessionStorage.removeItem("prompt-lib:admin-ok"); } catch (e) {}
+  if (typeof Backend !== "undefined") Backend.clearAdmin();
   location.reload();
 }
 function openAdmin() {
@@ -336,13 +390,14 @@ function renderAdminConsole() {
       <div class="admin-top">
         <div class="brand-mark" style="width:36px;height:31px;" role="img" aria-label="Synottic"></div>
         <h1>Synottic — Admin Console</h1>
-        <span class="chip">${AdminStore.backend() === "db" ? "Synced to account" : "Saved in this browser"}</span>
+        <span class="chip">${AdminStore.backend() === "neon" ? "Synced to Neon" : AdminStore.backend() === "db" ? "Synced to account" : "Saved in this browser"}</span>
         <button class="btn btn-sm" id="admin-exit">${icon("logout")} ${(Store.getSession && Store.getSession() && Store.getSession().superAdmin) ? "Back to library" : "Exit"}</button>
       </div>
       <div class="tabs">
         <button class="tab-btn ${ADMIN_STATE.tab === "codes" ? "active" : ""}" data-atab="codes">Access codes</button>
         <button class="tab-btn ${ADMIN_STATE.tab === "edit" ? "active" : ""}" data-atab="edit">${ADMIN_STATE.editing && ADMIN_STATE.editing.code ? "Edit code" : "New code"}</button>
         <button class="tab-btn ${ADMIN_STATE.tab === "download" ? "active" : ""}" data-atab="download">Download prompts</button>
+        ${AdminStore.backend() === "neon" ? `<button class="tab-btn ${ADMIN_STATE.tab === "analytics" ? "active" : ""}" data-atab="analytics">Analytics</button>` : ""}
       </div>
       <div id="admin-body"></div>
     </div>`;
@@ -355,7 +410,41 @@ function renderAdminConsole() {
   const body = root.querySelector("#admin-body");
   if (ADMIN_STATE.tab === "codes") renderAdminCodes(body);
   else if (ADMIN_STATE.tab === "edit") renderAdminEdit(body);
+  else if (ADMIN_STATE.tab === "analytics") renderAdminAnalytics(body);
   else renderAdminDownload(body);
+}
+
+function renderAdminAnalytics(body) {
+  body.innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin:6px 0 14px;">
+      <div class="result-count" style="padding:0;">Learner activity, all organisations</div>
+      <div style="flex:1;"></div>
+      <select id="an-days">${[7, 30, 90, 365].map((d) => `<option value="${d}" ${d === (ADMIN_STATE.anDays || 30) ? "selected" : ""}>Last ${d} days</option>`).join("")}</select>
+    </div>
+    <div id="an-body"><div class="skel" style="height:120px;"></div></div>`;
+  body.querySelector("#an-days").addEventListener("change", (e) => { ADMIN_STATE.anDays = +e.target.value; renderAdminAnalytics(body); });
+  const target = body.querySelector("#an-body");
+  Backend.adminAnalytics(ADMIN_STATE.anDays || 30).then((d) => {
+    if (!d) { target.innerHTML = emptyStateHtml("chart", "No analytics yet", "Activity shows up here once learners start using their codes."); return; }
+    const t = d.totals || {};
+    const bar = (rows, labelKey, valKey, extra) => {
+      const max = Math.max(1, ...rows.map((r) => r[valKey]));
+      return rows.map((r) => `<div class="bar-row"><span class="bar-label">${escapeHtml(String(r[labelKey] ?? "—"))}</span><span class="bar-track"><i style="width:${(r[valKey] / max) * 100}%"></i></span><span class="bar-val tabular">${r[valKey]}${extra ? extra(r) : ""}</span></div>`).join("");
+    };
+    target.innerHTML = `
+      <div class="stat-grid">
+        <div class="stat-tile"><div class="num tabular">${(t.events || 0).toLocaleString()}</div><div class="label">Events</div></div>
+        <div class="stat-tile"><div class="num tabular">${(t.learners || 0).toLocaleString()}</div><div class="label">Active learners</div></div>
+        <div class="stat-tile"><div class="num tabular">${(t.codes || 0).toLocaleString()}</div><div class="label">Codes in use</div></div>
+        <div class="stat-tile"><div class="num tabular">${(d.signins || 0).toLocaleString()}</div><div class="label">Sign-ins</div></div>
+      </div>
+      <div class="section-title"><h2>By event</h2></div>
+      <div style="margin-bottom:24px;">${bar(d.byEvent || [], "event", "n")}</div>
+      <div class="section-title"><h2>By access code</h2></div>
+      <div style="margin-bottom:24px;">${bar((d.byCode || []).slice(0, 15), "code", "n", (r) => ` · ${r.learners} learner${r.learners === 1 ? "" : "s"}`)}</div>
+      <div class="section-title"><h2>Most-used prompts</h2></div>
+      <div>${bar((d.topPrompts || []).slice(0, 15), "title", "n")}</div>`;
+  }).catch(() => { target.innerHTML = emptyStateHtml("chart", "Couldn't load analytics", "Try again in a moment."); });
 }
 
 function allProgramsList() {
