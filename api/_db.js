@@ -66,13 +66,26 @@ export function normCode(c) {
   return String(c || "").toUpperCase().trim().replace(/\s+/g, "");
 }
 
+// A missing relation (deployment without the v1 schema.sql) must not 500 the
+// whole gate — treat it as "no match in this source" and move on.
+async function safeRows(promise) {
+  try { return await promise; }
+  catch (e) {
+    if (/relation .* does not exist|42P01/i.test(String(e && e.message || e))) return [];
+    throw e;
+  }
+}
+
 // Resolve an access code -> the session scope object the frontend expects.
-// Checks admin_codes first, then seed_codes -> cohort/program/org/learner.
+// Checks admin_codes, then seed_codes -> cohort/program/org/learner, then the
+// v2 user-facing access_codes table (collection / org codes need a learner
+// account — see api/_authsrc/redeem-code.js — so those resolve to a marker
+// scope that /api/session turns into an "account-required" response).
 export async function resolveCode(sql, rawCode) {
   const code = normCode(rawCode);
   if (!code) return null;
 
-  const adminRows = await sql`select * from admin_codes where upper(code) = ${code} limit 1`;
+  const adminRows = await safeRows(sql`select * from admin_codes where upper(code) = ${code} limit 1`);
   if (adminRows.length) {
     const a = adminRows[0];
     if (!a.enabled) return { disabled: true, code: a.code };
@@ -96,8 +109,32 @@ export async function resolveCode(sql, rawCode) {
     };
   }
 
-  const seedRows = await sql`select * from seed_codes where upper(code) = ${code} limit 1`;
-  if (!seedRows.length) return null;
+  const seedRows = await safeRows(sql`select * from seed_codes where upper(code) = ${code} limit 1`);
+  if (!seedRows.length) {
+    // v2 user-facing access code (collection / org). These bind to a learner
+    // entitlement, so the anonymous /api/session gate can't complete them —
+    // it returns { accountRequired } and the UI routes to sign-in/up.
+    const accRows = await safeRows(sql`select * from access_codes where upper(code) = ${code} limit 1`);
+    if (accRows.length) {
+      const a = accRows[0];
+      const cats = Array.isArray(a.category_ids) ? a.category_ids : [];
+      const progs = Array.isArray(a.program_ids) ? a.program_ids : [];
+      return {
+        kind: "account",
+        accountRequired: true,
+        code: a.code,
+        scopeType: a.scope_type || "collection",
+        orgName: a.org_name || null,
+        collectionId: a.collection_id || null,
+        categoryCount: cats.length,
+        programCount: progs.length,
+        disabled: !a.enabled,
+        expired: !!(a.expires_at && new Date(a.expires_at) < new Date()),
+        exhausted: a.max_redemptions != null && a.redemptions >= a.max_redemptions,
+      };
+    }
+    return null;
+  }
   const s = seedRows[0];
   const cohRows = await sql`select * from cohorts where id = ${s.cohort_id} limit 1`;
   if (!cohRows.length) return null;

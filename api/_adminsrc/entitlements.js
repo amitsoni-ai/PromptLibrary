@@ -20,7 +20,9 @@ function genCode(label) {
 }
 const codeOut = (c) => ({
   id: c.id, code: c.code, label: c.label, orgName: c.org_name, scopeType: c.scope_type,
-  programIds: c.program_ids || [], featureFlags: c.feature_flags || {}, licenseType: c.license_type,
+  programIds: c.program_ids || [], categoryIds: c.category_ids || [], promptIds: c.prompt_ids || [],
+  collectionId: c.collection_id || null,
+  featureFlags: c.feature_flags || {}, licenseType: c.license_type,
   maxRedemptions: c.max_redemptions, redemptions: c.redemptions, expiresAt: c.expires_at,
   enabled: c.enabled, note: c.note, createdAt: c.created_at,
 });
@@ -64,10 +66,12 @@ export default async function handler(req, res) {
         code = genCode(b.label || b.orgName);
       }
       const row = (await sql`
-        insert into access_codes (id, code, label, org_name, scope_type, program_ids, feature_flags,
+        insert into access_codes (id, code, label, org_name, scope_type, program_ids, category_ids,
+          prompt_ids, collection_id, feature_flags,
           license_type, max_redemptions, expires_at, enabled, note, created_by)
         values (${id}, ${code}, ${b.label || null}, ${b.orgName || null}, ${scopeType},
-          ${JSON.stringify(b.programIds || [])}, ${JSON.stringify(b.featureFlags || {})},
+          ${JSON.stringify(b.programIds || [])}, ${JSON.stringify(b.categoryIds || [])},
+          ${JSON.stringify(b.promptIds || [])}, ${b.collectionId || null}, ${JSON.stringify(b.featureFlags || {})},
           ${b.licenseType || "standard"}, ${b.maxRedemptions ?? null}, ${b.expiresAt || null},
           ${b.enabled !== false}, ${b.note || null}, ${admin.id})
         returning *`)[0];
@@ -144,13 +148,18 @@ export default async function handler(req, res) {
     const m = {
       label: b.label ?? cur.label, org_name: b.orgName ?? cur.org_name,
       scope_type: SCOPE_TYPES.includes(b.scopeType) ? b.scopeType : cur.scope_type,
-      program_ids: b.programIds ?? cur.program_ids, feature_flags: b.featureFlags ?? cur.feature_flags,
+      program_ids: b.programIds ?? cur.program_ids,
+      category_ids: b.categoryIds ?? cur.category_ids, prompt_ids: b.promptIds ?? cur.prompt_ids,
+      collection_id: b.collectionId ?? cur.collection_id,
+      feature_flags: b.featureFlags ?? cur.feature_flags,
       license_type: b.licenseType ?? cur.license_type, max_redemptions: b.maxRedemptions ?? cur.max_redemptions,
       expires_at: b.expiresAt ?? cur.expires_at, enabled: b.enabled ?? cur.enabled, note: b.note ?? cur.note,
     };
     const row = (await sql`
       update access_codes set label=${m.label}, org_name=${m.org_name}, scope_type=${m.scope_type},
-        program_ids=${JSON.stringify(m.program_ids || [])}, feature_flags=${JSON.stringify(m.feature_flags || {})},
+        program_ids=${JSON.stringify(m.program_ids || [])}, category_ids=${JSON.stringify(m.category_ids || [])},
+        prompt_ids=${JSON.stringify(m.prompt_ids || [])}, collection_id=${m.collection_id || null},
+        feature_flags=${JSON.stringify(m.feature_flags || {})},
         license_type=${m.license_type}, max_redemptions=${m.max_redemptions}, expires_at=${m.expires_at},
         enabled=${m.enabled}, note=${m.note}, updated_at=now()
       where id=${b.codeId} returning *`)[0];

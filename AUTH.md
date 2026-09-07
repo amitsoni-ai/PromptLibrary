@@ -132,7 +132,7 @@ would shadow the admin — use a distinct address).
 
 ```bash
 npm install
-node migrate/authtest.mjs          # 48 in-process E2E checks (PGlite, no DB/email needed)
+node migrate/authtest.mjs          # in-process E2E checks (PGlite, no DB/email needed)
 node migrate/devserver_pglite.mjs  # full app + /api on http://localhost:8790, emails print to console
 ```
 
@@ -142,6 +142,123 @@ server console; you can also read them at **`GET /api/dev/outbox`** (dev-only �
 returns 404 in production and whenever `EMAIL_TRANSPORT` != `console`). It
 returns each message plus the extracted `token` / `link`.
 
+## Function library scope (v3)
+
+`migrate/schema_v3.sql` (additive, idempotent — run **after** `run_v2.mjs`):
+
+```bash
+DATABASE_URL="postgres://…-pooler…/neondb?sslmode=require" node migrate/run_v3.mjs
+```
+
+It adds `entitlements.category_ids` / `prompt_ids` and
+`access_codes.category_ids` / `prompt_ids` / `collection_id` (all default empty),
+plus `function_scopes` (admin overrides for per-function library scope — see the
+**Function access** console tab, `/api/admin/functions`) and `collections`
+(per-org curated sets, for a later change). Nothing is seeded: the static
+`FUNCTIONS` catalogue in `api/_functions.js` is the default, and a `function_scopes`
+row exists only when an admin has customised that function. `devserver_pglite.mjs`
+and `authtest.mjs` apply v3 automatically.
+
+**What changed for a function/signup learner.** `entitlementForFunction()` now
+returns `scope_type = "function"` (not `"program"`). On email verification
+`verify-email.js` calls `resolveFunctionScope(sql, users.role)` — the admin
+`function_scopes` row if present and non-empty, else the static
+`FUNCTIONS[key].categories` (the union of the Synottic course program's
+categories and the `src/part_admin.js` function catalogue) — and writes
+`category_ids` / `prompt_ids` onto the `auto_function` entitlement. Changing the
+function in the profile (`PATCH /api/auth/me`) re-runs the same resolver.
+`getUserAccess` surfaces `access.categoryIds` / `access.promptIds` alongside
+`access.scopeType` / `access.source`.
+
+**Admin: Function access tab.** `/api/admin/functions` (`access.write`) backs a
+console tab (`src/part_admin.js` `renderAdminFunctions`) that edits a function's
+`categories` / `programs` / pinned `promptIds` / `enabled` flag. `action:"save"`
+upserts the `fscope:<key>` row; `action:"reset"` deletes it (back to the static
+default); `action:"reapply"` re-scopes every current `auto_function` entitlement
+for that `users.role`. A plain save only affects **new** signups and profile
+changes — existing learners keep their snapshot until re-applied or re-assigned.
+All three are audited (`function.scope_update` / `_reset` / `_reapply`). The tab
+is shown only when the console is Neon-backed.
+
+**Frontend.** `userLibraryMode()` returns
+`{ mode: "function", categories, programIds, promptIds }` for a
+`scope_type` of `"function"` (and `mode:"collection"` for `"collection"`; a pre-v3
+`auto_function` row still saying `"program"` is coerced to `"function"`).
+`scopedLibrary()` filters every prompt list to those categories + linked/pinned
+prompts. Unlike the access-code **program** scope, these modes keep the
+**Categories** tab visible and filtered — `isViewAllowed()` allows `categories` /
+`categoryDetail` when `scopeShowsCategories()` is true; `Insights` stays hidden.
+With no `/api` (static host) the learner path never runs; `scopedLibrary()` falls
+back to `functionScopeCategories(role)` from `src/part_admin.js` if the access
+payload carries no categories.
+
+For a curated scope (`function` / `collection`) `getUserAccess` returns
+`access.programIds` from the entitlement's own `program_ids` only — stale
+`program_enrollments` from a previous scope are ignored so a curated library is
+never silently widened. `redeem-code.js` also prunes prior self-serve enrolments
+not in the new code's `program_ids`.
+
+## Per-organization collections + access codes (v3)
+
+`/api/admin/collections` (`access.write` RBAC + CSRF, audited) backs a
+**Collections** console tab (`src/part_admin.js` `renderAdminCollections`). A
+*collection* (`collections` table) is a named `{ programIds, categoryIds,
+promptIds }` set bound to an org name. `generate_code` mints an `access_codes`
+row with `scope_type = 'collection'`, `collection_id`, and a **snapshot** of the
+collection's scope; editing the collection re-syncs every one of its codes
+(per-code label / seat limit / expiry / enabled are untouched). A learner enters
+the short code on the existing **Access code** gate tab → `/api/auth/redeem-code`
+writes an `access_code`-source entitlement carrying `category_ids` / `prompt_ids`
+→ the same filtered category browse as a function scope. Code lifecycle
+(rename / disable / re-scope / seat limit / expiry / redemption count) reuses
+`PATCH /api/admin/entitlements` (now also accepts `categoryIds` / `promptIds` /
+`collectionId`). Deleting a collection is blocked once any of its codes has been
+redeemed (disable instead). The tab shows only when the console reaches `/api`.
+
+**Local verify (dev).** Verification only completes when the learner opens the
+emailed link. With `EMAIL_TRANSPORT=console` (recommended for local runs:
+`EMAIL_TRANSPORT=console node migrate/devserver_pglite.mjs`) the link is in the
+server log **and** at `GET /api/dev/outbox` (which works for any transport
+outside production, 404 in prod). The verify-pending screen and the in-app
+verify banner both show a **"Confirm now (dev)"** button that reads the token
+from `/api/dev/outbox` and completes verification in one click.
+`renderVerifyLanding` also now boots straight from the `access` in the
+`verify-email` response if the follow-up `/api/auth/me` can't be reached.
+
+## User Management console (v3)
+
+`src/part_admin.js` `renderAdminUsers` is a full **Users** tab on
+`/api/admin/{users,entitlements,audit}` (shown whenever the console reaches
+`/api`). `Backend` bridge: `adminUsers` / `adminUser` / `adminUserAction` /
+`adminUserCreate` / `adminUsersBulk` / `adminUserDelete` / `adminEntitlement` /
+`adminEntitlementAction` / `adminAudit`.
+
+- **Table** — paginated, searchable, filterable by organisation, function,
+  account status, verified/unverified, **entitlement source**
+  (`self_signup` / `auto_function` / `access_code` / `admin`) and **entitlement
+  status** (incl. `none`). The list query left-joins `entitlements` and computes
+  `last_activity_at` from `auth_events`; rows carry `entSource` / `entStatus` /
+  `entScope` / `lastActivityAt`.
+- **Row / bulk actions** — suspend · reactivate · disable · force-verify ·
+  resend-verification · send-reset · revoke-sessions · **align function**
+  (`POST {action:"bulk", subAction, ids}`); soft delete; hard delete
+  (SUPER_ADMIN only). Entitlement controls in the drawer: assign / suspend /
+  expire / revoke / reactivate, enroll / unenroll (via `/api/admin/entitlements`).
+- **Add user** — `POST {action:"create"}`: creates a `pending_verification`
+  account with an unusable random password, optionally a starting entitlement
+  (`functionScope:true` → auto function scope, or `entitlement:{scopeType…}` →
+  admin scope), and (default on) sends the `welcome` invite email.
+- **Align function** — `PATCH {action:"align_function"}` (and an automatic
+  re-scope when `update_profile` changes `role`) re-runs `resolveFunctionScope`
+  for an `auto_function` entitlement; a `409 not-auto-entitlement` if the
+  entitlement is admin- or code-assigned (never overridden).
+- **Detail drawer** — identity + inline profile edit, `getUserAccess` summary,
+  `entitlement_events` history, active enrollments, recent `auth_events`, and the
+  per-user `audit_logs` trail.
+
+All writes are `users.write` / `access.write` RBAC + CSRF and audited
+(`user.create` / `user.align_function` / `user.bulk_<sub>` / …).
+
 ## Not yet done (follow-ups)
 
 - **Server-side sync of learner state for user accounts.** Favourites / practice /
@@ -149,9 +266,10 @@ returns each message plus the extracted `token` / `link`.
   path still syncs to Neon via `/api/state`. A `/api/user/state` keyed by the
   session cookie is the next step (schema is ready — reuse `learner_state` with
   `subject = 'user:'+id`).
-- Admin **console UI** for the new endpoints. The APIs are complete and tested;
-  the in-app admin screens still show the legacy access-code console. Build new
-  tabs (Users / Access / Audit) against `/api/admin/*`.
+- Admin console UI — **done** for Users / Function access / Collections
+  (`/api/admin/{users,entitlements,functions,collections,audit}`). A dedicated
+  **Audit** tab (raw `/api/admin/audit` browser) is still a follow-up; audit is
+  currently surfaced per-user in the Users drawer.
 - Email templates render inline-CSS HTML; wire a real provider (`EMAIL_TRANSPORT=resend`)
   before launch.
 - `program_enrollments` / `access_codes.program_ids` reference `programs.id` from

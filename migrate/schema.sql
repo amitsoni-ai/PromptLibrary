@@ -60,6 +60,10 @@ create table if not exists admin_codes (
   created_at   timestamptz not null default now(),
   updated_at   timestamptz not null default now()
 );
+-- The classic gate / resolveCode() matches on upper(code); the plain unique
+-- btree on `code` can't serve that. (Idempotent — safe on re-run.)
+create index if not exists admin_codes_code_upper_idx on admin_codes (upper(code));
+create index if not exists seed_codes_code_upper_idx on seed_codes (upper(code));
 
 -- Central prompt library mirror (Excel + curriculum). The running app still
 -- ships prompts inline for fast client search; this table is the source of

@@ -11,7 +11,7 @@ export const AI_LEVELS = ["beginner", "foundational", "intermediate", "advanced"
 export const ADMIN_ROLES = ["SUPER_ADMIN", "ADMIN", "PROGRAM_MANAGER", "CONTENT_MANAGER", "VIEW_ONLY"];
 export const ACCOUNT_STATUSES = ["pending_verification", "active", "suspended", "disabled"];
 export const ENTITLEMENT_STATUSES = ["active", "suspended", "expired", "revoked"];
-export const SCOPE_TYPES = ["full", "program", "track", "none"];
+export const SCOPE_TYPES = ["full", "function", "program", "track", "collection", "none"];
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 

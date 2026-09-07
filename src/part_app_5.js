@@ -411,7 +411,12 @@ const SHARED_QUERY_VIEWS = new Set(["home", "search"]);
 // search, Learn and Practice, not by browsing the whole library.
 const SCOPED_HIDDEN_VIEWS = new Set(["categories", "categoryDetail", "insights"]);
 function isViewAllowed(view) {
-  return !(isScopeRestricted() && SCOPED_HIDDEN_VIEWS.has(view));
+  if (!isScopeRestricted()) return true;
+  // Function / org-collection learners keep a filtered Categories browse; only
+  // the whole-library views (Insights) stay hidden for them.
+  if ((view === "categories" || view === "categoryDetail")
+      && typeof scopeShowsCategories === "function" && scopeShowsCategories()) return true;
+  return !SCOPED_HIDDEN_VIEWS.has(view);
 }
 const VIEW_FEATURE = { practice: "practice", learn: "learning", framework: "learning", program: "my_program" };
 function navigate(view) {
@@ -588,6 +593,9 @@ async function bootApp() {
     renderGate("Your access code is no longer active. Ask your programme lead for a new one.");
     return;
   }
+  // A learner who entered an org / collection code on the classic gate before
+  // signing up has it stashed — redeem it now that there's a verified account.
+  if (typeof redeemPendingCode === "function") { try { await redeemPendingCode(); } catch (e) {} }
   Store.getMyPrompts().forEach((r) => enrichRecord(r));
   STATE.view = "home";
   renderApp();

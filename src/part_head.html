@@ -114,6 +114,18 @@ button{cursor:pointer;}
 .checkgrid{display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:5px 16px; max-height:240px; overflow:auto; border:1px solid var(--border); border-radius:var(--radius-sm); padding:12px; background:var(--surface-2);}
 .checkgrid label{display:flex; gap:7px; align-items:flex-start; font-size:12.5px; font-weight:400; color:var(--text); cursor:pointer; line-height:1.4;}
 .checkgrid input{margin-top:2px;}
+.checkgrid label.cg-hidden{display:none;}
+.cg-bar{display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin:-2px 0 8px;}
+.cg-selall{display:inline-flex; gap:7px; align-items:center; font-size:12px; font-weight:600; color:var(--text); background:var(--surface-2); border:1px solid var(--border-strong); border-radius:var(--radius-sm); padding:4px 10px; cursor:pointer;}
+.cg-selall:hover{background:var(--surface-3,var(--surface-2)); border-color:var(--accent);}
+.cg-selall:focus-visible{outline:2px solid var(--accent); outline-offset:1px;}
+.cg-selall .cg-ind{width:13px; height:13px; border:1.5px solid var(--border-strong); border-radius:3px; position:relative; flex:none; background:var(--surface);}
+.cg-selall[data-state="all"] .cg-ind{background:var(--accent); border-color:var(--accent);}
+.cg-selall[data-state="all"] .cg-ind::after{content:""; position:absolute; left:3px; top:0px; width:4px; height:8px; border:solid #fff; border-width:0 2px 2px 0; transform:rotate(45deg);}
+.cg-selall[data-state="some"] .cg-ind{background:var(--accent); border-color:var(--accent);}
+.cg-selall[data-state="some"] .cg-ind::after{content:""; position:absolute; left:2px; top:5px; width:7px; height:2px; background:#fff;}
+.cg-selall .cg-count{color:var(--text-faint); font-weight:400;}
+.cg-filter{font-size:12px; padding:4px 8px; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--surface); color:var(--text); min-width:130px;}
 .role-fn-group{grid-column:1/-1; font-size:10px; text-transform:uppercase; letter-spacing:.05em; color:var(--text-faint); font-weight:700; margin:8px 0 2px;}
 
 /* ---------- "View as" preview banner ---------- */

@@ -45,8 +45,10 @@ async function resetLimits() { try { await sql`delete from rate_limits`; await s
 // ---- schema + seed (same as run_v2, in-process so it shares the pglite singleton)
 const sql = db();
 {
-  const schema = readFileSync(join(HERE, "schema_v2.sql"), "utf8").replace(/--.*$/gm, "");
-  for (const stmt of schema.split(/;\s*(?:\n|$)/).map((s) => s.trim()).filter(Boolean)) await sql(stmt);
+  for (const file of ["schema.sql", "schema_v2.sql", "schema_v3.sql"]) {
+    const schema = readFileSync(join(HERE, file), "utf8").replace(/--.*$/gm, "");
+    for (const stmt of schema.split(/;\s*(?:\n|$)/).map((s) => s.trim()).filter(Boolean)) await sql(stmt);
+  }
   for (const f of DEFAULT_FEATURES) {
     await sql(
       `insert into feature_permissions (feature_key,label,description,public_ok,requires_verified,requires_entitlement,min_ai_level,sort)
@@ -100,16 +102,20 @@ const H = {
   forgot:    (await import("../api/_authsrc/forgot-password.js")).default,
   reset:     (await import("../api/_authsrc/reset-password.js")).default,
   redeem:    (await import("../api/_authsrc/redeem-code.js")).default,
+  session:   (await import("../api/session.js")).default,
   adminSession: (await import("../api/_adminsrc/session.js")).default,
   adminUsers:   (await import("../api/_adminsrc/users.js")).default,
   adminEnt:     (await import("../api/_adminsrc/entitlements.js")).default,
+  adminFns:     (await import("../api/_adminsrc/functions.js")).default,
+  adminCols:    (await import("../api/_adminsrc/collections.js")).default,
   adminAudit:   (await import("../api/_adminsrc/audit.js")).default,
   adminAnalytics: (await import("../api/_adminsrc/analytics.js")).default,
 };
 
-async function call(handler, { method = "GET", query = {}, body = null, cookieJar, csrf } = {}) {
+async function call(handler, { method = "GET", query = {}, body = null, cookieJar, csrf, ip } = {}) {
   const req = {
-    method, query, headers: { host: "test.local", "user-agent": "authtest", "x-forwarded-for": "10.0.0.1" },
+    method, query,
+    headers: { host: "test.local", "user-agent": "authtest", "x-forwarded-for": ip || "10.0.0.1" },
     body: body || undefined,
   };
   if (cookieJar) req.headers.cookie = cookieJar.header();
@@ -179,9 +185,10 @@ section("1. New user: signup → verify email → login → personalized access"
   const me = await call(H.me, { method: "GET", cookieJar: j });
   ok("me: authenticated + emailVerified", me.json.authenticated === true && me.json.user.emailVerified === true);
   // Auto-entitlement on verify — NO access code step. Function "it_engineering"
-  // -> program scope, so all features unlock and the entitlement is active.
-  ok("verify auto-grants access (no code): entitlement active, program-scoped",
-    me.json.access.access.active === true && me.json.access.access.scopeType === "program",
+  // -> function scope (filtered category browse), so all features unlock and the
+  // entitlement is active.
+  ok("verify auto-grants access (no code): entitlement active, function-scoped",
+    me.json.access.access.active === true && me.json.access.access.scopeType === "function",
     JSON.stringify(me.json.access.access));
   ok("auto-granted: library.full + practice + advanced_ai all allowed",
     me.json.access.features["library.full"] === true &&
@@ -190,6 +197,10 @@ section("1. New user: signup → verify email → login → personalized access"
   ok("auto-granted: programIds carries the function's program",
     Array.isArray(me.json.access.programs) && me.json.access.programs.includes("prog-syn-it-eng"),
     JSON.stringify(me.json.access.programs));
+  ok("auto-granted: access.categoryIds carries the function's categories",
+    Array.isArray(me.json.access.access.categoryIds) &&
+    me.json.access.access.categoryIds.includes("Coding & Tech"),
+    JSON.stringify(me.json.access.access.categoryIds));
   ok("personalization: no 'add access code' CTA anymore", me.json.access.personalization.cta === null);
 
   globalThis._ada = { j, csrf };
@@ -402,6 +413,344 @@ section("7. Admin analytics + audit log");
   const authlog = await call(H.adminAudit, { method: "GET", cookieJar: aj, query: { type: "auth", limit: 100 } });
   ok("auth events recorded (signup/login_ok/verify_ok)",
     authlog.json.rows.some((r) => r.event === "signup") && authlog.json.rows.some((r) => r.event === "verify_ok"));
+}
+
+section("8. Function library scope: signup function -> filtered category browse, re-scoped on profile change");
+{
+  await resetLimits();
+  const j = jar(); const csrf = await getCsrf(j);
+  await call(H.signup, { method: "POST", cookieJar: j, csrf, body: {
+    firstName: "Fenna", lastName: "Scope", email: "fenna@example.com",
+    password: "H3lloScope!!", confirmPassword: "H3lloScope!!", function: "hr",
+    aiLevel: "intermediate", organization: "Synottic", agreeTerms: true } });
+  const vtok = tokenFromMail(lastMailTo("fenna@example.com"));
+  await call(H.verify, { method: "POST", cookieJar: j, csrf, body: { token: vtok } });
+
+  const me = await call(H.me, { method: "GET", cookieJar: j });
+  const acc = me.json.access.access;
+  ok("HR signup -> scope_type 'function', active", acc.active === true && acc.scopeType === "function", JSON.stringify(acc));
+  ok("HR signup -> categoryIds includes 'HR & Recruiting'", (acc.categoryIds || []).includes("HR & Recruiting"), JSON.stringify(acc.categoryIds));
+  ok("HR signup -> programs includes prog-syn-hr", (me.json.access.programs || []).includes("prog-syn-hr"), JSON.stringify(me.json.access.programs));
+  ok("HR signup -> library.full + practice allowed (function scope entitles)",
+    me.json.access.features["library.full"] === true && me.json.access.features["practice"] === true);
+  ok("HR signup -> entitlement source is auto_function", acc.source === "auto_function");
+
+  // change the function in the profile -> the auto entitlement re-scopes
+  const patch = await call(H.me, { method: "PATCH", cookieJar: j, csrf, body: { function: "finance" } });
+  ok("profile function change accepted", patch.status === 200, JSON.stringify(patch.json));
+  const me2 = await call(H.me, { method: "GET", cookieJar: j });
+  const acc2 = me2.json.access.access;
+  ok("after change -> categoryIds now includes 'Finance & Accounting'", (acc2.categoryIds || []).includes("Finance & Accounting"), JSON.stringify(acc2.categoryIds));
+  ok("after change -> categoryIds no longer includes 'HR & Recruiting'", !(acc2.categoryIds || []).includes("HR & Recruiting"), JSON.stringify(acc2.categoryIds));
+  ok("after change -> programs swapped to prog-syn-finance", (me2.json.access.programs || []).includes("prog-syn-finance") && !(me2.json.access.programs || []).includes("prog-syn-hr"), JSON.stringify(me2.json.access.programs));
+  ok("after change -> still source auto_function, still function scope", acc2.source === "auto_function" && acc2.scopeType === "function");
+
+  // an admin override in function_scopes flows through resolveFunctionScope
+  {
+    const { aj, acsrf } = globalThis._admin;
+    await call(H.adminFns, { method: "POST", cookieJar: aj, csrf: acsrf, body: {
+      action: "save", functionKey: "finance",
+      categories: ["Finance & Accounting", "Business Strategy"], programIds: [], promptIds: ["p-x"] } });
+  }
+  await call(H.me, { method: "PATCH", cookieJar: j, csrf, body: { function: "hr" } });
+  await call(H.me, { method: "PATCH", cookieJar: j, csrf, body: { function: "finance" } });
+  const me3 = await call(H.me, { method: "GET", cookieJar: j });
+  const acc3 = me3.json.access.access;
+  ok("function_scopes override drives the resolved categories",
+    JSON.stringify((acc3.categoryIds || []).slice().sort()) === JSON.stringify(["Business Strategy", "Finance & Accounting"]),
+    JSON.stringify(acc3.categoryIds));
+  ok("function_scopes override drives the pinned prompt_ids", (acc3.promptIds || []).includes("p-x"), JSON.stringify(acc3.promptIds));
+}
+
+section("9. Admin: assign a prompt set to a function (function_scopes)");
+{
+  await resetLimits();
+  const { aj, acsrf } = globalThis._admin;
+
+  const list = await call(H.adminFns, { method: "GET", cookieJar: aj, query: {} });
+  ok("admin lists function scopes (13, no 'general')",
+    list.status === 200 && list.json.functions.length === 13 && !list.json.functions.some((f) => f.key === "general"));
+  const salesRow = list.json.functions.find((f) => f.key === "sales");
+  ok("function list carries the static default categories",
+    salesRow && salesRow.default.categories.includes("Sales & Lead Generation") && salesRow.scope === null,
+    JSON.stringify(salesRow));
+
+  const save = await call(H.adminFns, { method: "POST", cookieJar: aj, csrf: acsrf, body: {
+    action: "save", functionKey: "sales",
+    categories: ["Sales & Lead Generation", "Email Marketing"], programIds: [], promptIds: ["p-pin-1", "p-pin-1", " "] } });
+  ok("admin saves a custom sales scope", save.status === 200 && save.json.scope.categories.length === 2 && save.json.scope.promptIds.length === 1,
+    JSON.stringify(save.json));
+
+  // a fresh sales signup now inherits the custom scope
+  const j = jar(); const csrf = await getCsrf(j);
+  await call(H.signup, { method: "POST", cookieJar: j, csrf, body: {
+    firstName: "Cus", lastName: "Tom", email: "custom-sales@example.com",
+    password: "Cust0mScope!!", confirmPassword: "Cust0mScope!!", function: "sales",
+    aiLevel: "beginner", organization: "Synottic", agreeTerms: true } });
+  await call(H.verify, { method: "POST", cookieJar: j, csrf, body: { token: tokenFromMail(lastMailTo("custom-sales@example.com")) } });
+  const me = await call(H.me, { method: "GET", cookieJar: j });
+  ok("new sales signup inherits the custom categories",
+    JSON.stringify((me.json.access.access.categoryIds || []).slice().sort()) === JSON.stringify(["Email Marketing", "Sales & Lead Generation"]),
+    JSON.stringify(me.json.access.access.categoryIds));
+  ok("new sales signup inherits the pinned prompt id",
+    (me.json.access.access.promptIds || []).includes("p-pin-1"), JSON.stringify(me.json.access.access.promptIds));
+
+  // re-apply pushes the new scope onto existing auto_function learners
+  await call(H.adminFns, { method: "POST", cookieJar: aj, csrf: acsrf, body: {
+    action: "save", functionKey: "sales", categories: ["Sales & Lead Generation"], programIds: [], promptIds: [] } });
+  const reapply = await call(H.adminFns, { method: "POST", cookieJar: aj, csrf: acsrf, body: { action: "reapply", functionKey: "sales" } });
+  ok("re-apply updates current sales learners", reapply.status === 200 && reapply.json.reapplied >= 1, JSON.stringify(reapply.json));
+  const me2 = await call(H.me, { method: "GET", cookieJar: j });
+  ok("existing learner re-scoped by re-apply",
+    JSON.stringify(me2.json.access.access.categoryIds || []) === JSON.stringify(["Sales & Lead Generation"]),
+    JSON.stringify(me2.json.access.access.categoryIds));
+
+  // reset -> back to the static default for new signups
+  const reset = await call(H.adminFns, { method: "POST", cookieJar: aj, csrf: acsrf, body: { action: "reset", functionKey: "sales" } });
+  ok("admin resets sales to default", reset.status === 200 && reset.json.scope === null);
+  const j2 = jar(); const csrf2 = await getCsrf(j2);
+  await call(H.signup, { method: "POST", cookieJar: j2, csrf: csrf2, body: {
+    firstName: "Def", lastName: "Ault", email: "default-sales@example.com",
+    password: "D3faultScope!!", confirmPassword: "D3faultScope!!", function: "sales",
+    aiLevel: "beginner", organization: "Synottic", agreeTerms: true } });
+  await call(H.verify, { method: "POST", cookieJar: j2, csrf: csrf2, body: { token: tokenFromMail(lastMailTo("default-sales@example.com")) } });
+  const me3 = await call(H.me, { method: "GET", cookieJar: j2 });
+  ok("after reset, new sales signup gets the built-in default categories",
+    (me3.json.access.access.categoryIds || []).length === 6 && (me3.json.access.access.categoryIds || []).includes("Communication & Leadership"),
+    JSON.stringify(me3.json.access.access.categoryIds));
+
+  // RBAC: VIEW_ONLY cannot write a function scope
+  const vj = jar(); const vcsrf = await getCsrf(vj);
+  await call(H.adminSession, { method: "POST", cookieJar: vj, csrf: vcsrf, body: { email: "viewer@synottic.test", password: "ViewerPass123" } });
+  const vWrite = await call(H.adminFns, { method: "POST", cookieJar: vj, csrf: vcsrf, body: { action: "save", functionKey: "hr", categories: ["HR & Recruiting"] } });
+  ok("VIEW_ONLY admin cannot save a function scope -> 403", vWrite.status === 403);
+}
+
+section("10. Org collection: curate a set, generate a code, learner redeems -> collection scope");
+{
+  await resetLimits();
+  const { aj, acsrf } = globalThis._admin;
+
+  const create = await call(H.adminCols, { method: "POST", cookieJar: aj, csrf: acsrf, body: {
+    action: "create", name: "ABC Onboarding", orgName: "ABC",
+    categoryIds: ["Sales & Lead Generation", "Email Marketing"], programIds: [], promptIds: ["lib-2878"] } });
+  ok("admin creates a collection", create.status === 200 && create.json.collection.id && create.json.collection.categoryIds.length === 2,
+    JSON.stringify(create.json));
+  const colId = create.json.collection.id;
+
+  const future = new Date(Date.now() + 30 * 86400000).toISOString();
+  const gen = await call(H.adminCols, { method: "POST", cookieJar: aj, csrf: acsrf, body: {
+    action: "generate_code", id: colId, label: "Cohort A", maxRedemptions: 2, expiresAt: future } });
+  ok("admin generates a collection code", gen.status === 200 && /^ABC-/.test(gen.json.code.code) && gen.json.code.maxRedemptions === 2,
+    JSON.stringify(gen.json));
+  const code = gen.json.code.code;
+
+  // a verified learner (function scope) widens/replaces to the collection scope
+  const mk = async (email) => {
+    const j = jar(); const csrf = await getCsrf(j);
+    await call(H.signup, { method: "POST", cookieJar: j, csrf, body: {
+      firstName: "Col", lastName: "Redeem", email, password: "C0llScope!!", confirmPassword: "C0llScope!!",
+      function: "hr", aiLevel: "beginner", organization: "ABC", agreeTerms: true } });
+    await call(H.verify, { method: "POST", cookieJar: j, csrf, body: { token: tokenFromMail(lastMailTo(email)) } });
+    return { j, csrf };
+  };
+
+  const a = await mk("col-a@example.com");
+  const rd = await call(H.redeem, { method: "POST", cookieJar: a.j, csrf: a.csrf, body: { code } });
+  ok("learner redeems collection code -> 200", rd.status === 200, JSON.stringify(rd.json));
+  const meA = await call(H.me, { method: "GET", cookieJar: a.j });
+  const accA = meA.json.access.access;
+  ok("redeemed: scope_type 'collection', active", accA.scopeType === "collection" && accA.active === true, JSON.stringify(accA));
+  ok("redeemed: categoryIds match the collection",
+    JSON.stringify((accA.categoryIds || []).slice().sort()) === JSON.stringify(["Email Marketing", "Sales & Lead Generation"]),
+    JSON.stringify(accA.categoryIds));
+  ok("redeemed: pinned prompt id carried through", (accA.promptIds || []).includes("lib-2878"), JSON.stringify(accA.promptIds));
+  ok("redeemed: collection with no programs -> access.programs empty (no leak from prior HR function scope)",
+    Array.isArray(meA.json.access.programs) && meA.json.access.programs.length === 0, JSON.stringify(meA.json.access.programs));
+
+  const listAfter1 = await call(H.adminCols, { method: "GET", cookieJar: aj, query: {} });
+  const col1 = listAfter1.json.collections.find((c) => c.id === colId);
+  ok("redemption count increments", col1.codes[0].redemptions === 1, JSON.stringify(col1.codes[0]));
+
+  // re-scope the collection -> the still-unredeemed part stays in sync; the code
+  // itself already redeemed keeps the snapshot on the entitlement
+  await call(H.adminCols, { method: "POST", cookieJar: aj, csrf: acsrf, body: {
+    action: "update", id: colId, categoryIds: ["Sales & Lead Generation"], promptIds: [] } });
+  const b = await mk("col-b@example.com");
+  const rdB = await call(H.redeem, { method: "POST", cookieJar: b.j, csrf: b.csrf, body: { code } });
+  const accB = (await call(H.me, { method: "GET", cookieJar: b.j })).json.access.access;
+  ok("re-scoped collection flows to a new redemption",
+    rdB.status === 200 && JSON.stringify(accB.categoryIds || []) === JSON.stringify(["Sales & Lead Generation"]),
+    JSON.stringify(accB.categoryIds));
+
+  // seat limit reached (2/2)
+  const c = await mk("col-c@example.com");
+  const rdC = await call(H.redeem, { method: "POST", cookieJar: c.j, csrf: c.csrf, body: { code } });
+  ok("code exhausted after maxRedemptions -> 403", rdC.status === 403 && rdC.json.error === "code-exhausted", JSON.stringify(rdC.json));
+
+  // disable via the shared access-code PATCH
+  const codeId = col1.codes[0].id;
+  await call(H.adminEnt, { method: "PATCH", cookieJar: aj, csrf: acsrf, body: { codeId, enabled: false, maxRedemptions: 99 } });
+  const d = await mk("col-d@example.com");
+  const rdD = await call(H.redeem, { method: "POST", cookieJar: d.j, csrf: d.csrf, body: { code } });
+  ok("disabled code -> 403 code-disabled", rdD.status === 403 && rdD.json.error === "code-disabled", JSON.stringify(rdD.json));
+
+  // delete guard + RBAC
+  const del = await call(H.adminCols, { method: "POST", cookieJar: aj, csrf: acsrf, body: { action: "delete", id: colId } });
+  ok("cannot delete a collection with redeemed codes -> 422", del.status === 422 && del.json.error === "has-redemptions", JSON.stringify(del.json));
+
+  const vj = jar(); const vcsrf = await getCsrf(vj);
+  await call(H.adminSession, { method: "POST", cookieJar: vj, csrf: vcsrf, body: { email: "viewer@synottic.test", password: "ViewerPass123" } });
+  const vCreate = await call(H.adminCols, { method: "POST", cookieJar: vj, csrf: vcsrf, body: { action: "create", name: "Nope", orgName: "X" } });
+  ok("VIEW_ONLY admin cannot create a collection -> 403", vCreate.status === 403);
+}
+
+section("11. Admin user-management console: filters, create/invite, align, bulk");
+{
+  await resetLimits();
+  const { aj, acsrf } = globalThis._admin;
+
+  // enriched list rows + filters
+  const list = await call(H.adminUsers, { method: "GET", cookieJar: aj, query: { limit: "100" } });
+  ok("user list rows carry entitlement status/source + last activity",
+    list.status === 200 && list.json.users.length > 0 &&
+    list.json.users.every((u) => "entStatus" in u && "entSource" in u && "lastActivityAt" in u),
+    JSON.stringify(list.json.users[0]));
+  const bySrc = await call(H.adminUsers, { method: "GET", cookieJar: aj, query: { entSource: "auto_function", limit: "100" } });
+  ok("filter by entitlement source = auto_function",
+    bySrc.status === 200 && bySrc.json.users.length > 0 && bySrc.json.users.every((u) => u.entSource === "auto_function"));
+  const noneEnt = await call(H.adminUsers, { method: "GET", cookieJar: aj, query: { entStatus: "none", limit: "100" } });
+  ok("filter by entitlement status = none returns only users without an entitlement",
+    noneEnt.status === 200 && noneEnt.json.users.every((u) => u.entStatus === "none"));
+
+  // create user (invite) with a starting function scope
+  const create = await call(H.adminUsers, { method: "POST", cookieJar: aj, csrf: acsrf, body: {
+    action: "create", email: "invited@example.com", firstName: "In", lastName: "Vited",
+    function: "marketing", aiLevel: "beginner", organization: "ABC", functionScope: true, sendInvite: true } });
+  ok("admin creates a user -> 201 pending_verification", create.status === 201 && create.json.user.accountStatus === "pending_verification" && create.json.user.emailVerified === false,
+    JSON.stringify(create.json));
+  const invitedId = create.json.user.id;
+  ok("invite / verification email sent to the new user", !!lastMailTo("invited@example.com"));
+  const invitedEnt = await call(H.adminEnt, { method: "GET", cookieJar: aj, query: { userId: invitedId } });
+  ok("created user has the starting function-scope entitlement",
+    invitedEnt.json.entitlement && invitedEnt.json.entitlement.scope_type === "function" &&
+    (invitedEnt.json.entitlement.category_ids || []).includes("Marketing & Branding"),
+    JSON.stringify(invitedEnt.json.entitlement));
+  const dupe = await call(H.adminUsers, { method: "POST", cookieJar: aj, csrf: acsrf, body: {
+    action: "create", email: "invited@example.com", function: "sales" } });
+  ok("duplicate email on create -> 409", dupe.status === 409);
+
+  // admin changes the function on an auto_function user -> re-scoped
+  const changed = await call(H.adminUsers, { method: "PATCH", cookieJar: aj, csrf: acsrf, body: {
+    id: invitedId, action: "update_profile", role: "legal" } });
+  ok("admin update_profile role change accepted", changed.status === 200);
+  const afterEnt = await call(H.adminEnt, { method: "GET", cookieJar: aj, query: { userId: invitedId } });
+  ok("changing function re-scopes the auto entitlement (Legal categories now)",
+    (afterEnt.json.entitlement.category_ids || []).includes("Legal & Compliance") &&
+    !(afterEnt.json.entitlement.category_ids || []).includes("Marketing & Branding"),
+    JSON.stringify(afterEnt.json.entitlement.category_ids));
+
+  // align_function on a NON-auto entitlement -> 409
+  const adaId = globalThis._admin.adaId;
+  await call(H.adminEnt, { method: "POST", cookieJar: aj, csrf: acsrf, body: { action: "assign", userId: adaId, scopeType: "full", status: "active" } });
+  const badAlign = await call(H.adminUsers, { method: "PATCH", cookieJar: aj, csrf: acsrf, body: { id: adaId, action: "align_function" } });
+  ok("align_function on an admin entitlement -> 409 not-auto-entitlement", badAlign.status === 409);
+
+  // bulk suspend
+  const u1 = (await sql`select id from users where email_norm = 'invited@example.com'`)[0].id;
+  const bulk = await call(H.adminUsers, { method: "POST", cookieJar: aj, csrf: acsrf, body: {
+    action: "bulk", subAction: "suspend", ids: [u1, adaId] } });
+  ok("bulk suspend -> both ok", bulk.status === 200 && bulk.json.results.filter((r) => r.ok).length === 2);
+  const suspended = await call(H.adminUsers, { method: "GET", cookieJar: aj, query: { status: "suspended", limit: "100" } });
+  ok("bulk-suspended users show as suspended", suspended.json.users.some((u) => u.id === u1) && suspended.json.users.some((u) => u.id === adaId));
+  await call(H.adminUsers, { method: "POST", cookieJar: aj, csrf: acsrf, body: { action: "bulk", subAction: "reactivate", ids: [u1, adaId] } });
+
+  // RBAC
+  const vj = jar(); const vcsrf = await getCsrf(vj);
+  await call(H.adminSession, { method: "POST", cookieJar: vj, csrf: vcsrf, body: { email: "viewer@synottic.test", password: "ViewerPass123" } });
+  const vList = await call(H.adminUsers, { method: "GET", cookieJar: vj, query: {} });
+  const vCreate = await call(H.adminUsers, { method: "POST", cookieJar: vj, csrf: vcsrf, body: { action: "create", email: "nope2@example.com" } });
+  ok("VIEW_ONLY admin can list users", vList.status === 200);
+  ok("VIEW_ONLY admin cannot create a user -> 403", vCreate.status === 403);
+}
+
+section("12. Collection code on the anonymous gate + unknown/expired + seat-limit race");
+{
+  await resetLimits();
+  const { aj, acsrf } = globalThis._admin;
+
+  const col = await call(H.adminCols, { method: "POST", cookieJar: aj, csrf: acsrf, body: {
+    action: "create", name: "Gate Test", orgName: "GATECO",
+    categoryIds: ["Sales & Lead Generation", "Email Marketing", "Customer Support"], programIds: [], promptIds: [] } });
+  const colId = col.json.collection.id;
+  const gen = await call(H.adminCols, { method: "POST", cookieJar: aj, csrf: acsrf, body: {
+    action: "generate_code", id: colId, label: "Open" } });
+  const code = gen.json.code.code;
+
+  // --- anonymous /api/session must NOT 500 and must NOT silently fail ---
+  const prev = await call(H.session, { method: "POST", body: { code, preview: true } });
+  ok("collection code: /api/session preview -> accountRequired (not 404/500)",
+    prev.status === 200 && prev.json.resolved && prev.json.resolved.accountRequired === true && prev.json.resolved.orgName === "GATECO",
+    JSON.stringify(prev.json));
+  const prevCase = await call(H.session, { method: "POST", body: { code: `  ${code.toLowerCase()} `, preview: true } });
+  ok("collection code: preview tolerates case + surrounding spaces",
+    prevCase.status === 200 && prevCase.json.resolved && prevCase.json.resolved.accountRequired === true, JSON.stringify(prevCase.json));
+  const red = await call(H.session, { method: "POST", body: { code, name: "Anon" } });
+  ok("collection code: /api/session redeem -> 409 account-required (routes to sign-up)",
+    red.status === 409 && red.json.error === "account-required" && red.json.code === code, JSON.stringify(red.json));
+
+  const unknown = await call(H.session, { method: "POST", body: { code: "TOTALLY-BOGUS", preview: true } });
+  ok("unknown code on the gate -> clean 404 unknown-code", unknown.status === 404 && unknown.json.error === "unknown-code", JSON.stringify(unknown.json));
+
+  // --- learner account path: unknown + expired rejected cleanly ---
+  const mk = async (email) => {
+    await resetLimits();   // the suite drives many signups from one IP
+    const j = jar(); const csrf = await getCsrf(j);
+    await call(H.signup, { method: "POST", cookieJar: j, csrf, body: {
+      firstName: "Race", lastName: "R", email, password: "R4ceScope!!", confirmPassword: "R4ceScope!!",
+      function: "sales", aiLevel: "beginner", organization: "GATECO", agreeTerms: true } });
+    await call(H.verify, { method: "POST", cookieJar: j, csrf, body: { token: tokenFromMail(lastMailTo(email)) } });
+    return { j, csrf };
+  };
+  const u = await mk("race-unknown@example.com");
+  const ru = await call(H.redeem, { method: "POST", cookieJar: u.j, csrf: u.csrf, body: { code: "NOPE-NOPE" } });
+  ok("redeem unknown code -> 404 unknown-code", ru.status === 404 && ru.json.error === "unknown-code", JSON.stringify(ru.json));
+
+  const past = new Date(Date.now() - 86400000).toISOString();
+  const expGen = await call(H.adminCols, { method: "POST", cookieJar: aj, csrf: acsrf, body: {
+    action: "generate_code", id: colId, label: "Expired", expiresAt: past } });
+  const ue = await mk("race-expired@example.com");
+  const re = await call(H.redeem, { method: "POST", cookieJar: ue.j, csrf: ue.csrf, body: { code: expGen.json.code.code } });
+  ok("redeem expired code -> 403 code-expired", re.status === 403 && re.json.error === "code-expired", JSON.stringify(re.json));
+  const pe = await call(H.session, { method: "POST", body: { code: expGen.json.code.code, preview: true } });
+  ok("expired collection code on the gate -> 403 code-expired", pe.status === 403 && pe.json.error === "code-expired", JSON.stringify(pe.json));
+
+  // --- seat-limit race: 20 concurrent redeems, max_redemptions = 5 -> exactly 5 ---
+  const seatGen = await call(H.adminCols, { method: "POST", cookieJar: aj, csrf: acsrf, body: {
+    action: "generate_code", id: colId, label: "Seats", maxRedemptions: 5 } });
+  const seatCode = seatGen.json.code.code;
+  const racers = [];
+  for (let i = 0; i < 20; i++) racers.push(await mk(`race-${i}@example.com`));
+  await resetLimits();
+  // distinct IPs so the per-IP redeem limiter doesn't mask the DB seat guard —
+  // the guard is what we're proving holds under concurrency.
+  const outcomes = await Promise.all(racers.map((r, i) =>
+    call(H.redeem, { method: "POST", cookieJar: r.j, csrf: r.csrf, ip: `10.1.0.${i + 1}`, body: { code: seatCode } }).then((x) => x.status)));
+  const granted = outcomes.filter((s) => s === 200).length;
+  const refused = outcomes.filter((s) => s === 403).length;
+  ok("seat-limit race: exactly 5 of 20 concurrent redeems succeed, rest refused 403",
+    granted === 5 && refused === 15, `statuses=${JSON.stringify(outcomes)}`);
+  const finalCount = (await call(H.adminCols, { method: "GET", cookieJar: aj, query: {} }))
+    .json.collections.find((c) => c.id === colId).codes.find((k) => k.code === seatCode).redemptions;
+  ok("seat-limit race: stored redemption count is exactly 5 (no over-count)", finalCount === 5, `redemptions=${finalCount}`);
+
+  // re-applying the SAME code you already hold doesn't burn another seat
+  const holder = racers[outcomes.indexOf(200)];
+  await resetLimits();
+  const reapply = await call(H.redeem, { method: "POST", cookieJar: holder.j, csrf: holder.csrf, ip: "10.2.0.1", body: { code: seatCode } });
+  const afterReapply = (await call(H.adminCols, { method: "GET", cookieJar: aj, query: {} }))
+    .json.collections.find((c) => c.id === colId).codes.find((k) => k.code === seatCode).redemptions;
+  ok("re-redeeming a held code is idempotent (no extra seat consumed)", reapply.status === 200 && afterReapply === 5, `redemptions=${afterReapply}`);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

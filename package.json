@@ -9,6 +9,8 @@
     "make:admin": "node migrate/make_admin.mjs",
     "apitest": "node migrate/apitest.mjs",
     "authtest": "node migrate/authtest.mjs",
+    "loadtest": "node migrate/loadtest.mjs",
+    "migrate:v3": "node migrate/run_v3.mjs",
     "dev": "node devserver.mjs",
     "dev:auth": "node migrate/devserver_pglite.mjs"
   },

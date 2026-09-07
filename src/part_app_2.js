@@ -48,11 +48,29 @@ function userLibraryMode() {
   const a = (typeof userAccess === "function" && userAccess()) || s.access || null;
   const acc = a && a.access;
   if (acc && acc.active && acc.scopeType === "full") return { mode: "full" };
+  // Function / signup scope and org "collection" scope both keep a FILTERED
+  // category browse (Categories tab stays visible). `auto_function` rows created
+  // before schema_v3 still say scopeType:"program" — coerce them to "function".
+  if (acc && acc.active && (acc.scopeType === "function" || acc.scopeType === "collection"
+      || (acc.scopeType === "program" && acc.source === "auto_function"))) {
+    return {
+      mode: acc.scopeType === "collection" ? "collection" : "function",
+      categories: Array.isArray(acc.categoryIds) ? acc.categoryIds : [],
+      programIds: Array.isArray(a.programs) ? a.programs : [],
+      promptIds: Array.isArray(acc.promptIds) ? acc.promptIds : [],
+    };
+  }
   if (acc && acc.active && (acc.scopeType === "program" || acc.scopeType === "track")) {
     const ids = Array.isArray(a.programs) ? a.programs : [];
     return { mode: "program", programIds: ids };
   }
   return { mode: "preview" };   // unverified / no entitlement / suspended
+}
+// True when the scope is a filtered CATEGORY browse (function / org collection),
+// as opposed to the access-code program scope which hides Categories.
+function scopeShowsCategories() {
+  const um = userLibraryMode();
+  return !!(um && (um.mode === "function" || um.mode === "collection"));
 }
 function userPreviewLibrary() {
   return ALL_PROMPTS
@@ -144,10 +162,22 @@ function scopedLibrary() {
   if (um) {
     if (um.mode === "full") return ALL_PROMPTS;
     if (um.mode === "preview") return userPreviewLibrary();
-    const linked = new Set();
+    // program | function | collection: categories + explicitly linked prompts.
+    const linked = new Set(um.promptIds || []);
     (um.programIds || []).forEach((pid) => programPromptIds(pid).forEach((id) => linked.add(id)));
-    const cats = new Set();
-    (um.programIds || []).forEach((pid) => ((ORG_INDEX.programs[pid] || {}).categories || []).forEach((c) => cats.add(c)));
+    const cats = new Set(um.categories || []);
+    // A COLLECTION is "exactly this set": its programs contribute only their
+    // module-linked prompts (above), never their whole category span — that
+    // keeps the learner browse matched to the admin Scope preview count.
+    // A function scope's category list is already the program-derived union, so
+    // folding program categories in there stays a harmless no-op / edge fallback.
+    if (um.mode !== "collection") {
+      (um.programIds || []).forEach((pid) => ((ORG_INDEX.programs[pid] || {}).categories || []).forEach((c) => cats.add(c)));
+    }
+    // no-DB / pre-v3 fallback: derive the function's categories from the static catalogue
+    if (!cats.size && (um.mode === "function" || um.mode === "collection") && typeof functionScopeCategories === "function") {
+      functionScopeCategories(s && s.role).forEach((c) => cats.add(c));
+    }
     const out = ALL_PROMPTS.filter((r) => cats.has(r.category) || linked.has(r.id));
     return out.length ? out : userPreviewLibrary();
   }

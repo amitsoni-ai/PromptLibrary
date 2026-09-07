@@ -119,9 +119,21 @@ export async function getUserAccess(sql, user) {
     map[f.feature_key] = allow;
   }
 
+  // For a curated scope (function / collection) the entitlement's own
+  // program_ids are authoritative — stale program_enrollments from a previous
+  // scope must not widen a curated library.
+  // A curated scope (function / collection) carries its own program / category /
+  // prompt lists on the entitlement; stale program_enrollments from a previous
+  // scope must not widen it.
+  const curated = ent && ["function", "collection"].includes(ent.scope_type);
   const programIds = ent && ent.scope_type === "full"
     ? "*"
-    : Array.from(new Set([...(ent && ent.program_ids || []), ...enrollments]));
+    : curated
+      ? Array.from(new Set(ent.program_ids || []))
+      : Array.from(new Set([...(ent && ent.program_ids || []), ...enrollments]));
+
+  const categoryIds = curated && Array.isArray(ent.category_ids) ? ent.category_ids : [];
+  const promptIds = curated && Array.isArray(ent.prompt_ids) ? ent.prompt_ids : [];
 
   return {
     authenticated: true,
@@ -138,6 +150,8 @@ export async function getUserAccess(sql, user) {
       status: ent ? ent.status : "none",
       scopeType: ent ? ent.scope_type : "none",
       programIds,
+      categoryIds,
+      promptIds,
       licenseType: ent ? ent.license_type : null,
       expiresAt: ent ? ent.expires_at : null,
       source: ent ? ent.source : null,

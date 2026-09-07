@@ -28,9 +28,14 @@ const { DEFAULT_FEATURES } = await import("../api/_access.js");
 const { hashPassword, newId } = await import("../api/_crypto.js");
 
 const sql = db();
-console.log("→ applying schema_v2.sql to", process.env.DATABASE_URL);
-const schema = readFileSync(join(HERE, "schema_v2.sql"), "utf8").replace(/--.*$/gm, "");
-for (const stmt of schema.split(/;\s*(?:\n|$)/).map((s) => s.trim()).filter(Boolean)) await sql(stmt);
+// Apply v1 (schema.sql) FIRST so the classic access-code path has its tables
+// (admin_codes / seed_codes / activity / learner_state). schema_v2 and _v3 are
+// additive on top of v1 — the same order the production checklist requires.
+console.log("→ applying schema.sql + schema_v2.sql + schema_v3.sql to", process.env.DATABASE_URL);
+for (const file of ["schema.sql", "schema_v2.sql", "schema_v3.sql"]) {
+  const schema = readFileSync(join(HERE, file), "utf8").replace(/--.*$/gm, "");
+  for (const stmt of schema.split(/;\s*(?:\n|$)/).map((s) => s.trim()).filter(Boolean)) await sql(stmt);
+}
 for (const f of DEFAULT_FEATURES) {
   await sql(
     `insert into feature_permissions (feature_key,label,description,public_ok,requires_verified,requires_entitlement,min_ai_level,sort)
@@ -50,6 +55,7 @@ await sql(`insert into access_codes (id,code,label,org_name,scope_type,license_t
            values ($1,'DEMO-LEARNER','Demo','Synottic','full','trial',true,'devserver')
            on conflict (code) do nothing`, [newId("acc")]);
 console.log("→ access code: DEMO-LEARNER (full)");
+console.log("→ verify links: GET /api/dev/outbox  (run with EMAIL_TRANSPORT=console for local email)");
 console.log(`→ email: transport=${process.env.EMAIL_TRANSPORT} from=${process.env.EMAIL_FROM || "(default)"}` +
   (process.env.EMAIL_TRANSPORT === "resend" ? `  key=${(process.env.RESEND_API_KEY || "").slice(0, 8)}…` : ""));
 

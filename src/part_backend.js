@@ -117,5 +117,81 @@ const Backend = (function () {
     async adminAnalytics(days) {
       return call("/admin/analytics?days=" + (days || 30), { token: adminToken });
     },
+    // ---- per-function library scope (Function access tab) ----
+    async adminFunctions() {
+      const d = await call("/admin/functions", { token: adminToken });
+      return (d && d.functions) || [];
+    },
+    async adminSaveFunction(rec) {
+      const d = await call("/admin/functions", { method: "POST", body: Object.assign({ action: "save" }, rec), token: adminToken });
+      return d && d.scope;
+    },
+    async adminResetFunction(functionKey) {
+      await call("/admin/functions", { method: "POST", body: { action: "reset", functionKey }, token: adminToken });
+      return true;
+    },
+    async adminReapplyFunction(functionKey) {
+      const d = await call("/admin/functions", { method: "POST", body: { action: "reapply", functionKey }, token: adminToken });
+      return (d && d.reapplied) || 0;
+    },
+    // ---- per-organization curated collections + their access codes ----
+    async adminCollections() {
+      const d = await call("/admin/collections", { token: adminToken });
+      return (d && d.collections) || [];
+    },
+    async adminSaveCollection(rec) {
+      const action = rec.id ? "update" : "create";
+      const d = await call("/admin/collections", { method: "POST", body: Object.assign({ action }, rec), token: adminToken });
+      return d && d.collection;
+    },
+    async adminDeleteCollection(id) {
+      return call("/admin/collections", { method: "POST", body: { action: "delete", id }, token: adminToken });
+    },
+    async adminGenerateCollectionCode(id, opts) {
+      const d = await call("/admin/collections", { method: "POST", body: Object.assign({ action: "generate_code", id }, opts || {}), token: adminToken });
+      return d && d.code;
+    },
+    // access_codes lifecycle (rename / disable / seat limit / expiry / re-scope)
+    async adminPatchAccessCode(codeId, fields) {
+      const d = await call("/admin/entitlements", { method: "PATCH", body: Object.assign({ codeId }, fields), token: adminToken });
+      return d && d.code;
+    },
+    async adminDeleteAccessCode(codeId) {
+      return call("/admin/entitlements?codeId=" + encodeURIComponent(codeId), { method: "DELETE", token: adminToken });
+    },
+    // ---- User Management console ----
+    async adminUsers(params) {
+      const qs = new URLSearchParams();
+      Object.entries(params || {}).forEach(([k, v]) => { if (v !== "" && v != null) qs.set(k, v); });
+      return call("/admin/users?" + qs.toString(), { token: adminToken });
+    },
+    async adminUser(id) {
+      return call("/admin/users?id=" + encodeURIComponent(id), { token: adminToken });
+    },
+    async adminUserAction(id, action, extra) {
+      const d = await call("/admin/users", { method: "PATCH", body: Object.assign({ id, action }, extra || {}), token: adminToken });
+      return d && d.user;
+    },
+    async adminUserCreate(body) {
+      const d = await call("/admin/users", { method: "POST", body: Object.assign({ action: "create" }, body), token: adminToken });
+      return d && d.user;
+    },
+    async adminUsersBulk(ids, subAction, extra) {
+      const d = await call("/admin/users", { method: "POST", body: Object.assign({ action: "bulk", ids, subAction }, extra || {}), token: adminToken });
+      return (d && d.results) || [];
+    },
+    async adminUserDelete(id, hard) {
+      return call("/admin/users?id=" + encodeURIComponent(id) + (hard ? "&hard=1" : ""), { method: "DELETE", token: adminToken });
+    },
+    async adminEntitlement(userId) {
+      return call("/admin/entitlements?userId=" + encodeURIComponent(userId), { token: adminToken });
+    },
+    async adminEntitlementAction(body) {
+      return call("/admin/entitlements", { method: "POST", body, token: adminToken });
+    },
+    async adminAudit(params) {
+      const qs = new URLSearchParams(params || {});
+      return call("/admin/audit?" + qs.toString(), { token: adminToken });
+    },
   };
 })();

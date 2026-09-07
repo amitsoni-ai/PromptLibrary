@@ -33,26 +33,57 @@ export default async function handler(req, res) {
   const c = rows[0];
   if (!c.enabled) return json(res, 403, { error: "code-disabled" });
   if (c.expires_at && new Date(c.expires_at) < new Date()) return json(res, 403, { error: "code-expired" });
-  if (c.max_redemptions != null && c.redemptions >= c.max_redemptions) return json(res, 403, { error: "code-exhausted" });
+
+  // Re-applying the SAME code you already hold doesn't consume another seat —
+  // just refresh the entitlement snapshot below.
+  const already = await sql`select 1 from entitlements
+    where user_id = ${ctx.user.id} and upper(access_code) = ${code} and status = 'active' limit 1`;
+  const reapply = already.length > 0;
+
+  // Atomic seat claim: the WHERE guard makes "exactly max_redemptions succeed"
+  // hold under concurrency — a check-then-increment would let all racers pass.
+  if (!reapply) {
+    const claim = await sql`update access_codes
+        set redemptions = redemptions + 1, updated_at = now()
+      where id = ${c.id}
+        and enabled = true
+        and (expires_at is null or expires_at > now())
+        and (max_redemptions is null or redemptions < max_redemptions)
+      returning redemptions`;
+    if (!claim.length) {
+      const fresh = (await sql`select enabled, expires_at, max_redemptions, redemptions from access_codes where id = ${c.id} limit 1`)[0] || {};
+      if (fresh.enabled === false) return json(res, 403, { error: "code-disabled" });
+      if (fresh.expires_at && new Date(fresh.expires_at) < new Date()) return json(res, 403, { error: "code-expired" });
+      return json(res, 403, { error: "code-exhausted" });
+    }
+  }
+
+  try {
 
   await sql`insert into entitlements (id, user_id, source, access_code, scope_type, program_ids,
-              feature_flags, license_type, org_name, status, granted_by, expires_at)
+              category_ids, prompt_ids, feature_flags, license_type, org_name, status, granted_by, expires_at)
             values (${newId("ent")}, ${ctx.user.id}, 'access_code', ${c.code}, ${c.scope_type},
-              ${JSON.stringify(c.program_ids || [])}, ${JSON.stringify(c.feature_flags || {})},
+              ${JSON.stringify(c.program_ids || [])}, ${JSON.stringify(c.category_ids || [])},
+              ${JSON.stringify(c.prompt_ids || [])}, ${JSON.stringify(c.feature_flags || {})},
               ${c.license_type}, ${c.org_name || ctx.user.org_name}, 'active', 'self', ${c.expires_at || null})
           on conflict (user_id) do update set
             source = 'access_code', access_code = excluded.access_code, scope_type = excluded.scope_type,
-            program_ids = excluded.program_ids, feature_flags = excluded.feature_flags,
+            program_ids = excluded.program_ids, category_ids = excluded.category_ids,
+            prompt_ids = excluded.prompt_ids, feature_flags = excluded.feature_flags,
             license_type = excluded.license_type, org_name = excluded.org_name,
             status = 'active', expires_at = excluded.expires_at, updated_at = now()`;
 
-  for (const pid of (c.program_ids || [])) {
+  const newProgs = c.program_ids || [];
+  // drop self-serve enrolments from a prior (function / older code) scope so a
+  // curated code doesn't inherit programs it never granted
+  await sql`update program_enrollments set status = 'removed'
+    where user_id = ${ctx.user.id} and enrolled_by in ('system', 'self')
+    and not (program_id = any(${newProgs}))`;
+  for (const pid of newProgs) {
     await sql`insert into program_enrollments (id, user_id, program_id, status, enrolled_by)
               values (${newId("enr")}, ${ctx.user.id}, ${pid}, 'active', 'self')
               on conflict (user_id, program_id) do update set status = 'active'`;
   }
-  await sql`update access_codes set redemptions = redemptions + 1, updated_at = now() where id = ${c.id}`;
-
   authEvent(sql, { userId: ctx.user.id, email: ctx.user.email, event: "login_ok", req, meta: { redeemed: c.code } });
   entitlementEvent(sql, { userId: ctx.user.id, actor: "self", action: "code_redeemed",
     detail: { code: c.code, scope: c.scope_type, programIds: c.program_ids } });
@@ -63,4 +94,12 @@ export default async function handler(req, res) {
   const fresh = (await sql`select * from users where id = ${ctx.user.id} limit 1`)[0];
   const access = await getUserAccess(sql, fresh);
   return json(res, 200, { ok: true, access });
+
+  } catch (e) {
+    // Grant failed after the seat was claimed — release it so the count stays true.
+    if (!reapply) {
+      await sql`update access_codes set redemptions = greatest(redemptions - 1, 0), updated_at = now() where id = ${c.id}`.catch(() => {});
+    }
+    throw e;
+  }
 }

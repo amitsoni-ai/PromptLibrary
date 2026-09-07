@@ -8,6 +8,7 @@ import { checkCsrf, issueCsrf } from "../_http.js";
 import { resolveUser } from "../_session.js";
 import { getUserAccess } from "../_access.js";
 import { entitlementForFunction } from "../_functions.js";
+import { resolveFunctionScope } from "../_funcscope.js";
 import { newId } from "../_crypto.js";
 import { str, ROLES, AI_LEVELS } from "../_validate.js";
 import { auditLog, entitlementEvent } from "../_audit.js";
@@ -78,20 +79,26 @@ export default async function handler(req, res) {
       const cur = (await sql`select * from entitlements where user_id = ${fresh.id} limit 1`)[0];
       if (cur && cur.source === "auto_function") {
         const grant = entitlementForFunction(fresh.role);
+        const fs = grant.scopeType === "function"
+          ? await resolveFunctionScope(sql, fresh.role)
+          : { categories: [], programIds: grant.programIds, promptIds: [] };
+        const programIds = fs.programIds && fs.programIds.length ? fs.programIds : grant.programIds;
         await sql`update entitlements set scope_type = ${grant.scopeType},
-          program_ids = ${JSON.stringify(grant.programIds)}, status = 'active', updated_at = now()
+          program_ids = ${JSON.stringify(programIds)}, category_ids = ${JSON.stringify(fs.categories || [])},
+          prompt_ids = ${JSON.stringify(fs.promptIds || [])}, status = 'active', updated_at = now()
           where user_id = ${fresh.id}`;
         // drop system enrolments that no longer match the chosen function
         await sql`update program_enrollments set status = 'removed'
           where user_id = ${fresh.id} and enrolled_by = 'system'
-          and not (program_id = any(${grant.programIds}))`;
-        for (const pid of grant.programIds) {
+          and not (program_id = any(${programIds}))`;
+        for (const pid of programIds) {
           await sql`insert into program_enrollments (id, user_id, program_id, status, enrolled_by)
                     values (${newId("enr")}, ${fresh.id}, ${pid}, 'active', 'system')
                     on conflict (user_id, program_id) do update set status = 'active'`;
         }
         entitlementEvent(sql, { userId: fresh.id, actor: "self", action: "modified",
-          detail: { via: "profile_function_change", function: fresh.role, scopeType: grant.scopeType } });
+          detail: { via: "profile_function_change", function: fresh.role, scopeType: grant.scopeType,
+            programIds, categories: fs.categories || [] } });
       }
     }
 

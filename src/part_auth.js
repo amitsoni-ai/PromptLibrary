@@ -177,6 +177,63 @@ async function refreshAccess() {
   return null;
 }
 
+/* ---- access-code redemption for a signed-in learner ---- */
+function pendingAccessCode() {
+  try { return sessionStorage.getItem("prompt-lib:pending-code") || null; } catch (e) { return null; }
+}
+function clearPendingAccessCode() {
+  try { sessionStorage.removeItem("prompt-lib:pending-code"); } catch (e) {}
+}
+// Apply an access code to the current signed-in learner. Returns { ok, access }
+// or { ok:false, error }. Used by the in-app "Add an access code" banner form
+// and by the auto-redeem of a code stashed on the classic gate.
+async function applyAccessCode(code) {
+  code = String(code || "").toUpperCase().trim().replace(/\s+/g, "");
+  if (!code) return { ok: false, error: "missing-code" };
+  try {
+    const d = await AuthAPI.redeemCode(code);
+    if (d && d.access) {
+      CURRENT_ACCESS = d.access;
+      const cur = Store.getSession && Store.getSession();
+      if (cur && cur.user) {
+        cur.access = d.access;
+        cur.fullLibrary = !!(d.access.access && d.access.access.scopeType === "full");
+        cur.programIds = Array.isArray(d.access.programs) ? d.access.programs : cur.programIds;
+        Store.setSession(cur);
+      }
+    }
+    return { ok: true, access: d && d.access };
+  } catch (e) {
+    return { ok: false, error: (e && e.data && e.data.error) || (e && e.message) || "error", status: e && e.status };
+  }
+}
+function accessCodeErrorText(err) {
+  return err === "unknown-code" ? "That access code isn't recognised."
+    : err === "code-disabled" ? "That access code has been disabled."
+    : err === "code-expired" ? "That access code has expired."
+    : err === "code-exhausted" ? "That access code has reached its seat limit."
+    : err === "verify-email-first" ? "Confirm your email first, then add the code."
+    : err === "missing-code" ? "Enter an access code."
+    : "Couldn't apply that access code — try again.";
+}
+// Auto-redeem a code the learner entered on the classic gate before signing up.
+// Called from bootApp once a user session exists.
+async function redeemPendingCode() {
+  const code = pendingAccessCode();
+  if (!code) return;
+  const s = Store.getSession && Store.getSession();
+  if (!s || !s.user) return;
+  if (!s.emailVerified) return;          // keep stashed — the banner nudges + retries post-verify
+  const r = await applyAccessCode(code);
+  if (r.ok) {
+    clearPendingAccessCode();
+    if (typeof showToast === "function") showToast("Organisation library unlocked");
+  } else if (r.error !== "verify-email-first") {
+    clearPendingAccessCode();
+    if (typeof showToast === "function") showToast(accessCodeErrorText(r.error));
+  }
+}
+
 /* ============================ screens ============================ */
 function authShell(inner) {
   const root = document.getElementById("gate-root");
@@ -392,10 +449,38 @@ function renderVerifyPending(email, opts) {
     <div class="auth-error"></div>
     <button class="btn btn-primary" id="vp-resend" type="button">Resend confirmation email</button>
     ${opts.afterLogin ? `<button class="btn" id="vp-continue" type="button" style="margin-top:8px;">Continue with limited access</button>` : ""}
+    <div id="vp-dev"></div>
     <div class="gate-hint" style="text-align:center;"><button class="auth-link" id="vp-back">Back to sign in</button></div>`);
   root.querySelector("#vp-back").addEventListener("click", () => renderSignIn());
   const cont = root.querySelector("#vp-continue");
   if (cont) cont.addEventListener("click", () => bootApp());
+
+  // Dev-only shortcut: the local /api/dev/outbox exposes the verification token
+  // (it 404s in production), so offer a one-click confirm when testing locally
+  // where there is no real inbox.
+  (async () => {
+    let box = null;
+    try { box = await AuthAPI.devOutbox(email); } catch (e) { box = null; }
+    const msg = box && (box.latest || (Array.isArray(box.messages) && box.messages[box.messages.length - 1]));
+    const token = msg && (msg.token || (String(msg.link || msg.text || "").match(/[?&]token=([^&\s]+)/) || [])[1]);
+    const slot = root.querySelector("#vp-dev");
+    if (!token || !slot) return;
+    slot.innerHTML = `<button class="btn" id="vp-devconfirm" type="button" style="margin-top:8px;">Confirm now (dev)</button>
+      <div class="auth-note" style="margin-top:6px;">Local only — uses the verification link from <code>/api/dev/outbox</code>.</div>`;
+    slot.querySelector("#vp-devconfirm").addEventListener("click", async (e) => {
+      e.target.disabled = true; e.target.textContent = "Confirming…";
+      try {
+        const d = await AuthAPI.verifyEmail(token);
+        const me = await AuthAPI.me().catch(() => null);
+        if (me && me.authenticated) { applyUserSession(me); bootApp(); return; }
+        if (d && d.access && d.access.authenticated) { applyUserSession({ user: { id: d.access.userId, email: d.access.email, firstName: d.access.firstName, role: d.access.role, aiLevel: d.access.aiLevel, organization: d.access.org, emailVerified: true, accountStatus: d.access.accountStatus }, access: d.access }); bootApp(); return; }
+        renderSignIn("Email confirmed — sign in to continue.");
+      } catch (err) {
+        e.target.disabled = false; e.target.textContent = "Confirm now (dev)";
+        fieldErr(root, "Couldn't confirm with the dev token.");
+      }
+    });
+  })();
   root.querySelector("#vp-resend").addEventListener("click", async (e) => {
     e.target.disabled = true; e.target.textContent = "Sending…";
     try { await AuthAPI.resendVerification(email); fieldErr(root, ""); e.target.textContent = "Sent — check your inbox"; }
@@ -469,9 +554,27 @@ function renderVerifyLanding(token) {
       document.getElementById("ve-go").addEventListener("click", () => renderSignIn());
       return;
     }
-    // verified — a session cookie was set. Load it and boot.
+    // verified — a session cookie was set, and `d.access` already carries the
+    // freshly auto-granted (function-scoped) access. Prefer a /me round-trip;
+    // fall back to the verify payload so a slow cookie / cross-origin load still
+    // boots straight into the scoped library instead of the sign-in screen.
     const me = await AuthAPI.me().catch(() => null);
     if (me && me.authenticated) { applyUserSession(me); bootApp(); return; }
+    if (d.access && d.access.authenticated) {
+      const a = d.access;
+      const nameParts = String(a.name || "").trim().split(/\s+/);
+      applyUserSession({
+        user: {
+          id: a.userId, email: a.email,
+          firstName: a.firstName || nameParts[0] || "", lastName: nameParts.slice(1).join(" "),
+          role: a.role, aiLevel: a.aiLevel, organization: a.org,
+          emailVerified: a.emailVerified, accountStatus: a.accountStatus,
+        },
+        access: a,
+      });
+      bootApp();
+      return;
+    }
     authShell(`<h1>Email confirmed 🎉</h1><p class="sub">You're all set. Sign in to open your library.</p>
       <button class="btn btn-primary" id="ve-go" type="button">Go to sign in</button>`);
     document.getElementById("ve-go").addEventListener("click", () => renderSignIn());
@@ -505,11 +608,14 @@ function verificationBannerHtml() {
       <span>Your account is on hold. Contact your programme lead to restore access.</span>
       <span class="vb-actions"><button class="vb-btn" id="vb-signout">Sign out</button></span></div>`;
   }
+  const pend = pendingAccessCode();
   if (!s.emailVerified) {
     try { if (sessionStorage.getItem("prompt-lib:vbanner-dismissed") === "1") return ""; } catch (e) {}
     return `<div class="verify-banner" id="verify-banner">
-      <span>Please confirm your email address to activate your account and open the full library.</span>
+      <span>Please confirm your email address to activate your account and open the full library.${
+        pend ? ` Your access code <b>${escapeHtml(pend)}</b> will apply automatically once confirmed.` : ""}</span>
       <span class="vb-actions">
+        <button class="vb-btn" id="vb-devconfirm" hidden>Confirm now (dev)</button>
         <button class="vb-btn" id="vb-resend">Resend confirmation</button>
         <button class="vb-x" id="vb-x" aria-label="Dismiss">✕</button>
       </span></div>`;
@@ -522,7 +628,22 @@ function verificationBannerHtml() {
       <span>Your library is being set up. If it doesn't appear shortly, contact your programme lead.</span>
       <span class="vb-actions"><button class="vb-btn" id="vb-refresh">Refresh</button></span></div>`;
   }
-  return "";
+  // Verified + active. Offer an "add an access code" affordance unless the
+  // learner already has full-library scope or has dismissed it. Always shown
+  // when a code is pending (e.g. redeem failed pre-verify and needs a retry).
+  const scopeType = a.access && a.access.scopeType;
+  let dismissed = false;
+  try { dismissed = sessionStorage.getItem("prompt-lib:addcode-dismissed") === "1"; } catch (e) {}
+  if (!pend && (scopeType === "full" || dismissed)) return "";
+  return `<div class="verify-banner" id="verify-banner" style="background:var(--accent-soft);color:var(--accent-strong);">
+    <span>${pend
+      ? `Apply your organisation access code <b>${escapeHtml(pend)}</b> to open its library.`
+      : "Have an organisation or cohort access code? Add it to open that library."}</span>
+    <span class="vb-actions" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+      <input id="vb-code" class="name-input" style="max-width:190px;padding:6px 8px;" placeholder="ACCESS-CODE" value="${escapeHtml(pend || "")}" />
+      <button class="vb-btn" id="vb-addcode">Add code</button>
+      <button class="vb-x" id="vb-addcode-x" aria-label="Dismiss">✕</button>
+    </span></div>`;
 }
 function wireVerificationBanner() {
   const el = document.getElementById("verify-banner");
@@ -534,10 +655,55 @@ function wireVerificationBanner() {
     try { await AuthAPI.resendVerification(s.email); e.target.textContent = "Sent ✓"; }
     catch (err) { e.target.textContent = "Try again"; e.target.disabled = false; }
   });
+  // Dev-only: /api/dev/outbox exposes the verification token locally (404s in
+  // production), so offer a one-click confirm from the banner too.
+  const dev = el.querySelector("#vb-devconfirm");
+  if (dev && s && s.email) {
+    AuthAPI.devOutbox(s.email).then((box) => {
+      const msg = box && (box.latest || (Array.isArray(box.messages) && box.messages[box.messages.length - 1]));
+      const token = msg && (msg.token || (String(msg.link || msg.text || "").match(/[?&]token=([^&\s]+)/) || [])[1]);
+      if (!token) return;
+      dev.hidden = false;
+      dev.addEventListener("click", async (e) => {
+        e.target.disabled = true; e.target.textContent = "Confirming…";
+        try {
+          const d = await AuthAPI.verifyEmail(token);
+          const me = await AuthAPI.me().catch(() => null);
+          if (me && me.authenticated) applyUserSession(me);
+          else if (d && d.access && d.access.authenticated) applyUserSession({ user: { id: d.access.userId, email: d.access.email, firstName: d.access.firstName, role: d.access.role, aiLevel: d.access.aiLevel, organization: d.access.org, emailVerified: true, accountStatus: d.access.accountStatus }, access: d.access });
+          bootApp();
+        } catch (err) { e.target.disabled = false; e.target.textContent = "Confirm now (dev)"; }
+      });
+    }).catch(() => {});
+  }
   const x = el.querySelector("#vb-x");
   if (x) x.addEventListener("click", () => { try { sessionStorage.setItem("prompt-lib:vbanner-dismissed", "1"); } catch (e) {} el.remove(); });
   const so = el.querySelector("#vb-signout");
   if (so) so.addEventListener("click", () => signOut());
+  const addBtn = el.querySelector("#vb-addcode");
+  if (addBtn) addBtn.addEventListener("click", async () => {
+    const inp = el.querySelector("#vb-code");
+    const code = (inp && inp.value || "").trim();
+    if (!code) { if (inp) inp.focus(); return; }
+    addBtn.disabled = true; addBtn.textContent = "Adding…";
+    const r = await applyAccessCode(code);
+    if (r.ok) {
+      clearPendingAccessCode();
+      if (typeof showToast === "function") showToast("Organisation library unlocked");
+      if (typeof renderApp === "function") renderApp();
+    } else {
+      addBtn.disabled = false; addBtn.textContent = "Add code";
+      if (typeof showToast === "function") showToast(accessCodeErrorText(r.error));
+    }
+  });
+  const addX = el.querySelector("#vb-addcode-x");
+  if (addX) addX.addEventListener("click", () => {
+    clearPendingAccessCode();
+    try { sessionStorage.setItem("prompt-lib:addcode-dismissed", "1"); } catch (e) {}
+    el.remove();
+  });
+  const inp = el.querySelector("#vb-code");
+  if (inp) inp.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); addBtn && addBtn.click(); } });
   const refresh = el.querySelector("#vb-refresh");
   if (refresh) refresh.addEventListener("click", async () => {
     const me = await refreshAccess();

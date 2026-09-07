@@ -46,6 +46,17 @@ function renderGate(prefillMsg, opts) {
 
   function renderBackendPreview(r) {
     errEl.textContent = "";
+    if (r.accountRequired) {
+      // A collection / org access code — it attaches to a learner account.
+      resolvedEl.innerHTML = `<div class="gate-resolved"><b>${escapeHtml(r.orgName || "Organisation library")}</b><br>
+        <span style="opacity:.85">${escapeHtml(r.scopeNote || "Curated library access.")}</span><br>
+        <span style="opacity:.7">You'll create a free account (or sign in) to use this code — it keeps your saved work and progress.</span></div>`;
+      nameWrap.hidden = true;
+      enterBtn.disabled = false;
+      enterBtn.textContent = "Continue";
+      return;
+    }
+    enterBtn.textContent = "Enter library";
     const scopeNote = r.superAdmin ? "Super-admin — full library and the admin console."
       : r.fullLibrary ? "Full library — all categories, functions and programs."
       : r.programScoped ? "Scoped access — only the prompts in the assigned program(s)."
@@ -136,10 +147,41 @@ function renderGate(prefillMsg, opts) {
         return;
       } catch (e) {
         enterBtn.disabled = false;
-        if (e.status === 404) { errEl.textContent = "That code isn't recognised."; return; }
+        // Collection / org access code -> needs a learner account. Stash the
+        // code and route to sign-up; part_auth redeems it after verification.
+        if (e.status === 409 && e.data && e.data.error === "account-required") {
+          try { sessionStorage.setItem("prompt-lib:pending-code", val); } catch (_) {}
+          if (typeof renderSignUp === "function") {
+            renderSignUp();
+            const b = document.querySelector("#gate-root .auth-card");
+            if (b) {
+              const note = document.createElement("div");
+              note.className = "auth-note";
+              note.style.marginTop = "10px";
+              note.textContent = `Create your account (or use the Sign in tab) and the code ${val} unlocks ${(e.data.orgName ? e.data.orgName + "'s" : "your organisation's")} library automatically.`;
+              b.insertBefore(note, b.querySelector("form"));
+            }
+          }
+          return;
+        }
+        if (e.status === 403 && e.data && e.data.error === "code-expired") { errEl.textContent = "That access code has expired. Ask your programme lead for a new one."; return; }
+        if (e.status === 403 && e.data && e.data.error === "code-exhausted") { errEl.textContent = "That access code has reached its seat limit. Ask your programme lead."; return; }
         if (e.status === 403) { errEl.textContent = "That access code has been disabled."; return; }
-        if (!e.soft) { errEl.textContent = "Couldn't reach the server — try again."; return; }
-        // e.soft: backend absent -> fall through to local
+        if (e.status === 404 || (e.status && e.status >= 500)) {
+          // The backend doesn't recognise this code (or errored). Fall through
+          // to the static org model — it still resolves the built-in seed codes.
+          if (!resolved) resolved = resolveAccessCode(val);
+          if (!resolved || resolved.disabled) {
+            errEl.textContent = e.status === 404
+              ? "That code isn't recognised. Check with your program lead."
+              : "Couldn't reach the server — try again.";
+            return;
+          }
+          // local match -> fall through to the local redeem below
+        } else if (!e.soft) {
+          errEl.textContent = "Couldn't reach the server — try again."; return;
+        }
+        // e.soft (backend absent) or a valid local fall-through -> local redeem
       }
     }
     if (!resolved) { resolved = resolveAccessCode(codeI.value); check(); }
@@ -407,12 +449,19 @@ function renderCategoriesView(container) {
   const lib = scopedLibrary();
   const counts = {};
   lib.forEach((r) => { counts[r.category] = (counts[r.category] || 0) + 1; });
-  let cats = CATEGORIES.filter((c) => counts[c.name]).map((c) => Object.assign({}, c, { count: counts[c.name] }));
+  // A collection is "exactly this set" of categories — its programs' linked
+  // prompts stay reachable via search / recommendations, but they don't spawn
+  // extra category tiles the admin never chose.
+  const um = typeof userLibraryMode === "function" ? userLibraryMode() : null;
+  const onlyCats = um && um.mode === "collection" && Array.isArray(um.categories) && um.categories.length
+    ? new Set(um.categories) : null;
+  let cats = CATEGORIES.filter((c) => counts[c.name] && (!onlyCats || onlyCats.has(c.name)))
+    .map((c) => Object.assign({}, c, { count: counts[c.name] }));
   const maxCount = Math.max(1, ...cats.map((c) => c.count));
   const q = STATE.query.trim().toLowerCase();
   const shown = q ? cats.filter((c) => c.name.toLowerCase().includes(q) || (c.role || "").toLowerCase().includes(q)) : cats;
   container.innerHTML = `
-    <div class="section-title"><h2>Categories</h2><span style="font-size:12px;color:var(--text-faint)">${q ? `${shown.length} of ${cats.length} match "${escapeHtml(STATE.query.trim())}"` : `${cats.length} categories${isScopeRestricted() ? " in your program scope" : " · preserved from the source library"}`}</span></div>
+    <div class="section-title"><h2>Categories</h2><span style="font-size:12px;color:var(--text-faint)">${q ? `${shown.length} of ${cats.length} match "${escapeHtml(STATE.query.trim())}"` : `${cats.length} categories${(typeof scopeShowsCategories === "function" && scopeShowsCategories()) ? " in your library" : isScopeRestricted() ? " in your program scope" : " · preserved from the source library"}`}</span></div>
     <div class="category-grid">
       ${shown.map((c) => `
         <button class="category-card" data-category="${escapeHtml(c.name)}">

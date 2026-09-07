@@ -15,6 +15,32 @@ export default async function handler(req, res) {
   if (!scope) return json(res, 404, { error: "unknown-code" });
   if (scope.disabled) return json(res, 403, { error: "disabled" });
 
+  // A v2 access_codes / collection code binds to a learner entitlement — the
+  // anonymous session gate can't complete it. Tell the client to route the
+  // learner through sign-in / sign-up, then /api/auth/redeem-code.
+  if (scope.kind === "account") {
+    if (scope.expired) return json(res, 403, { error: "code-expired" });
+    if (scope.exhausted) return json(res, 403, { error: "code-exhausted" });
+    if (body.preview) {
+      const bits = [];
+      if (scope.categoryCount) bits.push(`${scope.categoryCount} categor${scope.categoryCount === 1 ? "y" : "ies"}`);
+      if (scope.programCount) bits.push(`${scope.programCount} program${scope.programCount === 1 ? "" : "s"}`);
+      return json(res, 200, {
+        ok: true,
+        resolved: {
+          kind: "account",
+          accountRequired: true,
+          orgName: scope.orgName || null,
+          scopeType: scope.scopeType,
+          scopeNote: bits.length
+            ? `Organisation library — ${bits.join(" · ")}.`
+            : "Organisation library — a curated set of prompts.",
+        },
+      });
+    }
+    return json(res, 409, { error: "account-required", code: scope.code, orgName: scope.orgName || null });
+  }
+
   if (body.preview) {
     return json(res, 200, {
       ok: true,

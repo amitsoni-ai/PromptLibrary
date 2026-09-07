@@ -11,6 +11,8 @@ const ROUTES = {
   "analytics": () => import("../_adminsrc/analytics.js"),
   "users": () => import("../_adminsrc/users.js"),
   "entitlements": () => import("../_adminsrc/entitlements.js"),
+  "functions": () => import("../_adminsrc/functions.js"),
+  "collections": () => import("../_adminsrc/collections.js"),
   "audit": () => import("../_adminsrc/audit.js"),
 };
 
