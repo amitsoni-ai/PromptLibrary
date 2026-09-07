@@ -10,7 +10,7 @@
 // any transport.
 
 const BRAND = {
-  name: "Synottic Prompt Library",
+  name: "Synottic Prompt Intelligence",
   org: "Synottic AI Institute",
   tagline: "Human-Centred AI Transformation",
   accent: "#4338CA",
