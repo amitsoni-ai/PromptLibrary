@@ -8,7 +8,24 @@ export function db() {
     e.code = "NO_DB";
     throw e;
   }
-  if (!_sql) _sql = neon(process.env.DATABASE_URL);
+  if (!_sql) {
+    const raw = neon(process.env.DATABASE_URL);
+    // Neon computes scale to zero; the first query after a cold start can
+    // "fetch failed". Retry a couple of times with a short backoff.
+    _sql = async function (...args) {
+      let last;
+      for (let i = 0; i < 3; i++) {
+        try { return await raw(...args); }
+        catch (e) {
+          last = e;
+          const msg = String(e && e.message || e);
+          if (!/fetch failed|ECONNRESET|ETIMEDOUT|and the pooler|Connection terminated|522|503/i.test(msg)) throw e;
+          await new Promise((r) => setTimeout(r, 250 * (i + 1)));
+        }
+      }
+      throw last;
+    };
+  }
   return _sql;
 }
 
@@ -48,7 +65,7 @@ export async function resolveCode(sql, rawCode) {
       kind: "admin",
       code: a.code,
       subjectBase: a.code,
-      orgId: "adm-" + a.id,
+      orgId: a.id,
       orgName: a.org_name,
       domain: a.domain || "",
       industry: a.industry || "",

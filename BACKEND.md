@@ -58,9 +58,19 @@ in the admin console evicts its learners on their next action**.
 
 ## Local dev with the functions
 
+Either the Vercel CLI:
 ```bash
-npm i -g vercel
-DATABASE_URL=… ADMIN_SECRET=… SESSION_SECRET=… vercel dev
+npm i -g vercel && DATABASE_URL=… ADMIN_SECRET=… SESSION_SECRET=… vercel dev
+```
+…or the bundled zero-dep dev server (static files + `/api/*` routed to the handlers):
+```bash
+DATABASE_URL=… ADMIN_SECRET=… SESSION_SECRET=… node devserver.mjs   # http://localhost:8790
+```
+
+## Tests
+
+```bash
+DATABASE_URL=… node migrate/apitest.mjs     # 16 checks against the live DB (creates + cleans test rows)
 ```
 
 ## Schema
