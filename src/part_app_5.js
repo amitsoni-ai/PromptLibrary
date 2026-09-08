@@ -812,12 +812,14 @@ async function initApp() {
     renderAuthGate("Please sign in again.");
     return;
   }
-  // No local session but the backend is live -> account gate.
+  // No local session but the backend is live -> marketing landing (`/`) or the
+  // sign-in gate (`/login`). renderPublicEntry() is defined in part_auth.js.
   if (!session && typeof AuthAPI !== "undefined" && AuthAPI.isConfigured()) {
     let me = null;
     try { me = await AuthAPI.me(); } catch (e) {}
     if (me && me.authenticated) { applyUserSession(me); bootApp(); return; }
-    renderAuthGate();
+    if (typeof renderPublicEntry === "function") renderPublicEntry();
+    else renderAuthGate();
     return;
   }
 

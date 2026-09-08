@@ -809,6 +809,173 @@ function wireVerificationBanner() {
   });
 }
 
+/* ============================================================================
+   Public marketing landing (logged-out `/`). The sign-in gate moved to `/login`.
+   renderPublicEntry() picks between the two by path; initApp() calls it for a
+   fresh visitor with no session. Data (counts, framework levels, sample prompts)
+   is read from the already-loaded ALL_PROMPTS / FRAMEWORK globals — no network.
+   ========================================================================== */
+const LP_FREE_IDS = ["lib-1303", "lib-546", "lib-1232", "lib-2610", "lib-293", "lib-1148", "lib-3315", "lib-2715"];
+const LP_PREMIUM_IDS = ["lib-2457", "lib-581", "lib-1261", "lib-2253", "lib-3047", "lib-2678", "lib-260", "lib-2809"];
+
+function lpNum(n) { return (n || 0).toLocaleString("en-US"); }
+function lpClip(s, n) {
+  s = String(s || "").replace(/\s+/g, " ").trim();
+  if (s.length <= n) return s;
+  const c = s.slice(0, n), i = c.lastIndexOf(" ");
+  return (i > n * 0.6 ? c.slice(0, i) : c).replace(/\s+$/, "") + "…";
+}
+function lpLevelOf(rec) {
+  if (rec.frameworkLevel == null && typeof deriveFrameworkLevel === "function") deriveFrameworkLevel(rec);
+  return rec.frameworkLevel || null;
+}
+function lpData() {
+  const live = (typeof ALL_PROMPTS !== "undefined" ? ALL_PROMPTS : []).filter((p) => p && p.lifecycle !== "Archived");
+  const cats = {}, lvl = { 1: 0, 2: 0, 3: 0 };
+  live.forEach((p) => {
+    if (p.category) cats[p.category] = (cats[p.category] || 0) + 1;
+    const L = lpLevelOf(p);
+    if (L >= 1 && L <= 3) lvl[L]++;
+  });
+  const catList = Object.keys(cats).map((k) => ({ name: k, count: cats[k] }))
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+  return { total: live.length, cats: catList, levels: lvl };
+}
+function lpTagFor(rec) {
+  const L = lpLevelOf(rec);
+  if (L && typeof fwLevel === "function") return '<span class="lp-tag lp-tag-fw">L' + L + " · " + escapeHtml(fwLevel(L).code) + "</span>";
+  if (rec.isTemplate) return '<span class="lp-tag">Template</span>';
+  return "";
+}
+function lpSampleCard(rec, locked) {
+  if (!rec) return "";
+  const cat = '<span class="lp-tag">' + escapeHtml(rec.category || "") + "</span>";
+  const desc = rec.description ? "<p>" + escapeHtml(lpClip(rec.description, 150)) + "</p>" : "";
+  if (locked) {
+    return '<div class="lp-card lp-lockcard" data-lp-signup>'
+      + '<div class="lp-card-tags">' + cat + lpTagFor(rec) + "</div>"
+      + "<h3>" + escapeHtml(rec.title || "") + "</h3>" + desc
+      + '<div class="lp-locked"><pre>' + escapeHtml(lpClip(rec.originalPrompt, 200)) + "</pre>"
+      + '<span class="lp-lock">🔒 Sign up to unlock</span></div></div>';
+  }
+  return '<div class="lp-card">'
+    + '<div class="lp-card-tags"><span class="lp-tag lp-tag-free">Free</span>' + cat + lpTagFor(rec) + "</div>"
+    + "<h3>" + escapeHtml(rec.title || "") + "</h3>" + desc
+    + '<div class="lp-body">' + escapeHtml(lpClip(rec.originalPrompt, 900)) + "</div>"
+    + '<button class="lp-copy" data-lp-copy="' + escapeHtml(rec.id) + '">Copy prompt</button></div>';
+}
+
+function renderLanding() {
+  document.getElementById("app").hidden = true;
+  const ar = document.getElementById("admin-root"); if (ar) ar.hidden = true;
+  const root = document.getElementById("gate-root");
+  const byId = (typeof ALL_PROMPTS_BY_ID !== "undefined") ? ALL_PROMPTS_BY_ID : {};
+  const d = lpData();
+  const freeRecs = LP_FREE_IDS.map((id) => byId[id]).filter(Boolean);
+  const premRecs = LP_PREMIUM_IDS.map((id) => byId[id]).filter(Boolean);
+  const roles = ["Founders", "Managers", "Executives", "Sales", "Marketing", "L&D / HR", "Finance", "Product", "Support", "Consultants"];
+  const steps = [
+    ["Find", "Search " + lpNum(d.total) + "+ ready-to-use prompts by role and outcome."],
+    ["Learn", "See why each prompt works — the framework is shown, not hidden."],
+    ["Create", "Build your own with the R‑C‑T‑F guardrails so you don't miss a part."],
+    ["Save", "Keep the prompts that work in your personal library."],
+    ["Use anywhere", "Copy into ChatGPT, Claude, Gemini or Copilot — nothing to install."],
+  ];
+  const levels = (typeof FRAMEWORK !== "undefined" && FRAMEWORK.levels) ? FRAMEWORK.levels : [];
+
+  root.innerHTML =
+    '<div id="lp">'
+    + '<header class="lp-bar"><div class="lp-wrap">'
+      + '<img class="lp-logo" src="/prompt-intelligence.png" alt="Prompt Intelligence by Synottic">'
+      + '<nav class="lp-bar-nav"><button class="lp-btn lp-btn-ghost" data-lp-login>Log in</button>'
+      + '<button class="lp-btn lp-btn-primary" data-lp-signup>Sign up free</button></nav>'
+    + "</div></header>"
+
+    + '<section class="lp-hero"><div class="lp-wrap lp-sec"><div class="lp-hero-grid"><div>'
+      + '<p class="lp-eyebrow">AI workspace for real work</p>'
+      + '<h1 class="lp-h1">Don’t just use AI. Think with it.</h1>'
+      + '<p class="lp-lead">A library of <b>' + lpNum(d.total) + " role‑based prompts</b> and a simple framework for writing "
+      + "your own — so AI gives you sharper thinking and finished work, not first drafts you have to redo.</p>"
+      + '<div class="lp-cta-row"><button class="lp-btn lp-btn-primary" data-lp-signup>Sign up free →</button>'
+      + '<button class="lp-btn lp-btn-outline" data-lp-login>Log in</button></div>'
+      + '<p class="lp-fine">Free to start · no credit card · <a href="#" data-lp-code>have an access code?</a></p>'
+      + '<div class="lp-stats"><div class="lp-stat"><b>' + lpNum(d.total) + "</b><span>curated prompts</span></div>"
+      + '<div class="lp-stat"><b>' + d.cats.length + "</b><span>categories</span></div>"
+      + '<div class="lp-stat"><b>3</b><span>framework levels</span></div></div>'
+    + "</div><div><div class=\"lp-preview\"><div class=\"lp-preview-bar\"><i></i><i></i><i></i></div>"
+      + '<div class="lp-preview-body"><div class="lp-preview-nav"><b>Library</b><span>Learn</span><span>Practice</span><span>My Prompts</span></div>'
+      + '<div class="lp-preview-main"><div class="lp-preview-search">🔍 Find the right prompt for your work…</div>'
+      + '<div class="lp-preview-row"><span>Strategic planning prompt</span><b>Use prompt →</b></div>'
+      + '<div class="lp-preview-row"><span>Customer interview → themes</span><span style="color:var(--text-faint)">Use prompt →</span></div>'
+      + '<div class="lp-preview-row"><span>Weekly team update</span><span style="color:var(--text-faint)">Use prompt →</span></div>'
+      + '</div></div></div><p class="lp-preview-cap">From prompt to progress.</p></div></div></div></section>'
+
+    + '<section class="lp-band"><div class="lp-wrap" style="padding:36px 24px;">'
+      + '<p style="font-weight:600; color:var(--text-muted); margin:0;">Built for the work your team already does</p>'
+      + '<div class="lp-chips">' + roles.map((r) => '<span class="lp-chip">' + escapeHtml(r) + "</span>").join("") + "</div></div></section>"
+
+    + '<section class="lp-wrap lp-sec"><p class="lp-eyebrow">Why Synottic</p>'
+      + '<h2 class="lp-h2">A prompt is a way of thinking — not a magic phrase.</h2>'
+      + '<p class="lp-lead">Most “prompt packs” are a pile of one‑liners. Synottic is built on <b>R‑C‑T‑F</b> — a repeatable '
+      + "structure you can feel yourself getting better at. Every prompt in the library is scored against it, so you always see <i>why</i> it works.</p>"
+      + '<div class="lp-levels">' + levels.map((L) => {
+          const c = d.levels[L.level] || 0;
+          return '<div class="lp-level"><code>' + escapeHtml(L.code) + "</code><h3>Level " + L.level + " — " + escapeHtml(L.name)
+            + "</h3><p>" + escapeHtml(L.summary) + '</p><p class="lp-count">' + lpNum(c) + " <span>prompts at this level</span></p></div>";
+        }).join("") + "</div></section>"
+
+    + '<section class="lp-band"><div class="lp-wrap lp-sec"><p class="lp-eyebrow">How it works</p>'
+      + '<h2 class="lp-h2">From prompt to progress</h2><div class="lp-steps">'
+      + steps.map((s, i) => '<div class="lp-step"><div class="lp-step-n">' + (i + 1) + "</div><h3>" + escapeHtml(s[0])
+          + "</h3><p>" + escapeHtml(s[1]) + "</p></div>").join("") + "</div></div></section>"
+
+    + '<section class="lp-wrap lp-sec"><p class="lp-eyebrow">Start now, no account</p>'
+      + '<h2 class="lp-h2">' + freeRecs.length + ' prompts you can copy right now</h2>'
+      + '<p class="lp-lead">Fully readable, ready to paste into any AI tool. No sign‑up, no email.</p>'
+      + '<div class="lp-cards">' + freeRecs.map((r) => lpSampleCard(r, false)).join("") + "</div></section>"
+
+    + '<section class="lp-band"><div class="lp-wrap lp-sec"><p class="lp-eyebrow">Inside the full library</p>'
+      + '<h2 class="lp-h2">' + d.cats.length + " categories. " + lpNum(d.total) + " prompts. One free account.</h2>"
+      + '<p class="lp-lead">Whatever your work touches, there’s a shelf for it. Sign up free to open any category.</p>'
+      + '<div class="lp-catgrid">' + d.cats.map((c) => '<button class="lp-cat" data-lp-signup><span class="lp-cat-name"><b>'
+          + escapeHtml(c.name) + '</b><span class="lp-cat-n">' + lpNum(c.count) + " prompts</span></span><span>🔒</span></button>").join("") + "</div>"
+      + '<div class="lp-cta-row"><button class="lp-btn lp-btn-primary" data-lp-signup>Unlock the full library — free</button>'
+      + '<button class="lp-btn lp-btn-outline" data-lp-login>Log in</button></div>'
+      + '<h3 style="font-family:var(--font-display); margin:44px 0 4px;">A few, locked for now</h3>'
+      + '<p style="color:var(--text-muted); margin:0; font-size:14px;">The kind of prompt waiting behind the sign‑up.</p>'
+      + '<div class="lp-cards">' + premRecs.map((r) => lpSampleCard(r, true)).join("") + "</div></div></section>"
+
+    + '<section class="lp-final"><div class="lp-wrap lp-sec"><h2 class="lp-h2">Don’t just use AI. Think with it.</h2>'
+      + '<p class="lp-lead">Start with the free prompts. Create an account when you want the whole library.</p>'
+      + '<div class="lp-cta-row"><button class="lp-btn lp-btn-primary" data-lp-signup>Sign up free →</button>'
+      + '<button class="lp-btn lp-btn-outline" data-lp-login>Log in</button></div></div></section>'
+
+    + '<footer class="lp-foot"><div class="lp-wrap"><span>Synottic Prompt Intelligence — Human‑Centred AI.</span>'
+      + '<a href="#" data-lp-login>Sign in</a></div></footer></div>';
+
+  const go = (fn) => { try { history.pushState(null, "", "/login"); } catch (e) {} fn(); window.scrollTo(0, 0); };
+  root.querySelectorAll("[data-lp-login]").forEach((b) => b.addEventListener("click", (e) => { e.preventDefault(); go(renderSignIn); }));
+  root.querySelectorAll("[data-lp-signup]").forEach((b) => b.addEventListener("click", (e) => { e.preventDefault(); go(renderSignUp); }));
+  root.querySelectorAll("[data-lp-code]").forEach((b) => b.addEventListener("click", (e) => {
+    e.preventDefault(); go(() => renderGate(null, { classic: true }));
+  }));
+  root.querySelectorAll("[data-lp-copy]").forEach((b) => b.addEventListener("click", () => {
+    const rec = (typeof ALL_PROMPTS_BY_ID !== "undefined") ? ALL_PROMPTS_BY_ID[b.getAttribute("data-lp-copy")] : null;
+    if (rec && navigator.clipboard) {
+      navigator.clipboard.writeText(rec.originalPrompt || "").then(() => {
+        const t = b.textContent; b.textContent = "Copied ✓"; setTimeout(() => { b.textContent = t; }, 1500);
+      }).catch(() => {});
+    }
+  }));
+  window.scrollTo(0, 0);
+}
+
+/** Fresh logged-out visitor: `/login` -> the sign-in gate; anything else -> the landing. */
+function renderPublicEntry(msg) {
+  if (/^\/login\/?$/.test(location.pathname || "")) { renderSignIn(msg); return; }
+  renderLanding();
+}
+
 /* ---- route detection, called from initApp ---- */
 function authRoute() {
   const path = location.pathname || "";
