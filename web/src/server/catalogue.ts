@@ -3,6 +3,7 @@ import { isNull, ne, and, or } from "drizzle-orm";
 import { getDb, hasDb } from "@/db/client";
 import { prompts as promptsTable } from "@/db/schema";
 import { deriveFrameworkLevel } from "@/lib/framework";
+import { PUBLIC_LANDING_IDS } from "@/lib/public-free";
 import { PromptSchema, type Prompt } from "@/contracts/prompt";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -33,7 +34,12 @@ function enrich(raw: unknown): Prompt | null {
   const p = parsed.data;
   if (p.lifecycle === "Archived") return null;
   const fw = deriveFrameworkLevel(p.originalPrompt);
-  return { ...p, frameworkLevel: fw.frameworkLevel, frameworkCode: fw.frameworkCode };
+  return {
+    ...p,
+    frameworkLevel: fw.frameworkLevel,
+    frameworkCode: fw.frameworkCode,
+    publicFree: PUBLIC_LANDING_IDS.includes(p.id),
+  };
 }
 
 async function loadFromDb(): Promise<Prompt[]> {

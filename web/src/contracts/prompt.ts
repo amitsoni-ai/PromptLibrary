@@ -27,6 +27,10 @@ export const PromptSchema = z
     // Derived (lib/framework.ts) — L1/L2/L3 or null.
     frameworkLevel: z.union([z.literal(1), z.literal(2), z.literal(3), z.null()]).optional(),
     frameworkCode: z.string().nullable().optional(),
+    // Derived (lib/public-free.ts) — true iff this row is a curated free sample
+    // shown (locked) on the public marketing landing page. Set in
+    // server/catalogue.ts#enrich; not part of the list card projection.
+    publicFree: z.boolean().optional(),
   })
   .passthrough();
 

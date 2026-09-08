@@ -94,3 +94,36 @@ export function isScreenEnabled(
   if (allowlistHit(screen, opts.identity ?? null)) return true;
   return envDefault(screen);
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LANDING_V2 — the public marketing landing page for LOGGED-OUT visitors to `/`.
+//
+// This is NOT a screen of its own (no matcher, no allowlist): it is a narrow
+// sub-branch of the `home` gate in middleware.ts that only ever changes what an
+// UNAUTHENTICATED request to `/` sees — the Next marketing page instead of the
+// legacy sign-in / access-code gate. It is fully INDEPENDENT of HOME_V2 (which
+// governs only the authenticated Home dashboard): the landing renders whether
+// HOME_V2 is on or off. Authenticated users are never affected.
+//
+// Resolution precedence (mirrors the screen flags, minus the allowlist):
+//   1. ?landing=1 / =0   → explicit per-request override (drops a sticky
+//                          `landingV2` cookie so it survives client-side nav)
+//   2. `landingV2` cookie
+//   3. LANDING_V2 env      → default OFF  ⇒ today's behaviour, byte-for-byte
+// ─────────────────────────────────────────────────────────────────────────────
+export const LANDING = {
+  envVar: "LANDING_V2",
+  cookieName: "landingV2",
+  queryParam: "landing",
+} as const;
+
+export function isLandingEnabled(opts: {
+  queryOverride?: string | null;
+  cookieOverride?: string | null;
+}): boolean {
+  const q = truthy(opts.queryOverride);
+  if (q !== null) return q;
+  const c = truthy(opts.cookieOverride);
+  if (c !== null) return c;
+  return truthy(process.env[LANDING.envVar]) === true;
+}

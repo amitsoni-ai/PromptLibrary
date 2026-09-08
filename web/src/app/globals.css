@@ -113,3 +113,30 @@ body {
   outline-offset: 2px;
   border-radius: var(--radius-sm);
 }
+
+/* Marketing landing (LANDING_V2) — one subtle hero entrance, motion-safe only. */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* The Prompt Intelligence wordmark is dark navy on transparent — invert it to a
+   clean off-white in dark mode (system OR explicit toggle) so it stays legible.
+   Tailwind's `dark:` variant only covers the [data-theme] toggle here, not
+   prefers-color-scheme, so this is done in CSS. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .landing-logo {
+    filter: brightness(0) invert(1);
+    opacity: 0.92;
+  }
+}
+:root[data-theme="dark"] .landing-logo {
+  filter: brightness(0) invert(1);
+  opacity: 0.92;
+}

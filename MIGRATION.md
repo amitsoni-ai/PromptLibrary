@@ -194,6 +194,163 @@ Ported the app's front door — `/` itself (not a side path), gated exactly like
 - **Deferred, not silently dropped**: the "Continue" card and "Program companion prompt" are
   Learn/Practice/program-model-coupled and ship with that port instead.
 
+## 13. Public landing page (`LANDING_V2`)
+
+A **purely additive** marketing front door for **logged-out** visitors. Everything lives under
+`web/**` (+ this file). Auth, the access gate, entitlements, `/api/v2`, and the ported
+Home/Library behaviour for **authenticated** users are untouched.
+
+### The flag & how it resolves
+`web/src/lib/flags.ts#isLandingEnabled` — first decisive hit wins:
+1. `?landing=1` / `?landing=0` → per-request override (drops a sticky `landingV2` cookie)
+2. `landingV2` cookie
+3. `LANDING_V2` env — **default OFF**
+
+`LANDING_V2` is **not** a `SCREENS` entry: it has no matcher and no allowlist (the landing has
+no per-identity variation — it is anon-only). It is a narrow sub-branch of the existing `home`
+gate.
+
+**Independent of `HOME_V2`** (verified live): the landing renders for anonymous `/` whether
+`HOME_V2` is on or off. `HOME_V2` governs only the *authenticated* Home dashboard; flipping
+either flag does not affect the other (or `LIBRARY_V2`).
+
+### The middleware branch (`web/src/middleware.ts`)
+One new branch on `/` only. With `LANDING_V2` off it is inert — `serveLanding()` returns `null`
+before any identity fetch and every path is byte-identical to before.
+
+```diff
++  // LANDING_V2 — resolved on the home screen only. Its own ?landing= / cookie / env.
++  const landingQuery = screen === "home" ? url.searchParams.get(LANDING.queryParam) : null;
++  const landingCookie =
++    screen === "home" ? req.cookies.get(LANDING.cookieName)?.value ?? null : null;
++  const landingOn =
++    screen === "home" &&
++    isLandingEnabled({ queryOverride: landingQuery, cookieOverride: landingCookie });
+   ...
++    if (landingQuery != null) {
++      res.cookies.set(LANDING.cookieName, /^(1|true|on|yes)$/i.test(landingQuery) ? "1" : "0", {
++        path: "/", sameSite: "lax", maxAge: 60 * 60 * 24 * 30,
++      });
++    }
+   ...
++  // The one new branch: serve the Next marketing landing page to an ANONYMOUS
++  // `/` visitor when LANDING_V2 is on. null → caller falls through to the
++  // unchanged legacy rewrite (incl. for any authenticated caller).
++  const serveLanding = async (): Promise<NextResponse | null> => {
++    if (!landingOn) return null;
++    if (!identity) identity = await fetchIdentity(req);
++    return identity.authenticated ? null : stick(NextResponse.next());
++  };
++
+-  if (!enabled) return toLegacy();
++  if (!enabled) return (await serveLanding()) ?? toLegacy();
+   if (!identity) identity = await fetchIdentity(req);
+-  if (!identity.authenticated) return toLegacy();
++  if (!identity.authenticated) return (await serveLanding()) ?? toLegacy();
+   return stick(NextResponse.next());
+```
+
+Every other path — `/library/**`, the sticky-cookie / allowlist logic, the `matcher` — is
+unchanged. `screenFor` / `SCREENS` are untouched.
+
+### Serving the page
+- `web/src/app/page.tsx` — `const access = await getAccess()`; `!access.authenticated` →
+  `<LandingPage/>` (new); else the existing dashboard, **byte-for-byte unchanged**.
+  `export const dynamic = "force-dynamic"` kept (it now branches on identity). A new
+  `generateMetadata` gives the anon case a real marketing `<title>` / description / OG + Twitter
+  tags (copy reused from `src/part_head.html`: *"Don't just use AI. Think with it."*); the
+  authenticated branch returns `{}` so it keeps inheriting the root-layout metadata unchanged.
+- `web/src/components/AppShell.tsx` — now calls `getAccess()` and renders `<NavSidebar/>` **only
+  when authenticated**. Logged-out = full-bleed marketing layout, no app chrome. Authenticated
+  Home/Library are unaffected (they were always reached authenticated → always had the sidebar).
+- `web/src/server/landing.ts` (new) — builds the view-model from the catalogue cache only (no
+  auth / scope / extra DB): headline counts (total non-archived prompts, category count,
+  L1/L2/L3 tallies) + a **category directory** (`{ name, count }` for all 28 categories, count
+  desc) + **two tiers** of sample cards:
+  - **free** — the whole prompt body ships to the client (lightly capped ~900 chars) with the
+    prompt's variables; the card renders it in a `<pre>` and has a working **copy** button.
+  - **premium** — only a **clipped ~200-char** preview of `originalPrompt` ships; the card blurs
+    it, shows "Sign up to unlock", and the whole card is `<a href="/legacy">`. The full premium
+    body never reaches the browser.
+- UI: `web/src/features/landing/{LandingPage,SampleCard,LandingCopyButton}.tsx` — server
+  components except `LandingCopyButton` (a tiny `"use client"` clipboard button, **no**
+  `/api/v2/activity` call — that endpoint is auth-only). The page is a full marketing narrative:
+  slim top bar → hero (eyebrow "AI workspace for real work" + brand line + B2C subhead + **Sign
+  up free** / **Log in**, both `→ /legacy` + a schematic CSS product preview) → role band
+  (Founders / Managers / Executives / Sales / Marketing / L&D · HR / Finance / Product / Support
+  / Consultants) → **Why Synottic** (the R‑C‑T‑F framework explained across its 3 levels, with
+  the live L1/L2/L3 counts) → **How it works** ("From prompt to progress": Find → Learn → Create
+  → Save → Use anywhere) → **free prompts** (fully readable + copy) → **Inside the full library**
+  (the **category directory** — every category + its prompt count as a locked tile `→ /legacy` —
+  carries the breadth/value story; a short "A few, locked for now" strip of ~8 blurred example
+  cards follows) → stats band → "who it's for" → final CTA → footer. Tokens from
+  `tailwind.config.ts`; full light + dark parity, mobile-first, real `<a>` CTAs, landmarks +
+  focus states, one motion-safe hero entrance (`@keyframes fadeUp` in `globals.css`). `/legacy`
+  is confirmed to land on the sign-in / sign-up / access-code gate (a client `STATE`-switched
+  gate with no per-tab URL, same as Learn/Practice — so `/legacy`, not a deep link).
+
+### The curated prompt lists — where they live & how to edit
+**One file: `web/src/lib/public-free.ts`** — two arrays:
+- `PUBLIC_FREE_IDS` (8) — shown **unlocked** with a copy button.
+- `PUBLIC_PREMIUM_IDS` (8) — the blurred example cards under the category directory.
+
+The "how much is in here" story is the **category directory** (all 28 categories + counts,
+derived live from the catalogue in `server/landing.ts`), not a long card grid.
+`web/src/server/catalogue.ts#enrich` stamps `publicFree: PUBLIC_LANDING_IDS.includes(p.id)`
+(the union of both arrays) onto every enriched prompt; `server/landing.ts` imports the two
+arrays and buckets by tier. Nothing else reads them. To change what the landing showcases — or
+to move a prompt between free and locked — **edit these arrays only**: no schema, API, or seed
+change.
+`web/src/contracts/prompt.ts` gains `publicFree: z.boolean().optional()` on the full
+`PromptSchema` (passthrough, alongside `flags` / `qualityBreakdown` / …); the list card
+projection (`PromptCardSchema` / `toCard`) is unchanged, so `/api/v2` **list** payloads are
+untouched. (`GET /api/v2/prompts/[id]` echoes the full `PromptSchema` and so now also carries
+`publicFree`, exactly as it already carries the other passthrough fields.)
+
+All 16 are `isTemplate`, `qualityScore`-picked, no `syn-*` / `crs-*` / "Synottic Programs" rows.
+Titles below are the catalogue's stored `title` verbatim (the same text the ported Library/Home
+render — no copy is edited here).
+
+**Free (`PUBLIC_FREE_IDS`, unlocked + copy):**
+
+| id | category | title |
+|---|---|---|
+| `lib-1303` | Email Marketing | Brainstorm writing Email Subject Lines |
+| `lib-546` | Content Writing & Copywriting | Create concise Structure |
+| `lib-1232` | Email Marketing | Create creating Email Templates |
+| `lib-2610` | Presentation & Slides | Improve public Speaking |
+| `lib-293` | Career Growth | Plan writing Career Development Plans |
+| `lib-1148` | Education & Learning | Creating Personalized Learning Plans |
+| `lib-3315` | Social Media | Write Lessons Learned Post |
+| `lib-2715` | Research & Data Analysis | Create Project Status Report |
+
+**Premium (`PUBLIC_PREMIUM_IDS`, blurred example cards):**
+
+| id | category | title |
+|---|---|---|
+| `lib-2457` | Marketing & Branding | Write prompts I Use Daily That Changed Everything: |
+| `lib-581` | Content Writing & Copywriting | Write drafting Press Releases For Maximum Impact |
+| `lib-1261` | Email Marketing | Brainstorm generating Google Ads Keywords |
+| `lib-2253` | Marketing & Branding | Write cold Email Copy |
+| `lib-3047` | Social Media | Develop content Marketing Strategy |
+| `lib-2678` | Productivity & Automation | Create project Management |
+| `lib-260` | Business Strategy | Recommended Implementation Strategy For |
+| `lib-2809` | SEO & Analytics | Generating Product Performance Reports |
+
+### e2e
+`web/e2e/landing.spec.ts` (Playwright, existing smoke config; `?landing=1` toggles the flag the
+same way the `HOME_V2` smoke tests use `?home=`): `?landing=1` + anon → `/` renders the hero,
+the workflow band, both CTAs pointing at `/legacy`, ≥1 working **Copy prompt** button (free
+tier) and the locked "Sign up to unlock" affordance (premium tier), no `/library` or
+`/prompt/` links anywhere; no `?landing` + anon → `/` still proxies the legacy gate
+(`#data-prompts` present), landing absent.
+
+### Rollback
+Set `LANDING_V2=off` (env) — or clear the `landingV2` cookie / drop `?landing=1` — and an
+anonymous `/` is byte-identical to prior behaviour (rewrite to the legacy zone). No redeploy.
+*Full:* delete `landing*` + `serveLanding` + the two `serveLanding() ??` prefixes in
+`middleware.ts`, and the `!access.authenticated` branch in `app/page.tsx` / `AppShell.tsx`.
+
 ## Appendix — verified in this migration
 
 - Single origin: login via proxied `/api/auth/login` → session on the Next origin → `/api/v2/prompts`
