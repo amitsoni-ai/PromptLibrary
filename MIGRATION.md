@@ -204,7 +204,9 @@ Home/Library behaviour for **authenticated** users are untouched.
 `web/src/lib/flags.ts#isLandingEnabled` — first decisive hit wins:
 1. `?landing=1` / `?landing=0` → per-request override (drops a sticky `landingV2` cookie)
 2. `landingV2` cookie
-3. `LANDING_V2` env — **default OFF**
+3. `LANDING_V2` env — **default ON**. Only an explicit `LANDING_V2=off` / `0` / `false` / `no`
+   turns it back off (instant rollback: anonymous `/` then rewrites to the legacy gate,
+   byte-for-byte the pre-landing behaviour).
 
 `LANDING_V2` is **not** a `SCREENS` entry: it has no matcher and no allowlist (the landing has
 no per-identity variation — it is anon-only). It is a narrow sub-branch of the existing `home`
@@ -215,7 +217,7 @@ gate.
 either flag does not affect the other (or `LIBRARY_V2`).
 
 ### The middleware branch (`web/src/middleware.ts`)
-One new branch on `/` only. With `LANDING_V2` off it is inert — `serveLanding()` returns `null`
+One new branch on `/` only. With `LANDING_V2=off` it is inert — `serveLanding()` returns `null`
 before any identity fetch and every path is byte-identical to before.
 
 ```diff
@@ -338,18 +340,41 @@ render — no copy is edited here).
 | `lib-2809` | SEO & Analytics | Generating Product Performance Reports |
 
 ### e2e
-`web/e2e/landing.spec.ts` (Playwright, existing smoke config; `?landing=1` toggles the flag the
-same way the `HOME_V2` smoke tests use `?home=`): `?landing=1` + anon → `/` renders the hero,
-the workflow band, both CTAs pointing at `/legacy`, ≥1 working **Copy prompt** button (free
-tier) and the locked "Sign up to unlock" affordance (premium tier), no `/library` or
-`/prompt/` links anywhere; no `?landing` + anon → `/` still proxies the legacy gate
-(`#data-prompts` present), landing absent.
+`web/e2e/landing.spec.ts` (Playwright, existing smoke config — LANDING_V2 defaults ON so no env
+is needed): anon `/` renders the hero, the workflow band, both CTAs pointing at `/legacy`, ≥1
+working **Copy prompt** button (free tier) and the locked "Sign up to unlock" affordance
+(premium tier), no `/library` or `/prompt/` links anywhere; `?landing=0` + anon → `/` proxies
+the legacy gate (`#data-prompts` present), landing absent. The two `HOME_V2` smoke tests that
+assert an anonymous legacy fallback now pass `&landing=0` to isolate the HOME_V2 behaviour.
 
 ### Rollback
-Set `LANDING_V2=off` (env) — or clear the `landingV2` cookie / drop `?landing=1` — and an
-anonymous `/` is byte-identical to prior behaviour (rewrite to the legacy zone). No redeploy.
+Set `LANDING_V2=off` on the `web/` Vercel project (or `?landing=0` / clear the `landingV2`
+cookie per browser) and an anonymous `/` is byte-identical to prior behaviour (rewrite to the
+legacy zone). No redeploy needed for the env flip.
 *Full:* delete `landing*` + `serveLanding` + the two `serveLanding() ??` prefixes in
 `middleware.ts`, and the `!access.authenticated` branch in `app/page.tsx` / `AppShell.tsx`.
+
+### Deploying `web/` (production: `prompting.synottic.com`)
+The strangler runs as its **own Vercel project**, separate from the legacy one:
+
+1. **New Vercel project** on the same GitHub repo, **Root Directory = `web`** (it has its own
+   `web/vercel.json` — framework `nextjs`, `next build`). Production branch: `main`.
+2. **Environment variables** on that project:
+   - `LEGACY_ORIGIN` = the legacy Vercel project's own URL (its `*.vercel.app`, or a dedicated
+     host like `legacy.synottic.com`) — `web/next.config.ts` proxies `/api/**` and `/legacy`
+     there, so shared-cookie auth keeps working. **Must not** be `prompting.synottic.com`
+     itself.
+   - `DATABASE_URL` = the shared Neon connection string (same DB the legacy project uses).
+   - `SESSION_SECRET` = identical to the legacy project's.
+   - `REVALIDATE_SECRET` = any secret (guards `POST /api/v2/revalidate`).
+   - `LANDING_V2` — leave unset (defaults ON). `HOME_V2` / `LIBRARY_V2` — leave unset (default
+     OFF).
+   - optional `NEXT_PUBLIC_SENTRY_DSN` / `SENTRY_DSN`.
+3. **Domain:** move `prompting.synottic.com` to this new project; give the legacy project a
+   different hostname (used only as `LEGACY_ORIGIN` + for `/legacy`).
+4. Result: anonymous `prompting.synottic.com/` → the marketing landing; `/legacy`, `/api/**`,
+   verify-email / reset-password etc. → proxied to the untouched legacy zone; signed-in users →
+   the legacy SPA (Home/Library V2 still gated OFF).
 
 ## Appendix — verified in this migration
 

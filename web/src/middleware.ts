@@ -14,12 +14,12 @@ import { SCREENS, isScreenEnabled, isLandingEnabled, LANDING, type Identity, typ
 // Zero changes to auth code.
 //
 // LANDING_V2 (see lib/flags.ts) adds exactly ONE new branch, on `/` only: when
-// the caller is UNAUTHENTICATED and LANDING_V2 is on, `/` is served by Next (the
-// public marketing landing page) instead of being rewritten to the legacy gate.
-// Independent of HOME_V2; authenticated `/` is unchanged in every state. With
-// LANDING_V2 off (the default) this branch is inert and behaviour is identical
-// to before — delete `landing*`, `serveLanding`, and the two `serveLanding() ??`
-// prefixes to revert.
+// the caller is UNAUTHENTICATED and LANDING_V2 is on (the DEFAULT), `/` is served
+// by Next (the public marketing landing page) instead of being rewritten to the
+// legacy gate. Independent of HOME_V2; authenticated `/` is unchanged in every
+// state. Set LANDING_V2=off to roll back (anonymous `/` then rewrites to legacy,
+// byte-for-byte the pre-landing behaviour); or delete `landing*`, `serveLanding`,
+// and the two `serveLanding() ??` prefixes to remove it entirely.
 // ─────────────────────────────────────────────────────────────────────────────
 
 const LEGACY_ORIGIN = process.env.LEGACY_ORIGIN || "http://localhost:8790";

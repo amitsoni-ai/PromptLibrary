@@ -84,8 +84,10 @@ test("usage endpoint requires auth (anonymous -> 401)", async ({ request }) => {
   expect(body.error).toBe("auth");
 });
 
+// `&landing=0` isolates the HOME_V2 behaviour under test: LANDING_V2 defaults ON,
+// so an anonymous `/` otherwise renders the marketing landing, not the legacy SPA.
 test("HOME_V2 off (?home=0) rolls the root back to the legacy SPA", async ({ request }) => {
-  const res = await request.get("/?home=0", { maxRedirects: 0 });
+  const res = await request.get("/?home=0&landing=0", { maxRedirects: 0 });
   expect(res.status()).toBe(200);
   const html = await res.text();
   // Legacy bakes the whole catalogue into the page (#data-prompts); the Next
@@ -94,7 +96,7 @@ test("HOME_V2 off (?home=0) rolls the root back to the legacy SPA", async ({ req
 });
 
 test("HOME_V2 on but anonymous still falls back to legacy (shared-auth gate)", async ({ request }) => {
-  const res = await request.get("/?home=1");
+  const res = await request.get("/?home=1&landing=0");
   expect(res.status()).toBe(200);
   const html = await res.text();
   expect(html).toContain('id="data-prompts"');

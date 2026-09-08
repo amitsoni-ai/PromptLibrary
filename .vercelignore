@@ -7,9 +7,10 @@ devserver.mjs
 promptlibrary-push-package/
 prompt-library-vercel.zip
 
-# Next.js strangler migration (prompt-library/web/) — lives in this repo/deploy
-# for version control, but is NOT part of the legacy site's build. It has its
-# own package.json/next.config and needs its own Vercel project (not yet
-# created) before it's served anywhere. Per the approved migration plan: no
-# production cutover, LIBRARY_V2/HOME_V2 ship OFF. See MIGRATION.md.
+# Next.js strangler migration (prompt-library/web/). This file is the LEGACY
+# Vercel project's ignore list — the legacy project deploys the repo root
+# (index.html + api/**) and must NOT build web/. The strangler runs as a
+# SEPARATE Vercel project with Root Directory = "web" (its own web/vercel.json).
+# On that project the marketing landing (LANDING_V2) ships ON; LIBRARY_V2 /
+# HOME_V2 still ship OFF. See MIGRATION.md §13 "Deploying web/".
 web/

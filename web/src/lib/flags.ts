@@ -106,10 +106,15 @@ export function isScreenEnabled(
 // HOME_V2 is on or off. Authenticated users are never affected.
 //
 // Resolution precedence (mirrors the screen flags, minus the allowlist):
-//   1. ?landing=1 / =0   → explicit per-request override (drops a sticky
-//                          `landingV2` cookie so it survives client-side nav)
+//   1. ?landing=1 / =0     → explicit per-request override (drops a sticky
+//                            `landingV2` cookie so it survives client-side nav)
 //   2. `landingV2` cookie
-//   3. LANDING_V2 env      → default OFF  ⇒ today's behaviour, byte-for-byte
+//   3. LANDING_V2 env      → default ON. Only an explicit LANDING_V2=off / 0 /
+//                            false / no turns it back off (instant rollback:
+//                            anonymous `/` then rewrites to the legacy gate,
+//                            byte-for-byte the pre-landing behaviour). Authed
+//                            `/` and every non-`/` path are unaffected either
+//                            way.
 // ─────────────────────────────────────────────────────────────────────────────
 export const LANDING = {
   envVar: "LANDING_V2",
@@ -125,5 +130,6 @@ export function isLandingEnabled(opts: {
   if (q !== null) return q;
   const c = truthy(opts.cookieOverride);
   if (c !== null) return c;
-  return truthy(process.env[LANDING.envVar]) === true;
+  // Default ON — disabled only by an explicit falsy LANDING_V2 env value.
+  return truthy(process.env[LANDING.envVar]) !== false;
 }

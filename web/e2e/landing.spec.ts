@@ -1,16 +1,16 @@
 import { test, expect } from "@playwright/test";
 
-// Public marketing landing page (LANDING_V2). The smoke webServer starts with
-// LANDING_V2 unset, so "on" is exercised via the ?landing=1 override (same
-// mechanism the HOME_V2 smoke tests use for ?home=). Anonymous throughout — the
-// landing is only ever served to logged-out `/` visitors.
+// Public marketing landing page (LANDING_V2). Default ON — the smoke webServer
+// sets no env, so anonymous `/` already renders the landing; the rollback path
+// is exercised with the ?landing=0 override. Anonymous throughout — the landing
+// is only ever served to logged-out `/` visitors.
 
 // A phrase unique to the Next landing (the brand line itself also appears in the
 // legacy <meta description>, so it can't be used as a discriminator).
 const LANDING_MARKER = "A prompt is a way of thinking";
 
-test("LANDING_V2 on + anonymous → `/` renders the marketing landing", async ({ request }) => {
-  const res = await request.get("/?landing=1");
+test("default ON + anonymous → `/` renders the marketing landing", async ({ request }) => {
+  const res = await request.get("/"); // no override — landing is the default
   expect(res.status()).toBe(200);
   const html = await res.text();
 
@@ -25,8 +25,8 @@ test("LANDING_V2 on + anonymous → `/` renders the marketing landing", async ({
   expect(html).not.toContain('id="data-prompts"');
 });
 
-test("LANDING_V2 on → free prompts are copyable, premium prompts are locked", async ({ page }) => {
-  await page.goto("/?landing=1");
+test("free prompts are copyable, premium prompts are locked", async ({ page }) => {
+  await page.goto("/");
 
   // CTAs are real links to the gate.
   await expect(page.getByRole("link", { name: "Sign up free" }).first()).toHaveAttribute(
@@ -45,8 +45,8 @@ test("LANDING_V2 on → free prompts are copyable, premium prompts are locked", 
   expect(await page.locator('a[href*="/prompt/"]').count()).toBe(0);
 });
 
-test("LANDING_V2 unset + anonymous → `/` still proxies the legacy gate", async ({ request }) => {
-  const res = await request.get("/");
+test("rollback: ?landing=0 + anonymous → `/` proxies the legacy gate", async ({ request }) => {
+  const res = await request.get("/?landing=0");
   expect(res.status()).toBe(200);
   const html = await res.text();
   // The rewrite reached the legacy zone (it bakes the catalogue into the page).
