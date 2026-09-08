@@ -6,10 +6,10 @@
     "api/**/*.js": { "maxDuration": 15 }
   },
   "rewrites": [
-    { "source": "/verify-email", "destination": "/index.html" },
-    { "source": "/reset-password", "destination": "/index.html" },
-    { "source": "/forgot-password", "destination": "/index.html" },
-    { "source": "/admin/login", "destination": "/index.html" },
-    { "source": "/((?!api/).*)", "destination": "/index.html" }
+    { "source": "/verify-email", "destination": "/" },
+    { "source": "/reset-password", "destination": "/" },
+    { "source": "/forgot-password", "destination": "/" },
+    { "source": "/admin/login", "destination": "/" },
+    { "source": "/((?!api/).*)", "destination": "/" }
   ]
 }
