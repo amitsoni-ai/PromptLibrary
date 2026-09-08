@@ -45,7 +45,7 @@ async function resetLimits() { try { await sql`delete from rate_limits`; await s
 // ---- schema + seed (same as run_v2, in-process so it shares the pglite singleton)
 const sql = db();
 {
-  for (const file of ["schema.sql", "schema_v2.sql", "schema_v3.sql"]) {
+  for (const file of ["schema.sql", "schema_v2.sql", "schema_v3.sql", "schema_v5.sql"]) {
     const schema = readFileSync(join(HERE, file), "utf8").replace(/--.*$/gm, "");
     for (const stmt of schema.split(/;\s*(?:\n|$)/).map((s) => s.trim()).filter(Boolean)) await sql(stmt);
   }
@@ -102,6 +102,8 @@ const H = {
   forgot:    (await import("../api/_authsrc/forgot-password.js")).default,
   reset:     (await import("../api/_authsrc/reset-password.js")).default,
   redeem:    (await import("../api/_authsrc/redeem-code.js")).default,
+  myCodes:   (await import("../api/_authsrc/my-codes.js")).default,
+  removeCode: (await import("../api/_authsrc/remove-code.js")).default,
   session:   (await import("../api/session.js")).default,
   adminSession: (await import("../api/_adminsrc/session.js")).default,
   adminUsers:   (await import("../api/_adminsrc/users.js")).default,
@@ -938,6 +940,63 @@ section("14. SUPER_ADMIN Prompts console: RBAC, add/edit/archive/hard-delete, bu
   // CSRF is enforced on writes
   const noCsrf = await call(H.adminPrompts, { method: "POST", cookieJar: aj, body: { action: "create", prompt: mk({ title: "no csrf" }) } });
   ok("write without CSRF -> 403", noCsrf.status === 403 && noCsrf.json.error === "bad-csrf", JSON.stringify(noCsrf.json));
+}
+
+section("15. Stackable access codes: signed-in learner applies several codes → union → remove");
+{
+  await resetLimits();
+  const aj = jar(); const acsrf = await getCsrf(aj);
+  await call(H.adminSession, { method: "POST", cookieJar: aj, csrf: acsrf,
+    body: { email: process.env.ADMIN_BOOTSTRAP_EMAIL, password: process.env.ADMIN_BOOTSTRAP_PASSWORD } });
+
+  const g1 = await call(H.adminEnt, { method: "POST", cookieJar: aj, csrf: acsrf,
+    body: { action: "generate_code", label: "STK1", orgName: "Stack Co", scopeType: "program", programIds: ["prog-syn-sales"] } });
+  const g2 = await call(H.adminEnt, { method: "POST", cookieJar: aj, csrf: acsrf,
+    body: { action: "generate_code", label: "STK2", orgName: "Stack Co", scopeType: "program", programIds: ["prog-syn-marketing"] } });
+  const c1 = g1.json.code.code, c2 = g2.json.code.code;
+  ok("admin generated two program-scoped codes", !!c1 && !!c2 && c1 !== c2);
+
+  // fresh verified learner. Function = hr, so the floor is prog-syn-hr and the
+  // two stacked codes (sales / marketing) are cleanly separable from it.
+  const j = jar(); const csrf = await getCsrf(j);
+  await call(H.signup, { method: "POST", cookieJar: j, csrf, body: {
+    firstName: "Stan", lastName: "Stack", email: "stack@example.com",
+    password: "StackEmUp123", confirmPassword: "StackEmUp123",
+    function: "hr", aiLevel: "beginner", organization: "Stack Co", agreeTerms: true } });
+  await call(H.verify, { method: "POST", cookieJar: j, csrf, body: { token: tokenFromMail(lastMailTo("stack@example.com")) } });
+
+  const r1 = await call(H.redeem, { method: "POST", cookieJar: j, csrf, body: { code: c1 } });
+  ok("redeem code #1 -> 200", r1.status === 200 && r1.json.ok === true, JSON.stringify(r1.json));
+  const p1 = r1.json.access.access.programIds;
+  ok("code #1: sales program present, marketing not yet", p1.includes("prog-syn-sales") && !p1.includes("prog-syn-marketing"), JSON.stringify(p1));
+
+  const r2 = await call(H.redeem, { method: "POST", cookieJar: j, csrf, body: { code: c2 } });
+  const p2 = r2.json.access.access.programIds;
+  ok("code #2 STACKS: both programs now present (union, not replace)",
+    p2.includes("prog-syn-sales") && p2.includes("prog-syn-marketing"), JSON.stringify(p2));
+  ok("access.multi flips true with 2 codes and access.codes lists both",
+    r2.json.access.access.multi === true &&
+    r2.json.access.access.codes.map((c) => c.code).sort().join() === [c1, c2].sort().join(),
+    JSON.stringify(r2.json.access.access.codes));
+
+  const list = await call(H.myCodes, { method: "GET", cookieJar: j });
+  ok("my-codes returns both applied codes", list.status === 200 && list.json.codes.length === 2, JSON.stringify(list.json));
+
+  const rm = await call(H.removeCode, { method: "POST", cookieJar: j, csrf, body: { code: c1 } });
+  const p3 = rm.json.access.access.programIds;
+  ok("remove code #1 -> union shrinks: marketing stays, sales gone",
+    rm.status === 200 && p3.includes("prog-syn-marketing") && !p3.includes("prog-syn-sales"), JSON.stringify(p3));
+
+  const rmMissing = await call(H.removeCode, { method: "POST", cookieJar: j, csrf, body: { code: c1 } });
+  ok("removing a code you no longer hold -> 404 code-not-applied", rmMissing.status === 404 && rmMissing.json.error === "code-not-applied");
+
+  const rm2 = await call(H.removeCode, { method: "POST", cookieJar: j, csrf, body: { code: c2 } });
+  ok("removing the last code reverts to the signup-function auto grant",
+    rm2.json.access.access.source === "auto_function" && rm2.json.access.access.codes.length === 0, JSON.stringify(rm2.json.access.access));
+
+  const anonJar = jar(); const anonCsrf = await getCsrf(anonJar);
+  const unauth = await call(H.redeem, { method: "POST", cookieJar: anonJar, csrf: anonCsrf, body: { code: c2 } });
+  ok("redeem without a session -> 401", unauth.status === 401, `status=${unauth.status}`);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

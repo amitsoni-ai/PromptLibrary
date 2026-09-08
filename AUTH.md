@@ -275,6 +275,42 @@ from `/api/dev/outbox` and completes verification in one click.
 All writes are `users.write` / `access.write` RBAC + CSRF and audited
 (`user.create` / `user.align_function` / `user.bulk_<sub>` / …).
 
+## Stackable access codes (v5)
+
+A signed-in learner can hold **several** access codes at once; their library is
+the **union** of all of them plus their signup-function floor. Fixes the old
+behaviour where `/api/auth/redeem-code` only knew the `access_codes` table (so
+none of the built-in `SYNOTTIC-*` catalogue codes — which live in `admin_codes` —
+could be applied after login) *and* where a second code silently replaced the
+first (`entitlements` is one row per user).
+
+- **`migrate/schema_v5.sql`** (additive, idempotent) — `user_access_codes`
+  (one row per user+code, `status active|removed|expired`) and
+  `access_codes.managed_by`. Apply after `run_v3` on a Neon dev branch first.
+- **`migrate/run_v5.mjs`** (`npm run migrate:v5`) — applies schema_v5 and seeds
+  every built-in `SYNOTTIC-*` course / track / all-access code from
+  `src/part_admin_seed.json` into `access_codes` (`scope_type` `program` / `track`
+  / `full`, `managed_by='seed:catalogue'`). Never overwrites an admin-authored
+  code. `migrate/devserver_pglite.mjs` runs the same seed for local dev.
+- **`api/_entitlements.js#recomputeEntitlement(sql, userId)`** — the one place the
+  merged `entitlements` snapshot is rebuilt from the active `user_access_codes`
+  rows: `scope_type` = widest (`full` > `program`/`track` > `collection`),
+  `program_ids` / `category_ids` / `prompt_ids` unioned, `feature_flags` merged,
+  soonest `expires_at`. The signup-function library is folded in as a **floor**
+  so a new code only ever widens — *except* a lone `collection` code, which keeps
+  its exact §10-curated scope. No codes → reverts to the `auto_function` grant.
+- **API** (all on the `/api/auth/[action].js` router — no new functions):
+  `redeem-code` now writes a `user_access_codes` row (atomic seat claim
+  unchanged) then `recomputeEntitlement`; **`my-codes`** (GET) lists the
+  learner's active codes; **`remove-code`** (POST `{code}`) detaches one, frees
+  the seat, recomputes. `getUserAccess` adds `access.codes[]` + `access.multi`.
+- **Frontend** — `AuthAPI.myCodes` / `removeCode` (`src/part_auth.js`); a routed
+  **Access codes** view (`renderAccessCodesView`, `src/part_app_5.js`) reached
+  from its own left-sidebar item (any signed-in account learner; the primary five
+  are untouched) — lists applied codes with add / remove. The in-app banner keeps
+  a quick "Add code" + a "Manage codes" link and no longer self-hides for
+  code-scoped learners.
+
 ## Not yet done (follow-ups)
 
 - **Server-side sync of learner state for user accounts.** Favourites / practice /

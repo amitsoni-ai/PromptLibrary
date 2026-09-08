@@ -58,7 +58,13 @@ Prefer the Vercel runtime? `vercel dev` also works and pulls env automatically.
 node --env-file=.env.local migrate/run.mjs        # v1 schema + prompts + seed/admin codes
 node --env-file=.env.local migrate/run_v2.mjs     # v2 auth/entitlements schema
 node --env-file=.env.local migrate/run_v3.mjs     # v3 function-scope schema
+node --env-file=.env.local migrate/run_v5.mjs     # v5 stackable access codes + seed SYNOTTIC-* into access_codes
 ```
+
+> `run_v5` is what makes the built-in `SYNOTTIC-*` course / track codes
+> redeemable by a **signed-in** learner (they previously lived only in
+> `admin_codes`, reachable through the anonymous gate). Review
+> `migrate/schema_v5.sql` and apply on a Neon **dev branch** first.
 
 Migrations are idempotent, so re-running after `python3 src/build.py` just upserts
 the refreshed rows — and because it's the shared DB, production sees them on the

@@ -31,11 +31,18 @@ const sql = db();
 // Apply v1 (schema.sql) FIRST so the classic access-code path has its tables
 // (admin_codes / seed_codes / activity / learner_state). schema_v2 and _v3 are
 // additive on top of v1 — the same order the production checklist requires.
-console.log("→ applying schema.sql + schema_v2.sql + schema_v3.sql to", process.env.DATABASE_URL);
-for (const file of ["schema.sql", "schema_v2.sql", "schema_v3.sql"]) {
+console.log("→ applying schema.sql + schema_v2.sql + schema_v3.sql + schema_v5.sql to", process.env.DATABASE_URL);
+for (const file of ["schema.sql", "schema_v2.sql", "schema_v3.sql", "schema_v5.sql"]) {
   const schema = readFileSync(join(HERE, file), "utf8").replace(/--.*$/gm, "");
   for (const stmt of schema.split(/;\s*(?:\n|$)/).map((s) => s.trim()).filter(Boolean)) await sql(stmt);
 }
+// Seed the built-in SYNOTTIC-* catalogue codes into access_codes so a signed-in
+// learner can redeem them locally (same as migrate/run_v5.mjs).
+try {
+  const { seedCatalogueAccessCodes } = await import("./run_v5.mjs");
+  const r = await seedCatalogueAccessCodes(sql);
+  console.log(`→ catalogue access codes: ${r.inserted} inserted, ${r.refreshed} refreshed (of ${r.total})`);
+} catch (e) { console.warn("  (catalogue code seed skipped:", e.message + ")"); }
 for (const f of DEFAULT_FEATURES) {
   await sql(
     `insert into feature_permissions (feature_key,label,description,public_ok,requires_verified,requires_entitlement,min_ai_level,sort)

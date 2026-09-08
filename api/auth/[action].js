@@ -15,6 +15,8 @@ const ROUTES = {
   "forgot-password": () => import("../_authsrc/forgot-password.js"),
   "reset-password": () => import("../_authsrc/reset-password.js"),
   "redeem-code": () => import("../_authsrc/redeem-code.js"),
+  "my-codes": () => import("../_authsrc/my-codes.js"),
+  "remove-code": () => import("../_authsrc/remove-code.js"),
 };
 
 export default async function handler(req, res) {

@@ -93,14 +93,20 @@ export async function getUserAccess(sql, user) {
     };
   }
 
-  let ent = null, enrollments = [];
+  let ent = null, enrollments = [], appliedCodes = [];
   try {
-    const [eRows, pRows] = await Promise.all([
+    const [eRows, pRows, cRows] = await Promise.all([
       sql`select * from entitlements where user_id = ${user.id} limit 1`,
       sql`select program_id from program_enrollments where user_id = ${user.id} and status = 'active'`,
+      sql`select code, scope_type, org_name, redeemed_at, expires_at from user_access_codes
+          where user_id = ${user.id} and status = 'active' order by redeemed_at asc`.catch(() => []),
     ]);
     ent = eRows[0] || null;
     enrollments = pRows.map((r) => r.program_id);
+    appliedCodes = (cRows || []).map((r) => ({
+      code: r.code, scopeType: r.scope_type, orgName: r.org_name || null,
+      redeemedAt: r.redeemed_at, expiresAt: r.expires_at || null,
+    }));
   } catch { /* degrade to no-entitlement */ }
   ent = await effectiveEntitlement(sql, ent);
 
@@ -151,15 +157,20 @@ export async function getUserAccess(sql, user) {
   // A curated scope (function / collection) carries its own program / category /
   // prompt lists on the entitlement; stale program_enrollments from a previous
   // scope must not widen it.
+  // An access-code scope may be the UNION of several stacked codes
+  // (api/_entitlements.js#recomputeEntitlement); it keeps its own program list
+  // AND may carry a curated category / prompt list, so treat both as live.
+  const multiSource = ent && ent.source === "access_code";
   const curated = ent && ["function", "collection"].includes(ent.scope_type);
   const programIds = ent && ent.scope_type === "full"
     ? "*"
-    : curated
+    : (curated && !multiSource)
       ? Array.from(new Set(ent.program_ids || []))
       : Array.from(new Set([...(ent && ent.program_ids || []), ...enrollments]));
 
-  const categoryIds = curated && Array.isArray(ent.category_ids) ? ent.category_ids : [];
-  const promptIds = curated && Array.isArray(ent.prompt_ids) ? ent.prompt_ids : [];
+  const carriesLists = (curated || multiSource) && ent && ent.scope_type !== "full";
+  const categoryIds = carriesLists && Array.isArray(ent.category_ids) ? ent.category_ids : [];
+  const promptIds = carriesLists && Array.isArray(ent.prompt_ids) ? ent.prompt_ids : [];
 
   return {
     authenticated: true,
@@ -182,6 +193,8 @@ export async function getUserAccess(sql, user) {
       expiresAt: ent ? ent.expires_at : null,
       source: ent ? ent.source : null,
       active: entActive && !blocked,
+      codes: appliedCodes,
+      multi: appliedCodes.length > 1,
     },
     programs: programIds,
     features: map,

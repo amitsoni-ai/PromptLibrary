@@ -386,6 +386,7 @@ const VIEW_TITLES = {
   program: "My Program", learn: "Learn", practice: "Practice", builder: "Create Prompt",
   framework: "Prompt Framework",
   myLibrary: "Saved", favorites: "Saved", me: "Me", insights: "Library Governance",
+  accessCodes: "Access codes",
 };
 /* Which primary nav item lights up for a given (possibly nested) view. */
 const VIEW_PARENT = {
@@ -412,6 +413,11 @@ const SHARED_QUERY_VIEWS = new Set(["home", "search"]);
 // search, Learn and Practice, not by browsing the whole library.
 const SCOPED_HIDDEN_VIEWS = new Set(["categories", "categoryDetail", "insights"]);
 function isViewAllowed(view) {
+  if (view === "accessCodes") {
+    // Any signed-in account learner can manage their codes, scoped or not.
+    return !!(typeof AuthAPI !== "undefined" && AuthAPI.isConfigured()
+      && Store.getSession() && Store.getSession().user);
+  }
   if (!isScopeRestricted()) return true;
   // Any scope that spans 2+ categories keeps a filtered Categories browse
   // (functions, org collections, multi-category access codes); only the
@@ -461,6 +467,11 @@ function renderNav() {
       <button class="nav-item ${active === item.key ? "active" : ""}" data-nav="${item.key}">
         ${icon(item.icon)}<span>${item.label}</span>${item.kbd ? `<span class="nav-kbd">${item.kbd}</span>` : ""}
       </button>`).join("") + `</div>`;
+  // Account learners manage their (stackable) access codes here. Kept out of the
+  // primary five (Home · Library · Learn · Practice · Me) as its own item.
+  if (s && s.user && typeof AuthAPI !== "undefined" && AuthAPI.isConfigured()) {
+    html += `<button class="nav-item ${STATE.view === "accessCodes" ? "active" : ""}" data-nav="accessCodes">${icon("key")}<span>Access codes</span></button>`;
+  }
   if (s && s.superAdmin) {
     html += `<div class="nav-group-label">Admin</div>
       <button class="nav-item" data-nav="__insights">${icon("chart")}<span>Library Governance</span></button>
@@ -492,15 +503,115 @@ function renderTopbar() {
 function renderContent() {
   const content = document.getElementById("content");
   if (!isViewAllowed(STATE.view)) STATE.view = "search";
-  content.className = "content" + (STATE.view === "insights" || STATE.view === "myLibrary" || STATE.view === "me" ? " wide" : "");
+  content.className = "content" + (STATE.view === "insights" || STATE.view === "myLibrary" || STATE.view === "me" || STATE.view === "accessCodes" ? " wide" : "");
   const map = {
     home: renderHome, search: renderSearchView, categories: renderCategoriesView, categoryDetail: renderCategoryDetail,
     program: renderProgramView, learn: renderLearnView, practice: renderPracticeView, builder: renderBuilderView,
     framework: renderFrameworkView,
     myLibrary: renderMeView, favorites: renderMeView, me: renderMeView, insights: renderInsightsView,
+    accessCodes: renderAccessCodesView,
   };
   (map[STATE.view] || renderHome)(content);
 }
+
+/* ---------- Access codes: a learner's stackable access codes ---------- */
+function acScopeLabel(c) {
+  if (c.scopeType === "full") return "Full library";
+  if (c.programNames && c.programNames.length) return c.programNames.join(" · ");
+  if (c.scopeType === "track") return "Programme track";
+  if (c.scopeType === "program") return "Programme library";
+  return "Curated library";
+}
+function renderAccessCodesView(container) {
+  const s = Store.getSession();
+  if (typeof AuthAPI === "undefined" || !AuthAPI.isConfigured() || !s || !s.user) {
+    container.innerHTML = `<div class="section-title"><h2>Access codes</h2></div>` +
+      emptyStateHtml("key", "Sign in to manage access codes",
+        "Access codes attach to your account so your library and saved work travel with you.");
+    return;
+  }
+  container.innerHTML = `
+    <div class="section-title"><h2>Access codes</h2></div>
+    <p class="sub" style="margin:-4px 0 16px;max-width:640px;">
+      Add the code for every programme you're enrolled in. Each code adds its prompts to your
+      library — they stack, and you can remove one any time.</p>
+    <div class="card" style="padding:14px;margin-bottom:18px;">
+      <label for="ac-code" style="display:block;font-weight:600;margin-bottom:6px;">Add an access code</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <input id="ac-code" class="name-input" style="max-width:260px;padding:8px 10px;" autocomplete="off"
+          spellcheck="false" placeholder="e.g. SYNOTTIC-MARKETING" />
+        <button class="btn btn-primary" id="ac-add">Add code</button>
+      </div>
+      <div id="ac-err" class="gate-error" role="alert" aria-live="polite" style="margin-top:8px;"></div>
+    </div>
+    <div id="ac-list">Loading your codes…</div>`;
+
+  const codeI = container.querySelector("#ac-code");
+  const addBtn = container.querySelector("#ac-add");
+  const errEl = container.querySelector("#ac-err");
+  const listEl = container.querySelector("#ac-list");
+
+  async function reloadSession() {
+    try {
+      const me = await AuthAPI.me();
+      if (me && me.authenticated && typeof applyUserSession === "function") applyUserSession(me);
+    } catch (e) {}
+  }
+  async function paintList() {
+    let codes = [];
+    try { const d = await AuthAPI.myCodes(); codes = (d && d.codes) || []; }
+    catch (e) { listEl.innerHTML = emptyStateHtml("alert", "Couldn't load your codes", "Refresh the page and try again."); return; }
+    if (!codes.length) {
+      listEl.innerHTML = emptyStateHtml("key", "No access codes yet",
+        "Add the code from your programme above to open its library.");
+      return;
+    }
+    listEl.innerHTML = `<div class="section-title" style="margin-bottom:6px;"><h2 style="font-size:15px;">Applied codes (${codes.length})</h2></div>` +
+      codes.map((c) => `
+        <div class="card" style="padding:12px 14px;margin-bottom:10px;display:flex;gap:12px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;">
+          <div style="min-width:200px;">
+            <div style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-weight:600;">${escapeHtml(c.code)}</div>
+            <div style="color:var(--text-faint);font-size:13px;margin-top:2px;">${escapeHtml(acScopeLabel(c))}</div>
+            <div style="color:var(--text-faint);font-size:12px;margin-top:2px;">${escapeHtml(c.orgName || "")}${c.redeemedAt ? " · added " + escapeHtml(timeAgo(new Date(c.redeemedAt).getTime())) : ""}</div>
+          </div>
+          <button class="btn btn-sm" data-remove="${escapeHtml(c.code)}">Remove</button>
+        </div>`).join("");
+    listEl.querySelectorAll("[data-remove]").forEach((b) => b.addEventListener("click", async () => {
+      const code = b.dataset.remove;
+      if (!confirm("Remove " + code + "? Its prompts leave your library (other codes stay).")) return;
+      b.disabled = true; b.textContent = "Removing…";
+      try {
+        await AuthAPI.removeCode(code);
+        await reloadSession();
+        if (typeof showToast === "function") showToast("Removed " + code);
+        renderApp();
+      } catch (e) {
+        b.disabled = false; b.textContent = "Remove";
+        if (typeof showToast === "function") showToast("Couldn't remove that code — try again.");
+      }
+    }));
+  }
+
+  async function add() {
+    const val = (codeI.value || "").trim();
+    errEl.textContent = "";
+    if (!val) { codeI.focus(); return; }
+    addBtn.disabled = true; addBtn.textContent = "Adding…";
+    const r = await applyAccessCode(val);
+    addBtn.disabled = false; addBtn.textContent = "Add code";
+    if (r.ok) {
+      codeI.value = "";
+      if (typeof showToast === "function") showToast("Access code applied");
+      renderApp();
+    } else {
+      errEl.textContent = accessCodeErrorText(r.error);
+    }
+  }
+  addBtn.addEventListener("click", add);
+  codeI.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); add(); } });
+  paintList();
+}
+
 function renderLearnerBox() {
   const sc = currentScope();
   const s = Store.getSession();

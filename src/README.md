@@ -8,9 +8,11 @@ python3 build.py
 
 - `part_head.html` — `<title>`, `<style>`, gate + app markup
 - `part_orgmodel.json` — organizations / programs / cohorts / learners / access codes
-- `part_auth.js` — learner-account layer: the `AuthAPI` bridge to `/api/auth/*`,
-  the account screens (sign-in / 2-step sign-up / verify / forgot / reset /
-  `/admin/login`), the in-app status banner, and `featureAllowed()` /
+- `part_auth.js` — learner-account layer: the `AuthAPI` bridge to `/api/auth/*`
+  (incl. `redeemCode` / `myCodes` / `removeCode` — access codes STACK, see
+  `../AUTH.md` "Stackable access codes"), the account screens (sign-in / 2-step
+  sign-up / verify / forgot / reset / `/admin/login`), the in-app status banner
+  (quick "Add code" + a "Manage codes" link), and `featureAllowed()` /
   `blockIfLocked()` feature gating. Loaded right after `part_backend.js` (before
   `part_app_3`, which delegates the gate to it when `/api` is present). No-ops on
   a static host. See `../AUTH.md`.
@@ -28,7 +30,9 @@ python3 build.py
 Primary nav is exactly five: Home · Library · Learn · Practice · Me. Categories and
 Create Prompt live inside Library; My Program lives inside Learn; Saved / Recently used /
 Progress live inside Me (one "Saved" concept = favourites + created/improved). Governance
-and the Admin console are superadmin-only and never in the learner sidebar.
+and the Admin console are superadmin-only and never in the learner sidebar. A separate
+**Access codes** item (below the five, `renderAccessCodesView`) shows for any signed-in
+account learner — add / remove the stackable access codes on their account.
 - `data_blocks.html` — the three read-only `<script type="application/json">` data blocks
   (3,367 prompts, categories, stats) imported from `Prompt_Library_Catalog.xlsx`. Regenerate only
   if the Excel source changes.

@@ -2,6 +2,12 @@
 
 _Generated from the course catalogue. Codes are case-insensitive; spaces are ignored._
 
+> **Signed-in learners can stack codes.** Every code below is redeemable from the
+> in-app **Access codes** page (left sidebar) or the "Add code" banner, and they
+> **add up** — apply your course, track and org codes and your library is the
+> union of all of them. Remove any code from the same page. (`migrate/run_v5.mjs`
+> seeds these into the DB so account users can redeem them; see `AUTH.md`.)
+
 ## Admin & all-access
 
 | Purpose | Code | What it opens |

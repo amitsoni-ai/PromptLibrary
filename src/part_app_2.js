@@ -62,7 +62,14 @@ function userLibraryMode() {
   }
   if (acc && acc.active && (acc.scopeType === "program" || acc.scopeType === "track")) {
     const ids = Array.isArray(a.programs) ? a.programs : [];
-    return { mode: "program", programIds: ids };
+    // A stacked-access-code scope (source 'access_code') also carries a category
+    // union on the entitlement — fold it in so the browse is the sum of every
+    // applied code plus the signup function, not just the programmes' prompts.
+    return {
+      mode: "program", programIds: ids,
+      categories: Array.isArray(acc.categoryIds) ? acc.categoryIds : [],
+      promptIds: Array.isArray(acc.promptIds) ? acc.promptIds : [],
+    };
   }
   return { mode: "preview" };   // unverified / no entitlement / suspended
 }
@@ -329,6 +336,7 @@ const ICONS = {
   path: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/><path d="M8 16.5c8-1 9-2 8-9"/></svg>',
   logout: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>',
   eye: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>',
+  key: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="5"/><path d="M11.5 11.5L21 21M17 17l2-2M14 14l2-2"/></svg>',
 };
 function icon(name, cls) { return (ICONS[name] || "").replace("<svg ", `<svg class="${cls || ""}" `); }
 

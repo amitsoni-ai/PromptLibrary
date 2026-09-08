@@ -48,6 +48,8 @@ const AuthAPI = (function () {
     forgotPassword: (email) => call("/auth/forgot-password", { method: "POST", body: { email } }),
     resetPassword: (b) => call("/auth/reset-password", { method: "POST", body: b }),
     redeemCode: (code) => call("/auth/redeem-code", { method: "POST", body: { code } }),
+    myCodes: () => call("/auth/my-codes"),
+    removeCode: (code) => call("/auth/remove-code", { method: "POST", body: { code } }),
     updateProfile: (b) => call("/auth/me", { method: "PATCH", body: b }),
     adminLogin: (b) => call("/admin/session", { method: "POST", body: b }),
     adminLogout: () => call("/admin/session", { method: "DELETE" }).catch(() => {}),
@@ -716,23 +718,23 @@ function verificationBannerHtml() {
       <span>Your library is being set up. If it doesn't appear shortly, contact your programme lead.</span>
       <span class="vb-actions"><button class="vb-btn" id="vb-refresh">Refresh</button></span></div>`;
   }
-  // Verified + active. Offer an "add an access code" affordance to a plain
-  // self-signup (function-scoped) learner who might also hold an org code.
-  // Hide it once they have full-library scope, already joined via an access
-  // code / collection (source 'access_code'), or dismissed it. Always shown
-  // when a code is pending (e.g. redeem failed pre-verify and needs a retry).
+  // Verified + active. Offer an "add an access code" affordance. Every learner
+  // can stack more codes now (managed on the "Access codes" page in the
+  // sidebar), so the only reasons to hide the banner are a full-library scope
+  // (nothing to widen) or a manual dismiss — unless a code is pending (e.g.
+  // redeem failed pre-verify and needs a retry).
   const scopeType = a.access && a.access.scopeType;
-  const fromCode = a.access && (a.access.source === "access_code" || scopeType === "collection");
   let dismissed = false;
   try { dismissed = sessionStorage.getItem("prompt-lib:addcode-dismissed") === "1"; } catch (e) {}
-  if (!pend && (scopeType === "full" || fromCode || dismissed)) return "";
+  if (!pend && (scopeType === "full" || dismissed)) return "";
   return `<div class="verify-banner" id="verify-banner" style="background:var(--accent-soft);color:var(--accent-strong);">
     <span>${pend
       ? `Apply your organisation access code <b>${escapeHtml(pend)}</b> to open its library.`
-      : "Have an organisation or cohort access code? Add it to open that library."}</span>
+      : "Have an access code for another programme? Add it — codes stack."}</span>
     <span class="vb-actions" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
       <input id="vb-code" class="name-input" style="max-width:190px;padding:6px 8px;" placeholder="ACCESS-CODE" value="${escapeHtml(pend || "")}" />
       <button class="vb-btn" id="vb-addcode">Add code</button>
+      <button class="vb-btn" id="vb-managecodes" style="background:transparent;">Manage codes</button>
       <button class="vb-x" id="vb-addcode-x" aria-label="Dismiss">✕</button>
     </span></div>`;
 }
@@ -786,6 +788,10 @@ function wireVerificationBanner() {
       addBtn.disabled = false; addBtn.textContent = "Add code";
       if (typeof showToast === "function") showToast(accessCodeErrorText(r.error));
     }
+  });
+  const manage = el.querySelector("#vb-managecodes");
+  if (manage) manage.addEventListener("click", () => {
+    if (typeof navigate === "function") navigate("accessCodes");
   });
   const addX = el.querySelector("#vb-addcode-x");
   if (addX) addX.addEventListener("click", () => {
