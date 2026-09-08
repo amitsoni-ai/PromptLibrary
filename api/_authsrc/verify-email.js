@@ -127,6 +127,12 @@ async function grantCollectionOnVerify(sql, u, rawCode, req) {
   const c = rows[0];
   if (!c || c.enabled === false || c.scope_type !== "collection") return false;
   if (c.expires_at && new Date(c.expires_at) < new Date()) return false;
+  // A disabled collection blocks its codes (Bug 2c) — fall through to the
+  // function auto-grant instead of claiming a collection seat.
+  if (c.collection_id) {
+    const col = (await sql`select enabled from collections where id = ${c.collection_id} limit 1`)[0];
+    if (col && col.enabled === false) return false;
+  }
 
   const claim = await sql`update access_codes
       set redemptions = redemptions + 1, updated_at = now()

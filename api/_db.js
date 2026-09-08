@@ -68,12 +68,24 @@ export function normCode(c) {
 
 // A missing relation (deployment without the v1 schema.sql) must not 500 the
 // whole gate — treat it as "no match in this source" and move on.
-async function safeRows(promise) {
+export async function safeRows(promise) {
   try { return await promise; }
   catch (e) {
-    if (/relation .* does not exist|42P01/i.test(String(e && e.message || e))) return [];
+    if (isMissingRelation(e)) return [];
     throw e;
   }
+}
+
+// Postgres 42P01 = undefined_table, 42703 = undefined_column. Both mean the
+// deployed DB is behind the code's migrations (run `npm run migrate:v3`).
+export function isMissingRelation(e) {
+  return /relation .* does not exist|42P01/i.test(String(e && e.message || e));
+}
+export function isMissingColumn(e) {
+  return /column .* does not exist|42703/i.test(String(e && e.message || e));
+}
+export function isSchemaBehind(e) {
+  return isMissingRelation(e) || isMissingColumn(e);
 }
 
 // Resolve an access code -> the session scope object the frontend expects.

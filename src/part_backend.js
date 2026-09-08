@@ -73,14 +73,43 @@ const Backend = (function () {
       try { await call("/state", { method: "PUT", body: { states }, token: sessionToken }); return true; }
       catch (e) { return false; }
     },
+    // ---- account-user (email+password) state sync — cookie session, no Bearer ----
+    // Same shape as getState/putState above but for a signed-in ACCOUNT user
+    // (part_auth.js's session.subject = 'user:'+id) rather than an access-code
+    // redemption. Hits /api/user-state (api/user-state.js), which reuses the
+    // same learner_state table keyed by that subject. Was the missing piece:
+    // account users' saved prompts/favorites previously lived in localStorage
+    // only (AUTH.md's documented gap) and were lost on a new device/browser.
+    async getUserState(keys) {
+      try { return await call("/user-state?keys=" + encodeURIComponent((keys || []).join(","))); }
+      catch (e) { if (e.status === 401) return { __revoked: true }; return null; }
+    },
+    async putUserState(states) {
+      if (!available) return false;
+      try { await call("/user-state", { method: "PUT", body: { states } }); return true; }
+      catch (e) { return false; }
+    },
+    // Works for BOTH auth modes transparently — callers never need to know
+    // which one is active. Bearer (access-code session) wins if present;
+    // otherwise falls back to the cookie-authenticated account-user route.
     logActivity(event, promptId, meta) {
-      if (!sessionToken || available === false || !BASE) return;
+      if (available === false || !BASE) return;
+      const body = JSON.stringify({ event, promptId: promptId || null, meta: meta || {} });
       try {
-        fetch(BASE + "/activity", {
-          method: "POST", keepalive: true,
-          headers: { "content-type": "application/json", authorization: "Bearer " + sessionToken },
-          body: JSON.stringify({ event, promptId: promptId || null, meta: meta || {} }),
-        }).catch(() => {});
+        if (sessionToken) {
+          fetch(BASE + "/activity", {
+            method: "POST", keepalive: true,
+            headers: { "content-type": "application/json", authorization: "Bearer " + sessionToken },
+            body,
+          }).catch(() => {});
+        } else {
+          const c = csrfCookie();
+          fetch(BASE + "/user-state", {
+            method: "POST", keepalive: true, credentials: "same-origin",
+            headers: Object.assign({ "content-type": "application/json" }, c ? { "x-csrf-token": decodeURIComponent(c) } : {}),
+            body,
+          }).catch(() => {});
+        }
       } catch (e) {}
     },
 
@@ -192,6 +221,40 @@ const Backend = (function () {
     async adminAudit(params) {
       const qs = new URLSearchParams(params || {});
       return call("/admin/audit?" + qs.toString(), { token: adminToken });
+    },
+
+    // ---- Prompt library curation (SUPER_ADMIN "Prompts" tab) ----
+    async adminPrompts(params) {
+      const qs = new URLSearchParams();
+      Object.entries(params || {}).forEach(([k, v]) => { if (v !== "" && v != null) qs.set(k, v); });
+      return call("/admin/prompts?" + qs.toString(), { token: adminToken });
+    },
+    async adminSavePrompt(body) {
+      const d = await call("/admin/prompts", { method: "POST", body, token: adminToken });
+      return d && d.prompt;
+    },
+    async adminDeletePrompt(id, opts) {
+      return call("/admin/prompts", { method: "POST", body: Object.assign({ action: "delete", id }, opts || {}), token: adminToken });
+    },
+    async adminImportPrompts(rows, commit) {
+      return call("/admin/prompts", { method: "POST", body: { action: "import", rows, commit: !!commit }, token: adminToken });
+    },
+    // Text download (csv | json); returns the raw string.
+    async adminPromptsExport(params) {
+      const qs = new URLSearchParams();
+      Object.entries(params || {}).forEach(([k, v]) => { if (v !== "" && v != null) qs.set(k, v); });
+      const headers = adminToken ? { authorization: "Bearer " + adminToken } : {};
+      const c = csrfCookie(); if (c) headers["x-csrf-token"] = decodeURIComponent(c);
+      const res = await fetch(BASE + "/admin/prompts?" + qs.toString(), { headers, credentials: "same-origin" });
+      if (!res.ok) { const e = new Error("export-" + res.status); e.status = res.status; throw e; }
+      return res.text();
+    },
+
+    // ---- public prompt delta (author-managed changes, merged at boot) ----
+    async publicPrompts() {
+      if (!BASE || available === false) return null;
+      try { return await call("/prompts"); }
+      catch (e) { return null; }
     },
   };
 })();

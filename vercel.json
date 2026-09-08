@@ -1,5 +1,6 @@
 {
   "cleanUrls": true,
+  "trailingSlash": false,
   "outputDirectory": ".",
   "functions": {
     "api/**/*.js": { "maxDuration": 15 }
@@ -8,6 +9,7 @@
     { "source": "/verify-email", "destination": "/index.html" },
     { "source": "/reset-password", "destination": "/index.html" },
     { "source": "/forgot-password", "destination": "/index.html" },
-    { "source": "/admin/login", "destination": "/index.html" }
+    { "source": "/admin/login", "destination": "/index.html" },
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]
 }

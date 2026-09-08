@@ -9,10 +9,10 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const url = process.env.DATABASE_URL;
-if (!url) { console.error("Set DATABASE_URL"); process.exit(1); }
 
 async function getSql() {
+  const url = process.env.DATABASE_URL;
+  if (!url) { console.error("Set DATABASE_URL"); process.exit(1); }
   if (/^pglite:/i.test(url)) {
     const { neon } = await import("../api/_pglite.js");
     return neon(url);
@@ -33,14 +33,30 @@ export async function applyV3(sql) {
   }
 }
 
+// Tag prompt rows for the SUPER_ADMIN "Prompts" console + api/prompts.js delta
+// feed. Excel originals = 'excel', course companions = 'curriculum', Synottic
+// kickstart set = 'authored' (the only origin editable/hard-deletable by
+// default). Idempotent — only fills nulls.
+export async function backfillPromptCuration(sql) {
+  await sql(`update prompts set origin = case
+      when source = 'Synottic Programs' then 'authored'
+      when source = 'Synottic Curriculum' or id like 'crs-%' then 'curriculum'
+      else 'excel' end
+    where origin is null or origin = ''`);
+  await sql(`update prompts set title_norm = lower(btrim(title))
+    where title is not null and (title_norm is null or title_norm = '')`);
+}
+
 async function run() {
   const t0 = Date.now();
   const sql = await getSql();
   console.log("→ schema_v3.sql");
   await applyV3(sql);
+  await backfillPromptCuration(sql).catch((e) => console.warn("  (prompt curation backfill skipped:", e.message + ")"));
   const c = (await sql(`select
     (select count(*) from function_scopes)::int function_scopes,
-    (select count(*) from collections)::int collections`))[0];
+    (select count(*) from collections)::int collections,
+    (select count(*) from prompts where origin = 'authored')::int authored_prompts`))[0];
   console.log(`✓ v3 done in ${((Date.now() - t0) / 1000).toFixed(1)}s`, c);
 }
 

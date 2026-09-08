@@ -108,6 +108,8 @@ const H = {
   adminEnt:     (await import("../api/_adminsrc/entitlements.js")).default,
   adminFns:     (await import("../api/_adminsrc/functions.js")).default,
   adminCols:    (await import("../api/_adminsrc/collections.js")).default,
+  adminPrompts: (await import("../api/_adminsrc/prompts.js")).default,
+  prompts:      (await import("../api/prompts.js")).default,
   adminAudit:   (await import("../api/_adminsrc/audit.js")).default,
   adminAnalytics: (await import("../api/_adminsrc/analytics.js")).default,
 };
@@ -572,8 +574,9 @@ section("10. Org collection: curate a set, generate a code, learner redeems -> c
   const col1 = listAfter1.json.collections.find((c) => c.id === colId);
   ok("redemption count increments", col1.codes[0].redemptions === 1, JSON.stringify(col1.codes[0]));
 
-  // re-scope the collection -> the still-unredeemed part stays in sync; the code
-  // itself already redeemed keeps the snapshot on the entitlement
+  // re-scope the collection -> BOTH a new redemption AND the already-redeemed
+  // learner (col-a) pick up the new scope on their next /api/auth/me (Bug 2b:
+  // getUserAccess re-resolves a collection entitlement against the live row).
   await call(H.adminCols, { method: "POST", cookieJar: aj, csrf: acsrf, body: {
     action: "update", id: colId, categoryIds: ["Sales & Lead Generation"], promptIds: [] } });
   const b = await mk("col-b@example.com");
@@ -582,6 +585,26 @@ section("10. Org collection: curate a set, generate a code, learner redeems -> c
   ok("re-scoped collection flows to a new redemption",
     rdB.status === 200 && JSON.stringify(accB.categoryIds || []) === JSON.stringify(["Sales & Lead Generation"]),
     JSON.stringify(accB.categoryIds));
+  const accA2 = (await call(H.me, { method: "GET", cookieJar: a.j })).json.access.access;
+  ok("edit reflected: ALREADY-redeemed learner sees the new scope on reload (Bug 2b)",
+    JSON.stringify((accA2.categoryIds || []).slice().sort()) === JSON.stringify(["Sales & Lead Generation"])
+    && (accA2.promptIds || []).length === 0, JSON.stringify(accA2.categoryIds));
+
+  // deactivate the collection -> existing learner loses access on reload,
+  // new redemptions are blocked (Bug 2c: Active toggle gates redemption).
+  await call(H.adminCols, { method: "POST", cookieJar: aj, csrf: acsrf, body: {
+    action: "update", id: colId, enabled: false } });
+  const accADown = (await call(H.me, { method: "GET", cookieJar: a.j })).json.access.access;
+  ok("deactivate: existing redeemed learner -> access.active false (Bug 2c)", accADown.active === false, JSON.stringify(accADown));
+  const dz = await mk("col-deact@example.com");
+  const rdDeact = await call(H.redeem, { method: "POST", cookieJar: dz.j, csrf: dz.csrf, body: { code } });
+  ok("deactivate: new redemption blocked -> 403 collection-disabled", rdDeact.status === 403 && rdDeact.json.error === "collection-disabled", JSON.stringify(rdDeact.json));
+
+  // re-activate -> the existing learner's access comes back
+  await call(H.adminCols, { method: "POST", cookieJar: aj, csrf: acsrf, body: {
+    action: "update", id: colId, enabled: true } });
+  const accAUp = (await call(H.me, { method: "GET", cookieJar: a.j })).json.access.access;
+  ok("reactivate: existing learner regains collection access", accAUp.active === true && accAUp.scopeType === "collection", JSON.stringify(accAUp));
 
   // seat limit reached (2/2)
   const c = await mk("col-c@example.com");
@@ -835,6 +858,86 @@ section("13. Collection short signup: code at signup → step 1 only → verify 
     firstName: "Nor", lastName: "Mal", email: "normal-ok@example.com",
     password: "N0rmalFl0w!!", confirmPassword: "N0rmalFl0w!!", function: "marketing", aiLevel: "beginner", organization: "Synottic", agreeTerms: true } });
   ok("normal signup with step-2 fields still works unchanged", normal.status === 201 && normal.json.signedIn === true, JSON.stringify(normal.json));
+}
+
+section("14. SUPER_ADMIN Prompts console: RBAC, add/edit/archive/hard-delete, bulk import/export, /api/prompts delta");
+{
+  await resetLimits();
+  const { aj, acsrf } = globalThis._admin;
+
+  // RBAC — a VIEW_ONLY admin is refused, even for a read
+  const vj = jar(); const vcsrf = await getCsrf(vj);
+  await call(H.adminSession, { method: "POST", cookieJar: vj, csrf: vcsrf, body: { email: "viewer@synottic.test", password: "ViewerPass123" } });
+  const vRead = await call(H.adminPrompts, { method: "GET", cookieJar: vj, query: {} });
+  ok("non-SUPER_ADMIN cannot open the Prompts console -> 403", vRead.status === 403, JSON.stringify(vRead.json));
+
+  // create
+  const mk = (over) => Object.assign({
+    title: "Draft a customer win-back email", category: "Email Marketing",
+    role: "Lifecycle Marketer", originalPrompt: "Act as a lifecycle marketer. Context: [SEGMENT]. Task: write a 3-email win-back sequence. Format: subject + body per email. Verification: flag any claim that needs data.",
+    difficulty: "Intermediate", variables: ["SEGMENT"], tags: ["email", "winback"], lifecycle: "Curated",
+  }, over || {});
+  const cr = await call(H.adminPrompts, { method: "POST", cookieJar: aj, csrf: acsrf, body: { action: "create", prompt: mk() } });
+  ok("SUPER_ADMIN creates a prompt -> 200 + id + origin authored",
+    cr.status === 200 && cr.json.prompt && /^syn-/.test(cr.json.prompt.id) && cr.json.prompt.origin === "authored",
+    JSON.stringify(cr.json));
+  const pid = cr.json.prompt.id;
+
+  const dup = await call(H.adminPrompts, { method: "POST", cookieJar: aj, csrf: acsrf, body: { action: "create", prompt: mk() } });
+  ok("duplicate title+category on create -> 409", dup.status === 409 && dup.json.error === "duplicate" && dup.json.id === pid, JSON.stringify(dup.json));
+
+  const badCat = await call(H.adminPrompts, { method: "POST", cookieJar: aj, csrf: acsrf, body: { action: "create", prompt: mk({ title: "X thing", category: "Nonsense" }) } });
+  ok("invalid category -> 422", badCat.status === 422 && badCat.json.error === "invalid-category", JSON.stringify(badCat.json));
+
+  // update
+  const up = await call(H.adminPrompts, { method: "POST", cookieJar: aj, csrf: acsrf, body: {
+    action: "update", id: pid, patch: { description: "Win back lapsed subscribers", lifecycle: "Recommended" } } });
+  ok("update merges fields", up.status === 200 && up.json.prompt.description === "Win back lapsed subscribers" && up.json.prompt.lifecycle === "Recommended", JSON.stringify(up.json));
+
+  // list + filter
+  const list = await call(H.adminPrompts, { method: "GET", cookieJar: aj, query: { category: "Email Marketing", q: "win-back" } });
+  ok("list filters by category + query", list.status === 200 && list.json.prompts.some((p) => p.id === pid), JSON.stringify(list.json.total));
+
+  // public delta feed reflects the authored prompt
+  const feed1 = await call(H.prompts, { method: "GET" });
+  ok("/api/prompts returns the authored prompt", feed1.status === 200 && feed1.json.prompts.some((p) => p.id === pid), JSON.stringify(feed1.json.count));
+
+  // export round-trips (JSON) and re-import is idempotent
+  const exp = await call(H.adminPrompts, { method: "GET", cookieJar: aj, query: { format: "json" } });
+  const exported = JSON.parse(exp.res.body);
+  ok("export JSON includes the prompt", Array.isArray(exported) && exported.some((r) => r.id === pid), String(exported.length));
+  const reimp = await call(H.adminPrompts, { method: "POST", cookieJar: aj, csrf: acsrf, body: { action: "import", rows: exported, commit: true } });
+  ok("re-import of the export is idempotent (all 'update', 0 'new')",
+    reimp.status === 200 && (reimp.json.counts.new || 0) === 0 && (reimp.json.counts.update || 0) === exported.length, JSON.stringify(reimp.json.counts));
+
+  // import: preview then commit a brand-new row + an invalid row
+  const impRows = [
+    { title: "Summarise a discovery call", category: "Sales & Lead Generation", originalPrompt: "Act as a sales lead. Summarise the attached discovery call into: pains, budget, timeline, next step.", tags: ["sales"] },
+    { title: "", category: "Sales & Lead Generation", originalPrompt: "too short" },
+  ];
+  const prev = await call(H.adminPrompts, { method: "POST", cookieJar: aj, csrf: acsrf, body: { action: "import", rows: impRows, commit: false } });
+  ok("import preview classifies new + invalid", prev.status === 200 && prev.json.committed === false
+    && prev.json.counts.new === 1 && prev.json.counts.invalid === 1, JSON.stringify(prev.json.counts));
+  const comm = await call(H.adminPrompts, { method: "POST", cookieJar: aj, csrf: acsrf, body: { action: "import", rows: impRows, commit: true } });
+  ok("import commit writes the 1 valid new row", comm.status === 200 && comm.json.committed === true && comm.json.counts.new === 1, JSON.stringify(comm.json.counts));
+
+  // soft delete -> archived, drops out of the default list + appears in archivedIds
+  const arch = await call(H.adminPrompts, { method: "POST", cookieJar: aj, csrf: acsrf, body: { action: "delete", id: pid } });
+  ok("soft delete -> lifecycle Archived", arch.status === 200 && arch.json.mode === "soft" && arch.json.prompt.lifecycle === "Archived", JSON.stringify(arch.json));
+  const feed2 = await call(H.prompts, { method: "GET" });
+  ok("/api/prompts moves archived prompt to archivedIds", feed2.json.archivedIds.includes(pid) && !feed2.json.prompts.some((p) => p.id === pid), JSON.stringify(feed2.json.archivedIds));
+
+  // hard delete needs confirm + authored origin
+  const hardNoConfirm = await call(H.adminPrompts, { method: "POST", cookieJar: aj, csrf: acsrf, body: { action: "delete", id: pid, hard: true } });
+  ok("hard delete without confirm -> 400", hardNoConfirm.status === 400 && hardNoConfirm.json.error === "confirm-required", JSON.stringify(hardNoConfirm.json));
+  const hard = await call(H.adminPrompts, { method: "POST", cookieJar: aj, csrf: acsrf, body: { action: "delete", id: pid, hard: true, confirm: true } });
+  ok("hard delete of an authored prompt -> 200", hard.status === 200 && hard.json.mode === "hard", JSON.stringify(hard.json));
+  const gone = await call(H.adminPrompts, { method: "GET", cookieJar: aj, query: { includeArchived: "1" } });
+  ok("hard-deleted prompt is gone", !gone.json.prompts.some((p) => p.id === pid), String(gone.json.total));
+
+  // CSRF is enforced on writes
+  const noCsrf = await call(H.adminPrompts, { method: "POST", cookieJar: aj, body: { action: "create", prompt: mk({ title: "no csrf" }) } });
+  ok("write without CSRF -> 403", noCsrf.status === 403 && noCsrf.json.error === "bad-csrf", JSON.stringify(noCsrf.json));
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

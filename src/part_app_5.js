@@ -591,6 +591,34 @@ function loadData() {
   CURRICULUM_PROMPTS.forEach((r) => { if (r.programId) PROGRAM_FLAGSHIP[r.programId] = r.id; });
   resolveModulePrompts();
 }
+// Runtime merge of author-managed prompt changes (SUPER_ADMIN "Prompts" tab):
+// GET /api/prompts returns additions/edits/archives made since the last build,
+// so the running app reflects them without a rebuild. Fail-soft — a static host
+// (or any error) just keeps the baked-in #data-prompts set.
+async function mergeAuthoredPrompts() {
+  if (typeof Backend === "undefined" || !Backend.isConfigured()) return;
+  let d = null;
+  try { d = await Backend.publicPrompts(); } catch (e) { return; }
+  if (!d || (!Array.isArray(d.prompts) && !Array.isArray(d.archivedIds))) return;
+  const archived = new Set(d.archivedIds || []);
+  let changed = 0;
+  (d.prompts || []).forEach((rec) => {
+    if (!rec || !rec.id || archived.has(rec.id)) return;
+    enrichRecord(rec);
+    const existing = ALL_PROMPTS_BY_ID[rec.id];
+    if (existing) Object.assign(existing, rec);
+    else { ALL_PROMPTS.push(rec); ALL_PROMPTS_BY_ID[rec.id] = rec; }
+    changed++;
+  });
+  archived.forEach((id) => {
+    if (!ALL_PROMPTS_BY_ID[id]) return;
+    delete ALL_PROMPTS_BY_ID[id];
+    const i = ALL_PROMPTS.findIndex((r) => r.id === id);
+    if (i >= 0) ALL_PROMPTS.splice(i, 1);
+    changed++;
+  });
+  if (changed && typeof resolveModulePrompts === "function") resolveModulePrompts();
+}
 async function bootApp() {
   document.getElementById("gate-root").innerHTML = "";
   const adminRoot = document.getElementById("admin-root");
@@ -626,6 +654,9 @@ async function initApp() {
     const aroute = typeof authRoute === "function" ? authRoute() : null;
     if (aroute) { await handleAuthRoute(aroute); return; }
   } catch (e) {}
+
+  // Pull author-managed prompt edits before the app renders (fail-soft).
+  try { await mergeAuthoredPrompts(); } catch (e) {}
 
   try { await AdminStore.init(); } catch (e) {}
   let adminOk = false;

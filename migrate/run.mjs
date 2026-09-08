@@ -138,6 +138,7 @@ async function run() {
     (select count(*) from cohorts) cohorts, (select count(*) from seed_codes) seed_codes,
     (select count(*) from admin_codes) admin_codes, (select count(*) from prompts) prompts`))[0];
   console.log(`✓ done in ${((Date.now() - t0) / 1000).toFixed(1)}s`, c);
+  console.log("  next: npm run migrate:v2 && npm run migrate:v3  (identity + function/collection/prompts-curation schema)");
 }
 
 run().catch((e) => { console.error(e); process.exit(1); });

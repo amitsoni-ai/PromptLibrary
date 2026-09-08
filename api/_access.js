@@ -54,6 +54,23 @@ async function effectiveEntitlement(sql, ent) {
   return ent;
 }
 
+// A collection-scoped entitlement is re-resolved LIVE against its `collections`
+// row every request, so an admin editing the collection's scope or flipping its
+// "Active" toggle reaches learners who ALREADY redeemed the code (Bug 2b / 2c) —
+// not just future redemptions. Falls back to the frozen entitlement snapshot
+// when the collection can't be resolved (legacy grant, or a DB without v3).
+async function resolveLiveCollection(sql, ent) {
+  if (!ent || ent.scope_type !== "collection" || !ent.access_code) return null;
+  try {
+    const rows = await sql`
+      select c.* from collections c
+      join access_codes ac on ac.collection_id = c.id
+      where upper(ac.code) = ${String(ent.access_code).toUpperCase()}
+      limit 1`;
+    return rows[0] || null;
+  } catch { return null; }
+}
+
 export async function getUserAccess(sql, user) {
   const features = await loadFeatures(sql);
 
@@ -86,6 +103,15 @@ export async function getUserAccess(sql, user) {
     enrollments = pRows.map((r) => r.program_id);
   } catch { /* degrade to no-entitlement */ }
   ent = await effectiveEntitlement(sql, ent);
+
+  // Re-resolve a collection scope against its live collection row.
+  const liveCol = await resolveLiveCollection(sql, ent);
+  if (liveCol) {
+    ent = liveCol.enabled === false
+      ? { ...ent, status: ent.status === "active" ? "suspended" : ent.status }
+      : { ...ent, program_ids: liveCol.program_ids || [], category_ids: liveCol.category_ids || [],
+          prompt_ids: liveCol.prompt_ids || [] };
+  }
 
   const blocked = user.account_status === "suspended" || user.account_status === "disabled";
   const verified = !!user.email_verified && user.account_status === "active";

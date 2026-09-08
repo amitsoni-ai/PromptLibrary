@@ -70,8 +70,11 @@ function qualityClass(score) { if (score >= 80) return "q-high"; if (score >= 55
    localStorage otherwise (per-browser only — the UI says which). Same API. */
 const Store = (function () {
   let db = null, downloads = null, sampleFn = null, backend = "local";
-  let neon = false;                  // true once the Neon /api backend is hydrating this session
-  const _pending = {};               // key -> value awaiting a debounced push to /api/state
+  let neon = false;                  // true once a server backend is hydrating this session
+  let userBacked = false;            // true when that server backend is the cookie-session
+                                      // account-user route (/api/user-state) rather than the
+                                      // classic access-code Bearer route (/api/state)
+  const _pending = {};               // key -> value awaiting a debounced push to the backend
   let _pushTimer = null;
   function pushState(key, value) {
     if (!neon) return;
@@ -80,7 +83,7 @@ const Store = (function () {
     _pushTimer = setTimeout(() => {
       const batch = Object.assign({}, _pending);
       for (const k in _pending) delete _pending[k];
-      Backend.putState(batch);
+      (userBacked ? Backend.putUserState(batch) : Backend.putState(batch));
     }, 450);
   }
   let favorites = new Set();
@@ -114,27 +117,52 @@ const Store = (function () {
     } catch (e) { db = null; }
     session = lsGet("session", null);
 
-    // 1) Neon /api backend — the deployed source of truth. Only when this
-    //    session was redeemed through /api (session.backend) and a token exists.
+    // Shared by both server-backed paths below: apply a fetched state blob to
+    // the in-memory store and mirror it to localStorage so an offline reload
+    // still has data.
+    function hydrateFromState(st) {
+      favorites = new Set(Array.isArray(st.favorites) ? st.favorites : []);
+      const u = st.usage;
+      usage = u ? { counts: u.counts || {}, recent: u.recent || [], lastUsedTs: u.lastUsedTs || {} } : usage;
+      myPrompts = Array.isArray(st.myPrompts) ? st.myPrompts : [];
+      improvements = st.improvements && typeof st.improvements === "object" ? st.improvements : {};
+      feedback = st.feedback && typeof st.feedback === "object" ? st.feedback : {};
+      progress = st.progress ? Object.assign({ modulesTouched: {}, practice: [], learnedLessons: {} }, st.progress) : progress;
+      lsSet(nsKey("favorites"), Array.from(favorites));
+      lsSet(nsKey("usage"), usage); lsSet(nsKey("myPrompts"), myPrompts);
+      lsSet(nsKey("improvements"), improvements); lsSet(nsKey("feedback"), feedback);
+      lsSet(nsKey("progress"), progress);
+    }
+    const STATE_KEYS_ALL = ["favorites", "usage", "myPrompts", "improvements", "feedback", "progress"];
+
+    // 1) Classic access-code session (Bearer token from /api/session) — the
+    //    deployed source of truth for code-redeemed learners.
     if (typeof Backend !== "undefined" && Backend.isConfigured() && session && session.backend && Backend.hasSession()) {
-      const st = await Backend.getState(["favorites", "usage", "myPrompts", "improvements", "feedback", "progress"]);
+      const st = await Backend.getState(STATE_KEYS_ALL);
       if (st && st.__revoked) { return { backend: "revoked" }; }
       if (st) {
-        neon = true;
+        neon = true; userBacked = false;
         backend = "neon";
         db = null;   // Neon wins; don't also write to the claude-db capability
-        favorites = new Set(Array.isArray(st.favorites) ? st.favorites : []);
-        const u = st.usage;
-        usage = u ? { counts: u.counts || {}, recent: u.recent || [], lastUsedTs: u.lastUsedTs || {} } : usage;
-        myPrompts = Array.isArray(st.myPrompts) ? st.myPrompts : [];
-        improvements = st.improvements && typeof st.improvements === "object" ? st.improvements : {};
-        feedback = st.feedback && typeof st.feedback === "object" ? st.feedback : {};
-        progress = st.progress ? Object.assign({ modulesTouched: {}, practice: [], learnedLessons: {} }, st.progress) : progress;
-        // mirror to localStorage so an offline reload still has data
-        lsSet(nsKey("favorites"), Array.from(favorites));
-        lsSet(nsKey("usage"), usage); lsSet(nsKey("myPrompts"), myPrompts);
-        lsSet(nsKey("improvements"), improvements); lsSet(nsKey("feedback"), feedback);
-        lsSet(nsKey("progress"), progress);
+        hydrateFromState(st);
+        return { backend, hasSample: false, hasDownloads: false };
+      }
+      // backend configured but unreachable -> fall through to local cache below
+    }
+
+    // 1b) Account (email+password) session — cookie-authenticated, no Bearer
+    //    token. Was localStorage-only before /api/user-state existed (AUTH.md's
+    //    documented gap): a saved prompt / favorite didn't survive a new device
+    //    or cleared browser data. `session.user` + `session.subject` are set by
+    //    part_auth.js#applyUserSession on every successful sign-in.
+    if (typeof Backend !== "undefined" && Backend.isConfigured() && session && session.user && session.subject) {
+      const st = await Backend.getUserState(STATE_KEYS_ALL);
+      if (st && st.__revoked) { return { backend: "revoked" }; }
+      if (st) {
+        neon = true; userBacked = true;
+        backend = "neon";
+        db = null;
+        hydrateFromState(st);
         return { backend, hasSample: false, hasDownloads: false };
       }
       // backend configured but unreachable -> fall through to local cache below
@@ -292,7 +320,7 @@ const Store = (function () {
       pProg();
       if (typeof Backend !== "undefined") Backend.logActivity("practice", rec.scenarioId || null, { framework: rec.level, score: rec.score });
     },
-    flush() { if (neon && _pushTimer) { clearTimeout(_pushTimer); const b = Object.assign({}, _pending); for (const k in _pending) delete _pending[k]; return Backend.putState(b); } },
+    flush() { if (neon && _pushTimer) { clearTimeout(_pushTimer); const b = Object.assign({}, _pending); for (const k in _pending) delete _pending[k]; return (userBacked ? Backend.putUserState(b) : Backend.putState(b)); } },
   };
 })();
 

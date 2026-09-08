@@ -32,6 +32,14 @@ and the Admin console are superadmin-only and never in the learner sidebar.
 - `data_blocks.html` — the three read-only `<script type="application/json">` data blocks
   (3,367 prompts, categories, stats) imported from `Prompt_Library_Catalog.xlsx`. Regenerate only
   if the Excel source changes.
+- `prompts_authored.json` — editable author-managed prompts, spliced into the `data-prompts`
+  block by `build.py#merge_authored()` (Excel `data_blocks.html` untouched) and seeded into the
+  `prompts` table by `migrate/run.mjs`. The SUPER_ADMIN **Prompts** console tab
+  (`part_admin.js#renderAdminPrompts` → `/api/admin/prompts`) writes changes to the DB; the app
+  merges the delta from `GET /api/prompts` at boot. To make a change permanent: export JSON from
+  that tab, replace this file, `python3 build.py`, commit `index.html`.
+- `build.py` also copies the canonical `../vercel.json` into
+  `../../promptlibrary-push-package/vercel.json` so the deployed SPA rewrites can't drift.
 
 Sanity check the bundle after building:
 ```bash

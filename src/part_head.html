@@ -218,6 +218,21 @@ textarea{resize:vertical; font-family:var(--font-mono); line-height:1.55; font-s
 .btn-icon{padding:7px; width:32px; height:32px; justify-content:center;}
 .btn[disabled]{opacity:.5; cursor:not-allowed;}
 .btn-danger{color:var(--danger); border-color:var(--danger);}
+.btn-danger:hover{background:var(--danger-soft);}
+.btn-warn{color:var(--warn); border-color:var(--warn);}
+.btn-warn:hover{background:var(--warn-soft);}
+
+/* ---------- Admin: grouped sections + danger zone ----------
+   Used by the Users/Prompts console drawers to separate normal controls from
+   destructive ones instead of one flat row of same-weight buttons. */
+.admin-section{border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px; background:var(--surface);}
+.admin-section + .admin-section{margin-top:14px;}
+.admin-section h3{font-size:12.5px; font-weight:600; margin:0 0 10px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.03em;}
+.admin-help{font-size:11.5px; color:var(--text-faint); margin-top:6px; line-height:1.5;}
+.admin-danger-zone{border:1px solid var(--danger); border-radius:var(--radius); padding:14px 16px; background:var(--danger-soft);}
+.admin-danger-zone h3{display:flex; align-items:center; gap:6px; font-size:12.5px; font-weight:600; margin:0 0 4px; color:var(--danger);}
+.admin-danger-zone h3 svg{width:15px; height:15px; flex-shrink:0;}
+.admin-danger-zone p{font-size:11.5px; color:var(--text-muted); margin:0 0 10px;}
 
 /* ---------- Chips / badges ---------- */
 .chip{display:inline-flex; align-items:center; gap:5px; padding:3px 9px; border-radius:99px; font-size:11.5px; font-weight:500; border:1px solid var(--border); background:var(--surface-2); color:var(--text-muted); white-space:nowrap;}

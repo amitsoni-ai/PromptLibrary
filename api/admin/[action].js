@@ -13,6 +13,7 @@ const ROUTES = {
   "entitlements": () => import("../_adminsrc/entitlements.js"),
   "functions": () => import("../_adminsrc/functions.js"),
   "collections": () => import("../_adminsrc/collections.js"),
+  "prompts": () => import("../_adminsrc/prompts.js"),
   "audit": () => import("../_adminsrc/audit.js"),
 };
 

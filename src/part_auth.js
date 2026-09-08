@@ -213,6 +213,7 @@ function accessCodeErrorText(err) {
     : err === "code-disabled" ? "That access code has been disabled."
     : err === "code-expired" ? "That access code has expired."
     : err === "code-exhausted" ? "That access code has reached its seat limit."
+    : err === "collection-disabled" ? "That library has been deactivated by your organisation."
     : err === "verify-email-first" ? "Confirm your email first, then add the code."
     : err === "missing-code" ? "Enter an access code."
     : "Couldn't apply that access code — try again.";

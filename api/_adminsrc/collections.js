@@ -15,7 +15,7 @@
 // Access-code lifecycle after generation (rename / disable / seat limit / expiry)
 // reuses PATCH /api/admin/entitlements. Writes need `access.write` + CSRF
 // (skipped for a Bearer legacy-console token, matching _adminsrc/codes.js).
-import { db, json, readBody } from "../_db.js";
+import { db, json, readBody, safeRows, isSchemaBehind } from "../_db.js";
 import { checkCsrf } from "../_http.js";
 import { requireAdmin } from "../_session.js";
 import { newId } from "../_crypto.js";
@@ -68,13 +68,13 @@ export default async function handler(req, res) {
 
   // ---------- GET ----------
   if (req.method === "GET") {
-    let cols = [], codes = [];
-    try {
-      [cols, codes] = await Promise.all([
-        sql`select * from collections order by created_at desc limit 500`,
-        sql`select * from access_codes where collection_id is not null order by created_at desc limit 2000`,
-      ]);
-    } catch { /* tables missing -> empty */ }
+    // safeRows swallows ONLY a missing relation (42P01) — a real error must not
+    // be masked as an empty list (that made a failed create look like it didn't
+    // persist; see ADMIN-PROMPTS-REPORT.md "Bug 2a").
+    const [cols, codes] = await Promise.all([
+      safeRows(sql`select * from collections order by created_at desc limit 500`),
+      safeRows(sql`select * from access_codes where collection_id is not null order by created_at desc limit 2000`),
+    ]);
     const byCol = {};
     for (const k of codes) (byCol[k.collection_id] = byCol[k.collection_id] || []).push(k);
     return json(res, 200, { collections: cols.map((c) => colOut(c, byCol[c.id])) });
@@ -83,7 +83,18 @@ export default async function handler(req, res) {
   // ---------- POST ----------
   const b = await readBody(req);
   const action = b.action || "create";
+  try {
+    return await handlePost(sql, res, b, action, actor, admin);
+  } catch (e) {
+    // A missing column/table means the deployed DB is behind the code's
+    // migrations (schema_v3 adds collections.default_function etc.). Surface it
+    // instead of a bare 500 so the console can tell the operator what to do.
+    if (isSchemaBehind(e)) return json(res, 503, { error: "schema-out-of-date", detail: "run: npm run migrate:v3" });
+    throw e;
+  }
+}
 
+async function handlePost(sql, res, b, action, actor, admin) {
   if (action === "create") {
     const name = String(b.name || "").trim();
     if (!name) return json(res, 422, { error: "name-required" });
@@ -122,6 +133,7 @@ export default async function handler(req, res) {
       default_ai_level: dlv === undefined ? cur.default_ai_level : dlv,
       enabled: b.enabled !== undefined ? !!b.enabled : cur.enabled,
     };
+    const enabledChanged = (cur.enabled !== false) !== (m.enabled !== false);
     const row = (await sql`
       update collections set name=${m.name}, org_name=${m.org_name},
         program_ids=${JSON.stringify(m.program_ids || [])}, category_ids=${JSON.stringify(m.category_ids || [])},
@@ -129,13 +141,18 @@ export default async function handler(req, res) {
         default_function=${m.default_function || null}, default_ai_level=${m.default_ai_level || null},
         enabled=${m.enabled}, updated_at=now()
       where id=${b.id} returning *`)[0];
-    // the collection is the source of truth: sync ALL its codes' scope snapshot
-    // (per-code label / seat limit / expiry / enabled are left untouched).
-    // Entitlements already granted keep their own snapshot from redeem time.
+    // The collection is the source of truth: sync ALL its codes' scope snapshot
+    // (per-code label / seat limit / expiry are left untouched). Only when the
+    // collection's Active flag actually CHANGES do we cascade it to every child
+    // code — deactivating blocks redemption (Bug 2c), reactivating restores it —
+    // so a plain scope edit still preserves an individually-disabled code.
+    // Existing learners are re-resolved live against the collection in
+    // api/_access.js.
     await sql`update access_codes set program_ids=${JSON.stringify(m.program_ids || [])},
         category_ids=${JSON.stringify(m.category_ids || [])}, prompt_ids=${JSON.stringify(m.prompt_ids || [])},
         org_name=${m.org_name}, default_function=${m.default_function || null},
-        default_ai_level=${m.default_ai_level || null}, updated_at=now()
+        default_ai_level=${m.default_ai_level || null},
+        enabled = case when ${enabledChanged} then ${!!m.enabled} else enabled end, updated_at=now()
       where collection_id=${b.id}`;
     const codes = await sql`select * from access_codes where collection_id = ${b.id} order by created_at desc`;
     auditLog(sql, { ...actor, action: "collection.update", targetType: "collection", targetId: b.id });

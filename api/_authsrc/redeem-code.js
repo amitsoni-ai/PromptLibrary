@@ -31,6 +31,13 @@ export default async function handler(req, res) {
   const rows = await sql`select * from access_codes where upper(code) = ${code} limit 1`;
   if (!rows.length) return json(res, 404, { error: "unknown-code" });
   const c = rows[0];
+  // A disabled collection blocks redemption of all its codes (Bug 2c). Checked
+  // before the per-code flag so the learner/admin gets the actionable reason
+  // ("collection-disabled" -> re-activate the collection, not the code).
+  if (c.collection_id) {
+    const col = (await sql`select enabled from collections where id = ${c.collection_id} limit 1`)[0];
+    if (col && col.enabled === false) return json(res, 403, { error: "collection-disabled" });
+  }
   if (!c.enabled) return json(res, 403, { error: "code-disabled" });
   if (c.expires_at && new Date(c.expires_at) < new Date()) return json(res, 403, { error: "code-expired" });
 

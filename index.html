@@ -220,6 +220,21 @@ textarea{resize:vertical; font-family:var(--font-mono); line-height:1.55; font-s
 .btn-icon{padding:7px; width:32px; height:32px; justify-content:center;}
 .btn[disabled]{opacity:.5; cursor:not-allowed;}
 .btn-danger{color:var(--danger); border-color:var(--danger);}
+.btn-danger:hover{background:var(--danger-soft);}
+.btn-warn{color:var(--warn); border-color:var(--warn);}
+.btn-warn:hover{background:var(--warn-soft);}
+
+/* ---------- Admin: grouped sections + danger zone ----------
+   Used by the Users/Prompts console drawers to separate normal controls from
+   destructive ones instead of one flat row of same-weight buttons. */
+.admin-section{border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px; background:var(--surface);}
+.admin-section + .admin-section{margin-top:14px;}
+.admin-section h3{font-size:12.5px; font-weight:600; margin:0 0 10px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.03em;}
+.admin-help{font-size:11.5px; color:var(--text-faint); margin-top:6px; line-height:1.5;}
+.admin-danger-zone{border:1px solid var(--danger); border-radius:var(--radius); padding:14px 16px; background:var(--danger-soft);}
+.admin-danger-zone h3{display:flex; align-items:center; gap:6px; font-size:12.5px; font-weight:600; margin:0 0 4px; color:var(--danger);}
+.admin-danger-zone h3 svg{width:15px; height:15px; flex-shrink:0;}
+.admin-danger-zone p{font-size:11.5px; color:var(--text-muted); margin:0 0 10px;}
 
 /* ---------- Chips / badges ---------- */
 .chip{display:inline-flex; align-items:center; gap:5px; padding:3px 9px; border-radius:99px; font-size:11.5px; font-weight:500; border:1px solid var(--border); background:var(--surface-2); color:var(--text-muted); white-space:nowrap;}
@@ -10905,8 +10920,11 @@ function qualityClass(score) { if (score >= 80) return "q-high"; if (score >= 55
    localStorage otherwise (per-browser only — the UI says which). Same API. */
 const Store = (function () {
   let db = null, downloads = null, sampleFn = null, backend = "local";
-  let neon = false;                  // true once the Neon /api backend is hydrating this session
-  const _pending = {};               // key -> value awaiting a debounced push to /api/state
+  let neon = false;                  // true once a server backend is hydrating this session
+  let userBacked = false;            // true when that server backend is the cookie-session
+                                      // account-user route (/api/user-state) rather than the
+                                      // classic access-code Bearer route (/api/state)
+  const _pending = {};               // key -> value awaiting a debounced push to the backend
   let _pushTimer = null;
   function pushState(key, value) {
     if (!neon) return;
@@ -10915,7 +10933,7 @@ const Store = (function () {
     _pushTimer = setTimeout(() => {
       const batch = Object.assign({}, _pending);
       for (const k in _pending) delete _pending[k];
-      Backend.putState(batch);
+      (userBacked ? Backend.putUserState(batch) : Backend.putState(batch));
     }, 450);
   }
   let favorites = new Set();
@@ -10949,27 +10967,52 @@ const Store = (function () {
     } catch (e) { db = null; }
     session = lsGet("session", null);
 
-    // 1) Neon /api backend — the deployed source of truth. Only when this
-    //    session was redeemed through /api (session.backend) and a token exists.
+    // Shared by both server-backed paths below: apply a fetched state blob to
+    // the in-memory store and mirror it to localStorage so an offline reload
+    // still has data.
+    function hydrateFromState(st) {
+      favorites = new Set(Array.isArray(st.favorites) ? st.favorites : []);
+      const u = st.usage;
+      usage = u ? { counts: u.counts || {}, recent: u.recent || [], lastUsedTs: u.lastUsedTs || {} } : usage;
+      myPrompts = Array.isArray(st.myPrompts) ? st.myPrompts : [];
+      improvements = st.improvements && typeof st.improvements === "object" ? st.improvements : {};
+      feedback = st.feedback && typeof st.feedback === "object" ? st.feedback : {};
+      progress = st.progress ? Object.assign({ modulesTouched: {}, practice: [], learnedLessons: {} }, st.progress) : progress;
+      lsSet(nsKey("favorites"), Array.from(favorites));
+      lsSet(nsKey("usage"), usage); lsSet(nsKey("myPrompts"), myPrompts);
+      lsSet(nsKey("improvements"), improvements); lsSet(nsKey("feedback"), feedback);
+      lsSet(nsKey("progress"), progress);
+    }
+    const STATE_KEYS_ALL = ["favorites", "usage", "myPrompts", "improvements", "feedback", "progress"];
+
+    // 1) Classic access-code session (Bearer token from /api/session) — the
+    //    deployed source of truth for code-redeemed learners.
     if (typeof Backend !== "undefined" && Backend.isConfigured() && session && session.backend && Backend.hasSession()) {
-      const st = await Backend.getState(["favorites", "usage", "myPrompts", "improvements", "feedback", "progress"]);
+      const st = await Backend.getState(STATE_KEYS_ALL);
       if (st && st.__revoked) { return { backend: "revoked" }; }
       if (st) {
-        neon = true;
+        neon = true; userBacked = false;
         backend = "neon";
         db = null;   // Neon wins; don't also write to the claude-db capability
-        favorites = new Set(Array.isArray(st.favorites) ? st.favorites : []);
-        const u = st.usage;
-        usage = u ? { counts: u.counts || {}, recent: u.recent || [], lastUsedTs: u.lastUsedTs || {} } : usage;
-        myPrompts = Array.isArray(st.myPrompts) ? st.myPrompts : [];
-        improvements = st.improvements && typeof st.improvements === "object" ? st.improvements : {};
-        feedback = st.feedback && typeof st.feedback === "object" ? st.feedback : {};
-        progress = st.progress ? Object.assign({ modulesTouched: {}, practice: [], learnedLessons: {} }, st.progress) : progress;
-        // mirror to localStorage so an offline reload still has data
-        lsSet(nsKey("favorites"), Array.from(favorites));
-        lsSet(nsKey("usage"), usage); lsSet(nsKey("myPrompts"), myPrompts);
-        lsSet(nsKey("improvements"), improvements); lsSet(nsKey("feedback"), feedback);
-        lsSet(nsKey("progress"), progress);
+        hydrateFromState(st);
+        return { backend, hasSample: false, hasDownloads: false };
+      }
+      // backend configured but unreachable -> fall through to local cache below
+    }
+
+    // 1b) Account (email+password) session — cookie-authenticated, no Bearer
+    //    token. Was localStorage-only before /api/user-state existed (AUTH.md's
+    //    documented gap): a saved prompt / favorite didn't survive a new device
+    //    or cleared browser data. `session.user` + `session.subject` are set by
+    //    part_auth.js#applyUserSession on every successful sign-in.
+    if (typeof Backend !== "undefined" && Backend.isConfigured() && session && session.user && session.subject) {
+      const st = await Backend.getUserState(STATE_KEYS_ALL);
+      if (st && st.__revoked) { return { backend: "revoked" }; }
+      if (st) {
+        neon = true; userBacked = true;
+        backend = "neon";
+        db = null;
+        hydrateFromState(st);
         return { backend, hasSample: false, hasDownloads: false };
       }
       // backend configured but unreachable -> fall through to local cache below
@@ -11127,7 +11170,7 @@ const Store = (function () {
       pProg();
       if (typeof Backend !== "undefined") Backend.logActivity("practice", rec.scenarioId || null, { framework: rec.level, score: rec.score });
     },
-    flush() { if (neon && _pushTimer) { clearTimeout(_pushTimer); const b = Object.assign({}, _pending); for (const k in _pending) delete _pending[k]; return Backend.putState(b); } },
+    flush() { if (neon && _pushTimer) { clearTimeout(_pushTimer); const b = Object.assign({}, _pending); for (const k in _pending) delete _pending[k]; return (userBacked ? Backend.putUserState(b) : Backend.putState(b)); } },
   };
 })();
 
@@ -11672,14 +11715,43 @@ const Backend = (function () {
       try { await call("/state", { method: "PUT", body: { states }, token: sessionToken }); return true; }
       catch (e) { return false; }
     },
+    // ---- account-user (email+password) state sync — cookie session, no Bearer ----
+    // Same shape as getState/putState above but for a signed-in ACCOUNT user
+    // (part_auth.js's session.subject = 'user:'+id) rather than an access-code
+    // redemption. Hits /api/user-state (api/user-state.js), which reuses the
+    // same learner_state table keyed by that subject. Was the missing piece:
+    // account users' saved prompts/favorites previously lived in localStorage
+    // only (AUTH.md's documented gap) and were lost on a new device/browser.
+    async getUserState(keys) {
+      try { return await call("/user-state?keys=" + encodeURIComponent((keys || []).join(","))); }
+      catch (e) { if (e.status === 401) return { __revoked: true }; return null; }
+    },
+    async putUserState(states) {
+      if (!available) return false;
+      try { await call("/user-state", { method: "PUT", body: { states } }); return true; }
+      catch (e) { return false; }
+    },
+    // Works for BOTH auth modes transparently — callers never need to know
+    // which one is active. Bearer (access-code session) wins if present;
+    // otherwise falls back to the cookie-authenticated account-user route.
     logActivity(event, promptId, meta) {
-      if (!sessionToken || available === false || !BASE) return;
+      if (available === false || !BASE) return;
+      const body = JSON.stringify({ event, promptId: promptId || null, meta: meta || {} });
       try {
-        fetch(BASE + "/activity", {
-          method: "POST", keepalive: true,
-          headers: { "content-type": "application/json", authorization: "Bearer " + sessionToken },
-          body: JSON.stringify({ event, promptId: promptId || null, meta: meta || {} }),
-        }).catch(() => {});
+        if (sessionToken) {
+          fetch(BASE + "/activity", {
+            method: "POST", keepalive: true,
+            headers: { "content-type": "application/json", authorization: "Bearer " + sessionToken },
+            body,
+          }).catch(() => {});
+        } else {
+          const c = csrfCookie();
+          fetch(BASE + "/user-state", {
+            method: "POST", keepalive: true, credentials: "same-origin",
+            headers: Object.assign({ "content-type": "application/json" }, c ? { "x-csrf-token": decodeURIComponent(c) } : {}),
+            body,
+          }).catch(() => {});
+        }
       } catch (e) {}
     },
 
@@ -11791,6 +11863,40 @@ const Backend = (function () {
     async adminAudit(params) {
       const qs = new URLSearchParams(params || {});
       return call("/admin/audit?" + qs.toString(), { token: adminToken });
+    },
+
+    // ---- Prompt library curation (SUPER_ADMIN "Prompts" tab) ----
+    async adminPrompts(params) {
+      const qs = new URLSearchParams();
+      Object.entries(params || {}).forEach(([k, v]) => { if (v !== "" && v != null) qs.set(k, v); });
+      return call("/admin/prompts?" + qs.toString(), { token: adminToken });
+    },
+    async adminSavePrompt(body) {
+      const d = await call("/admin/prompts", { method: "POST", body, token: adminToken });
+      return d && d.prompt;
+    },
+    async adminDeletePrompt(id, opts) {
+      return call("/admin/prompts", { method: "POST", body: Object.assign({ action: "delete", id }, opts || {}), token: adminToken });
+    },
+    async adminImportPrompts(rows, commit) {
+      return call("/admin/prompts", { method: "POST", body: { action: "import", rows, commit: !!commit }, token: adminToken });
+    },
+    // Text download (csv | json); returns the raw string.
+    async adminPromptsExport(params) {
+      const qs = new URLSearchParams();
+      Object.entries(params || {}).forEach(([k, v]) => { if (v !== "" && v != null) qs.set(k, v); });
+      const headers = adminToken ? { authorization: "Bearer " + adminToken } : {};
+      const c = csrfCookie(); if (c) headers["x-csrf-token"] = decodeURIComponent(c);
+      const res = await fetch(BASE + "/admin/prompts?" + qs.toString(), { headers, credentials: "same-origin" });
+      if (!res.ok) { const e = new Error("export-" + res.status); e.status = res.status; throw e; }
+      return res.text();
+    },
+
+    // ---- public prompt delta (author-managed changes, merged at boot) ----
+    async publicPrompts() {
+      if (!BASE || available === false) return null;
+      try { return await call("/prompts"); }
+      catch (e) { return null; }
     },
   };
 })();
@@ -12010,6 +12116,7 @@ function accessCodeErrorText(err) {
     : err === "code-disabled" ? "That access code has been disabled."
     : err === "code-expired" ? "That access code has expired."
     : err === "code-exhausted" ? "That access code has reached its seat limit."
+    : err === "collection-disabled" ? "That library has been deactivated by your organisation."
     : err === "verify-email-first" ? "Confirm your email first, then add the code."
     : err === "missing-code" ? "Enter an access code."
     : "Couldn't apply that access code — try again.";
@@ -15231,6 +15338,9 @@ function renderAdminGate() {
       try {
         await Backend.adminLogin(key);
         try { sessionStorage.setItem("prompt-lib:admin-ok", "1"); } catch (e) {}
+        // The legacy ADMIN_SECRET key resolves to a full SUPER_ADMIN server-side
+        // (api/_session.js#requireAdmin) — mirror that for the UI role gate.
+        try { sessionStorage.setItem("prompt-lib:admin-role", "SUPER_ADMIN"); } catch (e) {}
         await AdminStore.init();
         openAdmin();
         return;
@@ -15383,6 +15493,7 @@ function renderAdminConsole() {
         <button class="tab-btn ${ADMIN_STATE.tab === "download" ? "active" : ""}" data-atab="download">Download prompts</button>
         ${(typeof Backend !== "undefined" && Backend.isConfigured() && Backend.adminAuthed()) ? `<button class="tab-btn ${ADMIN_STATE.tab === "functions" ? "active" : ""}" data-atab="functions">Function access</button>` : ""}
         ${(typeof Backend !== "undefined" && Backend.isConfigured() && Backend.adminAuthed()) ? `<button class="tab-btn ${ADMIN_STATE.tab === "collections" ? "active" : ""}" data-atab="collections">Collections</button>` : ""}
+        ${(typeof Backend !== "undefined" && Backend.isConfigured() && Backend.adminAuthed() && isSuperAdmin()) ? `<button class="tab-btn ${ADMIN_STATE.tab === "prompts" ? "active" : ""}" data-atab="prompts">Prompts</button>` : ""}
         ${(typeof Backend !== "undefined" && Backend.isConfigured() && Backend.adminAuthed()) ? `<button class="tab-btn ${ADMIN_STATE.tab === "users" ? "active" : ""}" data-atab="users">Users</button>` : ""}
         ${AdminStore.backend() === "neon" ? `<button class="tab-btn ${ADMIN_STATE.tab === "analytics" ? "active" : ""}" data-atab="analytics">Analytics</button>` : ""}
       </div>
@@ -15399,6 +15510,7 @@ function renderAdminConsole() {
   else if (ADMIN_STATE.tab === "edit") renderAdminEdit(body);
   else if (ADMIN_STATE.tab === "functions") renderAdminFunctions(body);
   else if (ADMIN_STATE.tab === "collections") renderAdminCollections(body);
+  else if (ADMIN_STATE.tab === "prompts") renderAdminPrompts(body);
   else if (ADMIN_STATE.tab === "users") renderAdminUsers(body);
   else if (ADMIN_STATE.tab === "analytics") renderAdminAnalytics(body);
   else renderAdminDownload(body);
@@ -15595,7 +15707,13 @@ function renderAdminCollections(body) {
       if (!d.categoryIds.length && !d.programIds.length && !d.promptIds.length) { showToast("Pick at least one category, program or prompt"); return; }
       const btn = body.querySelector("#col-save"); btn.disabled = true; btn.textContent = "Saving…";
       Backend.adminSaveCollection(d).then(() => { showToast("Collection saved"); st.editing = null; load(); })
-        .catch(() => { btn.disabled = false; btn.textContent = d.id ? "Save changes" : "Create collection"; showToast("Couldn't save to the server"); });
+        .catch((e) => {
+          btn.disabled = false; btn.textContent = d.id ? "Save changes" : "Create collection";
+          const err = e && (e.message || (e.data && e.data.error));
+          showToast(err === "schema-out-of-date"
+            ? "Server database is behind — run: npm run migrate:v3"
+            : "Couldn't save: " + (err || "server error"));
+        });
     });
     const del = body.querySelector("#col-del");
     if (del) del.addEventListener("click", () => {
@@ -15660,6 +15778,380 @@ function renderAdminCollections(body) {
         expiresAt: body.querySelector("#cc-exp").value || undefined,
       }).then((code) => { showToast("Generated " + (code && code.code)); load(); })
         .catch(() => { btn.disabled = false; btn.textContent = "Generate code"; showToast("Couldn't generate on the server"); });
+    });
+  }
+
+  load();
+}
+
+/* ---------- Prompts: SUPER_ADMIN library curation (add / edit / archive /
+   hard-delete + bulk CSV/JSON import & export). Writes hit /api/admin/prompts;
+   the running app merges the delta via /api/prompts at boot. ---------------- */
+const PROMPT_IMPORT_COLS = ["id", "title", "category", "role", "useCase", "description",
+  "originalPrompt", "promptType", "difficulty", "variables", "tags", "lifecycle"];
+const PROMPT_LIFECYCLES_UI = ["Draft", "Curated", "Recommended", "Review", "Archived"];
+const PROMPT_DIFFICULTIES_UI = ["Beginner", "Intermediate", "Advanced"];
+
+function promptCategoryNames() {
+  const c = (typeof CATEGORIES !== "undefined" && CATEGORIES.length)
+    ? CATEGORIES.map((x) => x.name || x) : [];
+  return c.slice().sort();
+}
+function splitList(s) {
+  return String(s || "").split(/[|,\n]/).map((x) => x.trim()).filter(Boolean);
+}
+// Minimal RFC-4180-ish CSV parser (quoted fields, embedded commas/newlines).
+function parseCsv(text) {
+  const rows = []; let row = []; let val = ""; let q = false;
+  text = String(text || "").replace(/^﻿/, "");
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) {
+      if (c === '"' && text[i + 1] === '"') { val += '"'; i++; }
+      else if (c === '"') q = false;
+      else val += c;
+    } else if (c === '"') q = true;
+    else if (c === ",") { row.push(val); val = ""; }
+    else if (c === "\n" || c === "\r") {
+      if (c === "\r" && text[i + 1] === "\n") i++;
+      row.push(val); val = ""; rows.push(row); row = [];
+    } else val += c;
+  }
+  if (val !== "" || row.length) { row.push(val); rows.push(row); }
+  const nonEmpty = rows.filter((r) => r.some((x) => String(x).trim() !== ""));
+  if (!nonEmpty.length) return [];
+  const head = nonEmpty[0].map((h) => h.trim());
+  return nonEmpty.slice(1).map((r) => {
+    const o = {};
+    head.forEach((h, i) => { o[h] = r[i] != null ? r[i] : ""; });
+    if (o.variables !== undefined) o.variables = splitList(o.variables);
+    if (o.tags !== undefined) o.tags = splitList(o.tags);
+    return o;
+  });
+}
+function readPromptFile(file) {
+  return new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onerror = () => reject(new Error("read-failed"));
+    fr.onload = () => {
+      const txt = String(fr.result || "");
+      try {
+        if (/\.json$/i.test(file.name) || txt.trim().startsWith("[") || txt.trim().startsWith("{")) {
+          const j = JSON.parse(txt);
+          resolve(Array.isArray(j) ? j : (j.prompts || [j]));
+        } else {
+          resolve(parseCsv(txt));
+        }
+      } catch (e) { reject(new Error("parse-failed")); }
+    };
+    fr.readAsText(file);
+  });
+}
+
+function renderAdminPrompts(body) {
+  if (typeof isSuperAdmin === "function" && !isSuperAdmin()) {
+    body.innerHTML = emptyStateHtml("lock", "SUPER_ADMIN only", "Prompt library curation is restricted to super administrators.");
+    return;
+  }
+  const st = ADMIN_STATE.prompts || (ADMIN_STATE.prompts = {
+    list: null, total: 0, page: 0, pageSize: 50,
+    f: { q: "", category: "", role: "", source: "", lifecycle: "", origin: "" },
+    editing: null, imp: null,
+  });
+
+  const query = () => Object.assign({ page: st.page, pageSize: st.pageSize }, st.f);
+  const load = () => {
+    const tb = body.querySelector("#pr-tbody");
+    if (tb) tb.innerHTML = `<tr><td colspan="8"><div class="skel" style="height:80px;"></div></td></tr>`;
+    return Backend.adminPrompts(query()).then((d) => {
+      st.list = (d && d.prompts) || []; st.total = (d && d.total) || 0; paint();
+    }).catch((e) => {
+      const err = e && (e.message || (e.data && e.data.error));
+      body.innerHTML = emptyStateHtml("alert",
+        err === "schema-out-of-date" ? "Server database is behind" : "Couldn't load prompts",
+        err === "schema-out-of-date" ? "Run: npm run migrate:v3" : "Try again in a moment.");
+    });
+  };
+
+  function paint() {
+    if (st.editing) return paintEditor();
+    if (st.imp) return paintImport();
+    const rows = st.list || [];
+    const cats = promptCategoryNames();
+    const pages = Math.max(1, Math.ceil(st.total / st.pageSize));
+    body.innerHTML = `
+      <p class="prose" style="color:var(--text-muted);max-width:720px;margin:6px 0 14px;">
+        Add, edit and retire prompts in the shared library. Changes are saved to the database and
+        the learner app picks them up on next load — run <code>python3 src/build.py</code> to bake
+        them into <code>index.html</code> permanently.
+      </p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 12px;">
+        <input type="search" id="pr-q" placeholder="Search title / prompt text…" value="${escapeHtml(st.f.q)}" style="min-width:220px;flex:1;"/>
+        <select id="pr-cat"><option value="">All categories</option>${cats.map((c) => `<option ${st.f.category === c ? "selected" : ""}>${escapeHtml(c)}</option>`).join("")}</select>
+        <select id="pr-origin"><option value="">Any origin</option>${["authored", "excel", "curriculum"].map((o) => `<option ${st.f.origin === o ? "selected" : ""}>${o}</option>`).join("")}</select>
+        <select id="pr-lc"><option value="">Any lifecycle</option>${PROMPT_LIFECYCLES_UI.map((o) => `<option ${st.f.lifecycle === o ? "selected" : ""}>${o}</option>`).join("")}</select>
+        <input type="text" id="pr-role" placeholder="Role contains…" value="${escapeHtml(st.f.role)}" style="width:150px;"/>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px;">
+        <button class="btn btn-primary btn-sm" id="pr-new">${icon("plus")} Add prompt</button>
+        <button class="btn btn-sm" id="pr-import">Import CSV / JSON</button>
+        <button class="btn btn-sm" id="pr-exp-csv">${icon("download")} CSV</button>
+        <button class="btn btn-sm" id="pr-exp-json">${icon("download")} JSON</button>
+        <button class="btn btn-sm" id="pr-exp-xlsx">${icon("download")} XLSX</button>
+        <div style="flex:1;"></div>
+        <button class="btn btn-ghost btn-sm" id="pr-tmpl-csv">Template .csv</button>
+        <button class="btn btn-ghost btn-sm" id="pr-tmpl-json">Template .json</button>
+      </div>
+      <div style="overflow-x:auto;">
+      <table class="admin-table">
+        <thead><tr><th>Title</th><th>Category</th><th>Role</th><th>Origin</th><th>Lifecycle</th><th>Updated</th><th></th></tr></thead>
+        <tbody id="pr-tbody">
+          ${rows.length ? rows.map((p) => `<tr>
+            <td style="max-width:340px;"><b>${escapeHtml(p.title || "—")}</b><div style="color:var(--text-faint);font-size:11px;">${escapeHtml(p.id)}</div></td>
+            <td>${escapeHtml(p.category || "—")}</td>
+            <td>${escapeHtml(p.role || "—")}</td>
+            <td><span class="chip">${escapeHtml(p.origin || "excel")}</span></td>
+            <td>${escapeHtml(p.lifecycle || "—")}</td>
+            <td style="white-space:nowrap;color:var(--text-faint);font-size:12px;">${p.updatedAt ? auTimeAgo(p.updatedAt) : "—"}</td>
+            <td style="white-space:nowrap;">
+              <button class="btn btn-sm btn-ghost" data-pedit="${escapeHtml(p.id)}" title="Edit">${icon("slider")} Edit</button>
+              ${p.lifecycle === "Archived"
+                ? `<button class="btn btn-sm btn-ghost" data-prestore="${escapeHtml(p.id)}" title="Restore">Restore</button>`
+                : `<button class="btn btn-sm btn-ghost" data-parch="${escapeHtml(p.id)}" title="Archive">Archive</button>`}
+              <button class="btn btn-sm btn-ghost" data-pdel="${escapeHtml(p.id)}" title="Delete permanently">Delete</button>
+            </td></tr>`).join("") : `<tr><td colspan="7" style="color:var(--text-faint);padding:18px;">No prompts match.</td></tr>`}
+        </tbody>
+      </table></div>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:12px;color:var(--text-muted);font-size:12.5px;">
+        <button class="btn btn-sm" id="pr-prev" ${st.page <= 0 ? "disabled" : ""}>← Prev</button>
+        <span>Page ${st.page + 1} / ${pages} · ${st.total.toLocaleString()} prompts</span>
+        <button class="btn btn-sm" id="pr-next" ${st.page + 1 >= pages ? "disabled" : ""}>Next →</button>
+      </div>`;
+
+    const deb = (fn) => { let t; return () => { clearTimeout(t); t = setTimeout(fn, 350); }; };
+    const applyFilters = () => {
+      st.f.q = body.querySelector("#pr-q").value.trim();
+      st.f.category = body.querySelector("#pr-cat").value;
+      st.f.origin = body.querySelector("#pr-origin").value;
+      st.f.lifecycle = body.querySelector("#pr-lc").value;
+      st.f.role = body.querySelector("#pr-role").value.trim();
+      st.page = 0; load();
+    };
+    body.querySelector("#pr-q").addEventListener("input", deb(applyFilters));
+    body.querySelector("#pr-role").addEventListener("input", deb(applyFilters));
+    ["#pr-cat", "#pr-origin", "#pr-lc"].forEach((s) => body.querySelector(s).addEventListener("change", applyFilters));
+    body.querySelector("#pr-prev").addEventListener("click", () => { if (st.page > 0) { st.page--; load(); } });
+    body.querySelector("#pr-next").addEventListener("click", () => { st.page++; load(); });
+    body.querySelector("#pr-new").addEventListener("click", () => {
+      st.editing = { id: null, title: "", category: cats[0] || "General", role: "", useCase: "",
+        description: "", originalPrompt: "", promptType: "Reusable Prompt", difficulty: "",
+        lifecycle: "Curated", variables: "", tags: "" };
+      paint();
+    });
+    body.querySelectorAll("[data-pedit]").forEach((b) => b.addEventListener("click", () => {
+      const p = st.list.find((x) => x.id === b.dataset.pedit); if (!p) return;
+      st.editing = {
+        id: p.id, title: p.title || "", category: p.category || cats[0], role: p.role || "",
+        useCase: p.useCase || "", description: p.description || "", originalPrompt: p.originalPrompt || "",
+        promptType: p.promptType || "Reusable Prompt", difficulty: p.difficulty || "",
+        lifecycle: p.lifecycle || "Curated", origin: p.origin,
+        variables: (p.variables || []).join(", "), tags: (p.tags || []).join(", "),
+      };
+      paint();
+    }));
+    body.querySelectorAll("[data-parch]").forEach((b) => b.addEventListener("click", () => {
+      Backend.adminDeletePrompt(b.dataset.parch, {}).then(() => { showToast("Archived"); load(); })
+        .catch((e) => showToast("Couldn't archive: " + (e && e.message || "error")));
+    }));
+    body.querySelectorAll("[data-prestore]").forEach((b) => b.addEventListener("click", () => {
+      Backend.adminSavePrompt({ action: "update", id: b.dataset.prestore, patch: { lifecycle: "Curated" } })
+        .then(() => { showToast("Restored"); load(); }).catch((e) => showToast("Couldn't restore"));
+    }));
+    body.querySelectorAll("[data-pdel]").forEach((b) => b.addEventListener("click", () => {
+      if (!confirm("Permanently delete this prompt? This cannot be undone. (Only author-managed prompts can be hard-deleted.)")) return;
+      Backend.adminDeletePrompt(b.dataset.pdel, { hard: true, confirm: true }).then(() => { showToast("Deleted"); load(); })
+        .catch((e) => showToast(e && e.data && e.data.error === "hard-delete-authored-only"
+          ? "Only 'authored' prompts can be hard-deleted — archive this one instead." : "Couldn't delete"));
+    }));
+    body.querySelector("#pr-import").addEventListener("click", () => { st.imp = { stage: "pick" }; paint(); });
+    const dl = (text, name, type) => {
+      const blob = new Blob([text], { type });
+      const u = URL.createObjectURL(blob); const a = document.createElement("a");
+      a.href = u; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(u), 1000);
+    };
+    const expName = (ext) => `prompts-export-${new Date().toISOString().slice(0, 10)}.${ext}`;
+    body.querySelector("#pr-exp-csv").addEventListener("click", () => {
+      Backend.adminPromptsExport(Object.assign({ format: "csv" }, st.f))
+        .then((t) => dl(t, expName("csv"), "text/csv")).catch(() => showToast("Export failed"));
+    });
+    body.querySelector("#pr-exp-json").addEventListener("click", () => {
+      Backend.adminPromptsExport(Object.assign({ format: "json" }, st.f))
+        .then((t) => dl(t, expName("json"), "application/json")).catch(() => showToast("Export failed"));
+    });
+    body.querySelector("#pr-exp-xlsx").addEventListener("click", () => {
+      Backend.adminPromptsExport(Object.assign({ format: "json" }, st.f)).then((t) => {
+        const recs = JSON.parse(t);
+        const headers = PROMPT_IMPORT_COLS.concat(["source", "origin"]);
+        const rows = recs.map((r) => headers.map((h) => {
+          const v = h === "variables" ? (r.variables || []).join(" | ") : h === "tags" ? (r.tags || []).join(" | ") : r[h];
+          return v == null ? "" : String(v);
+        }));
+        const blob = buildXlsx(headers, rows, "Prompts");
+        const u = URL.createObjectURL(blob); const a = document.createElement("a");
+        a.href = u; a.download = expName("xlsx"); document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(u), 1000);
+      }).catch(() => showToast("Export failed"));
+    });
+    body.querySelector("#pr-tmpl-csv").addEventListener("click", () => {
+      Backend.adminPromptsExport({ template: "csv" }).then((t) => dl(t, "prompts-template.csv", "text/csv")).catch(() => showToast("Failed"));
+    });
+    body.querySelector("#pr-tmpl-json").addEventListener("click", () => {
+      Backend.adminPromptsExport({ template: "json" }).then((t) => dl(t, "prompts-template.json", "application/json")).catch(() => showToast("Failed"));
+    });
+  }
+
+  function paintEditor() {
+    const d = st.editing;
+    const cats = promptCategoryNames();
+    const fw = (typeof deriveFrameworkLevel === "function")
+      ? (deriveFrameworkLevel({ originalPrompt: d.originalPrompt || "" }).frameworkLevel) : null;
+    body.innerHTML = `
+      <div style="max-width:820px;">
+        <button class="btn btn-ghost btn-sm" id="pr-back" style="margin-bottom:10px;">← All prompts</button>
+        <h2 style="font-size:18px;margin:0 0 12px;">${d.id ? "Edit prompt" : "Add prompt"}${d.id ? ` <span style="color:var(--text-faint);font-size:12px;font-weight:400;">${escapeHtml(d.id)} · ${escapeHtml(d.origin || "authored")}</span>` : ""}</h2>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+          <div class="form-field"><label>Title *</label><input type="text" id="pf-title" value="${escapeHtml(d.title)}" maxlength="300"/></div>
+          <div class="form-field"><label>Category *</label><select id="pf-cat">${cats.map((c) => `<option ${d.category === c ? "selected" : ""}>${escapeHtml(c)}</option>`).join("")}</select></div>
+          <div class="form-field"><label>Role</label><input type="text" id="pf-role" value="${escapeHtml(d.role)}"/></div>
+          <div class="form-field"><label>Use case</label><input type="text" id="pf-uc" value="${escapeHtml(d.useCase)}"/></div>
+          <div class="form-field"><label>Prompt type</label><input type="text" id="pf-type" value="${escapeHtml(d.promptType)}"/></div>
+          <div class="form-field"><label>Difficulty <span style="color:var(--text-faint);font-weight:400;">— blank = auto</span></label>
+            <select id="pf-diff"><option value="">— auto —</option>${PROMPT_DIFFICULTIES_UI.map((x) => `<option ${d.difficulty === x ? "selected" : ""}>${x}</option>`).join("")}</select></div>
+          <div class="form-field"><label>Lifecycle</label>
+            <select id="pf-lc">${PROMPT_LIFECYCLES_UI.map((x) => `<option ${d.lifecycle === x ? "selected" : ""}>${x}</option>`).join("")}</select></div>
+          <div class="form-field"><label>Framework level <span style="color:var(--text-faint);font-weight:400;">— auto-detected</span></label>
+            <input type="text" id="pf-fw" value="${fw ? "Level " + fw : "—"}" readonly style="background:var(--surface-2);"/></div>
+        </div>
+        <div class="form-field"><label>Description</label><textarea id="pf-desc" rows="2">${escapeHtml(d.description)}</textarea></div>
+        <div class="form-field"><label>Original prompt *</label><textarea id="pf-prompt" rows="10" style="font-family:var(--font-mono);font-size:12.5px;">${escapeHtml(d.originalPrompt)}</textarea></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+          <div class="form-field"><label>Variables <span style="color:var(--text-faint);font-weight:400;">— comma / newline</span></label><textarea id="pf-vars" rows="2">${escapeHtml(d.variables)}</textarea></div>
+          <div class="form-field"><label>Tags <span style="color:var(--text-faint);font-weight:400;">— comma / newline</span></label><textarea id="pf-tags" rows="2">${escapeHtml(d.tags)}</textarea></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          <button class="btn btn-primary" id="pf-save">${d.id ? "Save changes" : "Create prompt"}</button>
+          <button class="btn" id="pf-cancel">Cancel</button>
+        </div>
+      </div>`;
+    const readForm = () => ({
+      title: body.querySelector("#pf-title").value.trim(),
+      category: body.querySelector("#pf-cat").value,
+      role: body.querySelector("#pf-role").value.trim(),
+      useCase: body.querySelector("#pf-uc").value.trim(),
+      description: body.querySelector("#pf-desc").value.trim(),
+      originalPrompt: body.querySelector("#pf-prompt").value.trim(),
+      promptType: body.querySelector("#pf-type").value.trim(),
+      difficulty: body.querySelector("#pf-diff").value,
+      lifecycle: body.querySelector("#pf-lc").value,
+      variables: splitList(body.querySelector("#pf-vars").value),
+      tags: splitList(body.querySelector("#pf-tags").value),
+    });
+    body.querySelector("#pf-prompt").addEventListener("input", () => {
+      const lvl = (typeof deriveFrameworkLevel === "function")
+        ? deriveFrameworkLevel({ originalPrompt: body.querySelector("#pf-prompt").value }).frameworkLevel : null;
+      body.querySelector("#pf-fw").value = lvl ? "Level " + lvl : "—";
+    });
+    body.querySelector("#pr-back").addEventListener("click", () => { st.editing = null; paint(); });
+    body.querySelector("#pf-cancel").addEventListener("click", () => { st.editing = null; paint(); });
+    body.querySelector("#pf-save").addEventListener("click", () => {
+      const f = readForm();
+      if (f.title.length < 3) return showToast("Give the prompt a title");
+      if (f.originalPrompt.length < 10) return showToast("Add the prompt text");
+      const btn = body.querySelector("#pf-save"); btn.disabled = true; btn.textContent = "Saving…";
+      const payload = d.id
+        ? { action: "update", id: d.id, patch: f, allowExcel: true }
+        : { action: "create", prompt: f };
+      Backend.adminSavePrompt(payload).then(() => { showToast("Prompt saved"); st.editing = null; load(); })
+        .catch((e) => {
+          btn.disabled = false; btn.textContent = d.id ? "Save changes" : "Create prompt";
+          const err = e && (e.message || (e.data && e.data.error));
+          showToast(err === "duplicate" ? "A prompt with this title + category already exists"
+            : err === "schema-out-of-date" ? "Server database is behind — run npm run migrate:v3"
+            : "Couldn't save: " + (err || "error"));
+        });
+    });
+  }
+
+  function paintImport() {
+    const imp = st.imp;
+    if (imp.stage === "pick") {
+      body.innerHTML = `
+        <button class="btn btn-ghost btn-sm" id="pi-back" style="margin-bottom:10px;">← All prompts</button>
+        <h2 style="font-size:18px;margin:0 0 8px;">Bulk import</h2>
+        <p class="prose" style="color:var(--text-muted);max-width:640px;">
+          Upload a <b>.csv</b> or <b>.json</b> file. Columns: <code>${PROMPT_IMPORT_COLS.join(", ")}</code>.
+          Rows are matched by <code>id</code>, else by normalised <code>title</code> + <code>category</code>
+          (idempotent — re-importing the same file makes no duplicates). You'll see a preview before anything is written.
+        </p>
+        <input type="file" id="pi-file" accept=".csv,.json,text/csv,application/json" style="margin:12px 0;"/>
+        <div id="pi-err" style="color:var(--danger);font-size:13px;"></div>`;
+      body.querySelector("#pi-back").addEventListener("click", () => { st.imp = null; paint(); });
+      body.querySelector("#pi-file").addEventListener("change", async (e) => {
+        const file = e.target.files[0]; if (!file) return;
+        body.querySelector("#pi-err").textContent = "";
+        let rows;
+        try { rows = await readPromptFile(file); }
+        catch (err) { body.querySelector("#pi-err").textContent = "Couldn't parse that file."; return; }
+        if (!rows.length) { body.querySelector("#pi-err").textContent = "No rows found in that file."; return; }
+        imp.rows = rows; imp.stage = "loading"; paint();
+        Backend.adminImportPrompts(rows, false).then((d) => { imp.result = d; imp.stage = "preview"; paint(); })
+          .catch((err) => { imp.stage = "pick"; paint();
+            showToast("Preview failed: " + (err && err.message || "error")); });
+      });
+      return;
+    }
+    if (imp.stage === "loading") {
+      body.innerHTML = `<div class="skel" style="height:120px;"></div>`;
+      return;
+    }
+    // preview
+    const r = imp.result || { counts: {}, preview: [] };
+    const c = r.counts || {};
+    body.innerHTML = `
+      <button class="btn btn-ghost btn-sm" id="pi-back" style="margin-bottom:10px;">← Cancel import</button>
+      <h2 style="font-size:18px;margin:0 0 8px;">Import preview — ${(imp.rows || []).length} rows</h2>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+        <span class="chip chip-accent">${c.new || 0} new</span>
+        <span class="chip">${c.update || 0} update</span>
+        <span class="chip">${(c["duplicate-in-file"] || 0)} dupe in file</span>
+        <span class="chip" style="color:var(--danger);">${c.invalid || 0} invalid</span>
+      </div>
+      <div style="overflow-x:auto;max-height:420px;overflow-y:auto;">
+      <table class="admin-table">
+        <thead><tr><th>#</th><th>Status</th><th>Title</th><th>Category</th><th>Reason</th></tr></thead>
+        <tbody>${(r.preview || []).map((p) => `<tr>
+          <td>${p.index + 1}</td>
+          <td><span class="chip ${p.status === "invalid" ? "" : "chip-accent"}">${escapeHtml(p.status)}</span></td>
+          <td style="max-width:340px;">${escapeHtml(p.title || "—")}</td>
+          <td>${escapeHtml(p.category || "—")}</td>
+          <td style="color:var(--text-faint);">${escapeHtml(p.reason || "")}</td>
+        </tr>`).join("")}</tbody>
+      </table></div>
+      <div style="display:flex;gap:8px;margin-top:12px;">
+        <button class="btn btn-primary" id="pi-commit" ${(c.new || 0) + (c.update || 0) === 0 ? "disabled" : ""}>Commit ${(c.new || 0) + (c.update || 0)} change(s)</button>
+        <button class="btn" id="pi-cancel">Cancel</button>
+      </div>`;
+    const back = () => { st.imp = null; paint(); };
+    body.querySelector("#pi-back").addEventListener("click", back);
+    body.querySelector("#pi-cancel").addEventListener("click", back);
+    body.querySelector("#pi-commit").addEventListener("click", () => {
+      const btn = body.querySelector("#pi-commit"); btn.disabled = true; btn.textContent = "Importing…";
+      Backend.adminImportPrompts(imp.rows, true).then((d) => {
+        const cc = d.counts || {};
+        showToast(`Imported: ${cc.new || 0} new, ${cc.update || 0} updated`);
+        st.imp = null; st.page = 0; load();
+      }).catch((e) => { btn.disabled = false; btn.textContent = "Commit"; showToast("Import failed: " + (e && e.message || "error")); });
     });
   }
 
@@ -16267,6 +16759,41 @@ function renderAdminUsers(body) {
     body.innerHTML = `<button class="btn btn-ghost btn-sm" id="dr-back" style="margin-bottom:10px;">← All users</button><div id="dr-body"><div class="skel" style="height:200px;"></div></div>`;
     body.querySelector("#dr-back").addEventListener("click", () => { st.drawer = null; load(); });
     const target = body.querySelector("#dr-body");
+    // Per-action button labels: [in-flight label, confirm prompt|null, success toast, style class].
+    // Centralising this makes every action consistent — clicking anything gives
+    // immediate feedback (disabled + busy label), a specific success message
+    // instead of a generic "Done", and a confirmation only where the action
+    // actually reduces access or removes data.
+    const UA_META = {
+      suspend: { busy: "Suspending…", confirm: "Suspend this account? They'll lose access until reactivated.", done: "Account suspended" },
+      reactivate: { busy: "Reactivating…", confirm: null, done: "Account reactivated" },
+      disable: { busy: "Disabling…", confirm: "Disable this account? They will not be able to sign in.", done: "Account disabled" },
+      resend_verification: { busy: "Sending…", confirm: null, done: "Verification email sent" },
+      force_verify: { busy: "Verifying…", confirm: "Mark this email verified without them clicking the link?", done: "Email marked verified" },
+      send_reset: { busy: "Sending…", confirm: null, done: "Password reset email sent" },
+      revoke_sessions: { busy: "Revoking…", confirm: "Sign this user out of every device? They'll need to sign in again.", done: "Sessions revoked" },
+    };
+    const ENT_META = {
+      suspend: { busy: "Suspending…", confirm: "Suspend this entitlement? Their library access pauses immediately.", done: "Entitlement suspended" },
+      expire: { busy: "Expiring…", confirm: "Expire this entitlement now?", done: "Entitlement expired" },
+      revoke: { busy: "Revoking…", confirm: "Revoke this entitlement? This removes their library access.", done: "Entitlement revoked" },
+      reactivate: { busy: "Reactivating…", confirm: null, done: "Entitlement reactivated" },
+    };
+    // Runs an async action through one button: confirms if needed, disables +
+    // relabels the button while in flight (so a second click can't double-fire
+    // and the click always has a visible, immediate effect), shows a toast that
+    // names what happened, then re-renders. Restores the button on failure —
+    // success re-renders the whole drawer anyway, so nothing is left stuck.
+    function runAction(btn, meta, run) {
+      if (meta.confirm && !confirm(meta.confirm)) return;
+      const orig = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = meta.busy;
+      run()
+        .then(() => { showToast(meta.done); paintDrawer(); })
+        .catch(() => { showToast("Couldn't complete that — try again."); btn.disabled = false; btn.textContent = orig; });
+    }
+
     Promise.all([
       Backend.adminUser(uid),
       Backend.adminEntitlement(uid).catch(() => ({ history: [], enrollments: [] })),
@@ -16275,62 +16802,92 @@ function renderAdminUsers(body) {
       const u = d.user, a = d.access || {}, acc = a.access || {};
       const feats = a.features || {};
       const grantedN = Object.values(feats).filter(Boolean).length;
-      const act = (action, extra, confirmMsg) => {
-        if (confirmMsg && !confirm(confirmMsg)) return;
-        Backend.adminUserAction(uid, action, extra).then(() => { showToast("Done"); paintDrawer(); }).catch(() => showToast("Action failed"));
-      };
-      const entAct = (action) => Backend.adminEntitlementAction({ action, userId: uid }).then(() => { showToast(action); paintDrawer(); }).catch(() => showToast("Failed"));
+      const scopeExplain = {
+        full: "sees the whole library", function: "sees only their function's categories",
+        program: "sees only their program's categories", collection: "sees only a curated collection",
+        none: "has no library access yet",
+      }[acc.scopeType] || "no scope set";
       target.innerHTML = `
         <div class="section-title" style="margin-bottom:4px;"><h2 style="font-size:18px;">${escapeHtml(([u.firstName, u.lastName].filter(Boolean).join(" ")) || u.email)}</h2>
-          <span class="chip ${u.accountStatus === "active" ? "chip-accent" : ""}">${escapeHtml((u.accountStatus || "").replace("_", " "))}</span></div>
+          <span class="chip ${u.accountStatus === "active" ? "chip-accent" : u.accountStatus === "suspended" || u.accountStatus === "disabled" ? "chip-warn" : ""}">${escapeHtml((u.accountStatus || "").replace("_", " "))}</span></div>
         <div style="color:var(--text-muted);font-size:12.5px;margin-bottom:14px;">${escapeHtml(u.email)} ${u.emailVerified ? "· verified" : "· <b>unverified</b>"} · ${escapeHtml(u.organization || "no org")} · joined ${u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "—"}</div>
 
-        <div class="admin-drawer-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
-          <div>
-            <h3 style="font-size:13px;margin:0 0 6px;">Profile</h3>
-            <div class="auth-2col"><div class="form-field"><label>First</label><input id="dr-first" value="${escapeHtml(u.firstName || "")}"/></div><div class="form-field"><label>Last</label><input id="dr-last" value="${escapeHtml(u.lastName || "")}"/></div></div>
-            <div class="auth-2col">
-              <div class="form-field"><label>Function</label><select id="dr-role">${AU_FUNCTIONS.map((f) => `<option value="${f[0]}" ${u.role === f[0] ? "selected" : ""}>${escapeHtml(f[1])}</option>`).join("")}</select></div>
-              <div class="form-field"><label>AI level</label><select id="dr-level">${AU_LEVELS.map((l) => `<option ${u.aiLevel === l ? "selected" : ""}>${l}</option>`).join("")}</select></div>
-            </div>
-            <div class="form-field"><label>Organisation</label><input id="dr-org" value="${escapeHtml(u.organization || "")}"/></div>
-            <button class="btn btn-sm btn-primary" id="dr-save-profile">Save profile</button>
+        <div class="admin-section">
+          <h3>Profile</h3>
+          <div class="auth-2col"><div class="form-field"><label>First</label><input id="dr-first" value="${escapeHtml(u.firstName || "")}"/></div><div class="form-field"><label>Last</label><input id="dr-last" value="${escapeHtml(u.lastName || "")}"/></div></div>
+          <div class="auth-2col">
+            <div class="form-field"><label>Function</label><select id="dr-role">${AU_FUNCTIONS.map((f) => `<option value="${f[0]}" ${u.role === f[0] ? "selected" : ""}>${escapeHtml(f[1])}</option>`).join("")}</select></div>
+            <div class="form-field"><label>AI level</label><select id="dr-level">${AU_LEVELS.map((l) => `<option ${u.aiLevel === l ? "selected" : ""}>${l}</option>`).join("")}</select></div>
           </div>
-          <div>
-            <h3 style="font-size:13px;margin:0 0 6px;">Access</h3>
-            <div style="font-size:12.5px;color:var(--text-muted);margin-bottom:8px;">
-              scope <b>${escapeHtml(acc.scopeType || "none")}</b> · ${acc.active ? "active" : "inactive"} · source ${escapeHtml(acc.source || "—")}<br>
-              ${grantedN} feature${grantedN === 1 ? "" : "s"} granted · ${(acc.categoryIds || []).length} categories · ${(acc.programIds === "*" ? "all" : (acc.programIds || []).length)} programs
+          <div class="form-field"><label>Organisation</label><input id="dr-org" value="${escapeHtml(u.organization || "")}"/></div>
+          <button class="btn btn-sm btn-primary" id="dr-save-profile">Save profile</button>
+        </div>
+
+        <div class="admin-section" style="margin-top:14px;">
+          <h3>Access — site-level entitlement</h3>
+          <div style="font-size:12.5px;color:var(--text-muted);margin-bottom:2px;">
+            <span class="chip ${acc.active ? "chip-accent" : "chip-warn"}">${escapeHtml(acc.scopeType || "none")}</span> ${acc.active ? "active" : "inactive"} · granted via ${escapeHtml((acc.source || "—").replace("_", " "))}${acc.licenseType ? ` · ${escapeHtml(acc.licenseType)} licence` : ""}${acc.expiresAt ? ` · expires ${new Date(acc.expiresAt).toLocaleDateString()}` : ""}
+          </div>
+          <div class="admin-help">${escapeHtml(scopeExplain)} · ${grantedN} feature${grantedN === 1 ? "" : "s"} enabled</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;">
+            <button class="btn btn-sm" id="dr-align">Align to function</button>
+            <button class="btn btn-sm btn-warn" data-ent="suspend">Suspend ent.</button>
+            <button class="btn btn-sm btn-warn" data-ent="expire">Expire</button>
+            <button class="btn btn-sm btn-danger" data-ent="revoke">Revoke</button>
+            <button class="btn btn-sm" data-ent="reactivate">Reactivate</button>
+          </div>
+
+          <div class="admin-help" style="margin:14px 0 4px;">Replace their entire access grant — pick exactly which categories and programs this user can browse:</div>
+          <div class="auth-2col">
+            <div class="form-field"><label>Scope type</label>
+              <select id="dr-assign-scope" aria-label="New scope">
+                ${[["full", "full — whole library"], ["function", "function — categories below"],
+                   ["collection", "collection — categories below"], ["program", "program — programs below"],
+                   ["none", "none — no access"]].map(([v, label]) =>
+                  `<option value="${v}" ${(acc.scopeType || "none") === v ? "selected" : ""}>${label}</option>`).join("")}
+              </select>
             </div>
-            <div style="display:flex;gap:6px;flex-wrap:wrap;">
-              <button class="btn btn-sm" id="dr-align">Align to function</button>
-              <button class="btn btn-sm btn-ghost" data-ent="suspend">Suspend ent.</button>
-              <button class="btn btn-sm btn-ghost" data-ent="expire">Expire</button>
-              <button class="btn btn-sm btn-ghost" data-ent="revoke">Revoke</button>
-              <button class="btn btn-sm btn-ghost" data-ent="reactivate">Reactivate</button>
+            <div class="form-field"><label>Licence</label>
+              <select id="dr-assign-license" aria-label="Licence type">
+                ${["standard", "premium", "trial", "enterprise"].map((l) => `<option value="${l}" ${(acc.licenseType || "standard") === l ? "selected" : ""}>${l}</option>`).join("")}
+              </select>
             </div>
-            <div style="margin-top:8px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
-              <select id="dr-assign-scope"><option value="full">full</option><option value="function">function</option><option value="program">program</option><option value="collection">collection</option><option value="none">none</option></select>
-              <input id="dr-assign-progs" placeholder="program ids (comma)" style="min-width:160px;"/>
-              <button class="btn btn-sm btn-primary" id="dr-assign">Assign entitlement</button>
-            </div>
+          </div>
+          <div class="form-field"><label>Expires <span style="font-weight:400;color:var(--text-faint)">— blank = never</span></label>
+            <input type="date" id="dr-assign-expires" value="${acc.expiresAt ? new Date(acc.expiresAt).toISOString().slice(0, 10) : ""}"/>
+          </div>
+          <div class="form-field"><label>Categories <span style="font-weight:400;color:var(--text-faint)">— used when scope is function or collection</span></label>
+            ${checkGroupHtml("data-dr-cat", (typeof CATEGORIES !== "undefined" ? CATEGORIES : []).map((c) => c.name).sort(), acc.categoryIds || [])}
+          </div>
+          <div class="form-field"><label>Programs <span style="font-weight:400;color:var(--text-faint)">— used when scope is program</span></label>
+            ${checkGroupHtml("data-dr-prog", allProgramsList().map((p) => ({ value: p.id, label: p.name, extra: "· " + p.org })), acc.programIds === "*" ? [] : (acc.programIds || []))}
+          </div>
+          <button class="btn btn-sm btn-primary" id="dr-assign" style="margin-top:10px;">Save access</button>
+        </div>
+
+        <div class="admin-section" style="margin-top:14px;">
+          <h3>Account controls</h3>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="btn btn-sm" data-ua="reactivate">Reactivate</button>
+            <button class="btn btn-sm" data-ua="resend_verification">Resend verify</button>
+            <button class="btn btn-sm" data-ua="force_verify">Force verify</button>
+            <button class="btn btn-sm" data-ua="send_reset">Send reset email</button>
+            <button class="btn btn-sm btn-warn" data-ua="suspend">Suspend account</button>
+            <button class="btn btn-sm btn-warn" data-ua="revoke_sessions">Revoke sessions</button>
+            <button class="btn btn-sm btn-danger" data-ua="disable">Disable account</button>
           </div>
         </div>
 
-        <div style="display:flex;gap:6px;flex-wrap:wrap;margin:16px 0;">
-          <button class="btn btn-sm btn-ghost" data-ua="suspend">Suspend acct</button>
-          <button class="btn btn-sm btn-ghost" data-ua="reactivate">Reactivate</button>
-          <button class="btn btn-sm btn-ghost" data-ua="disable">Disable</button>
-          <button class="btn btn-sm btn-ghost" data-ua="resend_verification">Resend verify</button>
-          <button class="btn btn-sm btn-ghost" data-ua="force_verify">Force verify</button>
-          <button class="btn btn-sm btn-ghost" data-ua="send_reset">Send reset</button>
-          <button class="btn btn-sm btn-ghost" data-ua="revoke_sessions">Revoke sessions</button>
-          <div style="flex:1;"></div>
-          <button class="btn btn-sm btn-ghost" id="dr-softdel" style="color:var(--danger);">Soft delete</button>
-          ${isSuperAdmin() ? `<button class="btn btn-sm btn-ghost" id="dr-harddel" style="color:var(--danger);">Hard delete</button>` : ""}
+        <div class="admin-danger-zone" style="margin-top:14px;">
+          <h3>${icon("alert")} Danger zone</h3>
+          <p>These actions are hard to undo. Soft delete disables the account and clears sessions but keeps records; hard delete permanently erases the user and all their data.</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn-sm btn-danger" id="dr-softdel">Soft delete</button>
+            ${isSuperAdmin() ? `<button class="btn btn-sm btn-danger" id="dr-harddel">Hard delete permanently</button>` : ""}
+          </div>
         </div>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:14px;">
           <div>
             <h3 style="font-size:13px;margin:0 0 6px;">Enrollments</h3>
             <div style="font-size:12px;">${(ent.enrollments || []).filter((e) => e.status === "active").map((e) => `<div>${escapeHtml(e.program_id)} <button class="linklike" data-unenroll="${escapeHtml(e.program_id)}" style="color:var(--danger);">remove</button></div>`).join("") || "<span style='color:var(--text-faint)'>none</span>"}</div>
@@ -16345,30 +16902,55 @@ function renderAdminUsers(body) {
           </div>
         </div>`;
 
-      target.querySelector("#dr-save-profile").addEventListener("click", () => act("update_profile", {
-        firstName: target.querySelector("#dr-first").value.trim(), lastName: target.querySelector("#dr-last").value.trim(),
-        role: target.querySelector("#dr-role").value, aiLevel: target.querySelector("#dr-level").value,
-        organization: target.querySelector("#dr-org").value.trim(),
-      }));
-      target.querySelector("#dr-align").addEventListener("click", () => act("align_function", {}, "Re-scope this user's auto entitlement to their current function?"));
-      target.querySelectorAll("[data-ent]").forEach((b) => b.addEventListener("click", () => entAct(b.dataset.ent)));
-      target.querySelector("#dr-assign").addEventListener("click", () => {
-        const scopeType = target.querySelector("#dr-assign-scope").value;
-        const programIds = target.querySelector("#dr-assign-progs").value.split(/[\s,]+/).map((s) => s.trim()).filter(Boolean);
-        Backend.adminEntitlementAction({ action: "assign", userId: uid, scopeType, programIds }).then(() => { showToast("Entitlement assigned"); paintDrawer(); }).catch(() => showToast("Failed"));
+      const saveBtn = target.querySelector("#dr-save-profile");
+      saveBtn.addEventListener("click", () => {
+        const orig = saveBtn.textContent;
+        saveBtn.disabled = true; saveBtn.textContent = "Saving…";
+        Backend.adminUserAction(uid, "update_profile", {
+          firstName: target.querySelector("#dr-first").value.trim(), lastName: target.querySelector("#dr-last").value.trim(),
+          role: target.querySelector("#dr-role").value, aiLevel: target.querySelector("#dr-level").value,
+          organization: target.querySelector("#dr-org").value.trim(),
+        }).then(() => { showToast("Profile saved"); paintDrawer(); })
+          .catch(() => { showToast("Couldn't save — try again."); saveBtn.disabled = false; saveBtn.textContent = orig; });
       });
-      target.querySelectorAll("[data-ua]").forEach((b) => b.addEventListener("click", () => act(b.dataset.ua, { reason: "admin console" }, b.dataset.ua === "disable" ? "Disable this account?" : null)));
-      target.querySelectorAll("[data-unenroll]").forEach((b) => b.addEventListener("click", () => {
-        Backend.adminEntitlementAction({ action: "unenroll", userId: uid, programId: b.dataset.unenroll }).then(() => { showToast("Unenrolled"); paintDrawer(); }).catch(() => showToast("Failed"));
+      target.querySelector("#dr-align").addEventListener("click", (e) => runAction(e.currentTarget, { busy: "Aligning…", confirm: "Re-scope this user's auto entitlement to their current function?", done: "Re-aligned to function" }, () => Backend.adminUserAction(uid, "align_function", {})));
+      target.querySelectorAll("[data-ent]").forEach((b) => b.addEventListener("click", (e) => {
+        const meta = ENT_META[b.dataset.ent];
+        runAction(e.currentTarget, meta, () => Backend.adminEntitlementAction({ action: b.dataset.ent, userId: uid }));
       }));
-      target.querySelector("#dr-softdel").addEventListener("click", () => {
-        if (!confirm("Soft-delete (disable + revoke sessions) this account?")) return;
-        Backend.adminUserDelete(uid, false).then(() => { showToast("Account disabled"); st.drawer = null; load(); }).catch(() => showToast("Failed"));
+      wireCheckGroups(target);
+      target.querySelector("#dr-assign").addEventListener("click", (e) => {
+        const scopeType = target.querySelector("#dr-assign-scope").value;
+        const licenseType = target.querySelector("#dr-assign-license").value;
+        const expiresRaw = target.querySelector("#dr-assign-expires").value;
+        const expiresAt = expiresRaw ? new Date(expiresRaw + "T00:00:00Z").toISOString() : null;
+        const categoryIds = [...target.querySelectorAll("[data-dr-cat]:checked")].map((x) => x.value);
+        const programIds = [...target.querySelectorAll("[data-dr-prog]:checked")].map((x) => x.value);
+        runAction(e.currentTarget, { busy: "Saving…", confirm: `Replace this user's access with scope “${scopeType}”?`, done: "Access updated" },
+          () => Backend.adminEntitlementAction({ action: "assign", userId: uid, scopeType, categoryIds, programIds, licenseType, expiresAt }));
+      });
+      target.querySelectorAll("[data-ua]").forEach((b) => b.addEventListener("click", (e) => {
+        const meta = UA_META[b.dataset.ua];
+        runAction(e.currentTarget, meta, () => Backend.adminUserAction(uid, b.dataset.ua, { reason: "admin console" }));
+      }));
+      target.querySelectorAll("[data-unenroll]").forEach((b) => b.addEventListener("click", (e) => {
+        runAction(e.currentTarget, { busy: "Removing…", confirm: null, done: "Unenrolled" },
+          () => Backend.adminEntitlementAction({ action: "unenroll", userId: uid, programId: b.dataset.unenroll }));
+      }));
+      target.querySelector("#dr-softdel").addEventListener("click", (e) => {
+        const btn = e.currentTarget;
+        if (!confirm("Soft-delete (disable + revoke sessions) this account? Records are kept.")) return;
+        const orig = btn.textContent; btn.disabled = true; btn.textContent = "Deleting…";
+        Backend.adminUserDelete(uid, false).then(() => { showToast("Account disabled"); st.drawer = null; load(); })
+          .catch(() => { showToast("Couldn't complete that — try again."); btn.disabled = false; btn.textContent = orig; });
       });
       const hd = target.querySelector("#dr-harddel");
-      if (hd) hd.addEventListener("click", () => {
+      if (hd) hd.addEventListener("click", (e) => {
+        const btn = e.currentTarget;
         if (!confirm("HARD DELETE — permanently removes " + u.email + " and all their data. This cannot be undone.")) return;
-        Backend.adminUserDelete(uid, true).then(() => { showToast("User hard-deleted"); st.drawer = null; load(); }).catch(() => showToast("Failed"));
+        const orig = btn.textContent; btn.disabled = true; btn.textContent = "Deleting…";
+        Backend.adminUserDelete(uid, true).then(() => { showToast("User hard-deleted"); st.drawer = null; load(); })
+          .catch(() => { showToast("Couldn't complete that — try again."); btn.disabled = false; btn.textContent = orig; });
       });
     }).catch(() => { target.innerHTML = emptyStateHtml("slider", "Couldn't load this user", "Try again."); });
   }
@@ -17505,6 +18087,34 @@ function loadData() {
   CURRICULUM_PROMPTS.forEach((r) => { if (r.programId) PROGRAM_FLAGSHIP[r.programId] = r.id; });
   resolveModulePrompts();
 }
+// Runtime merge of author-managed prompt changes (SUPER_ADMIN "Prompts" tab):
+// GET /api/prompts returns additions/edits/archives made since the last build,
+// so the running app reflects them without a rebuild. Fail-soft — a static host
+// (or any error) just keeps the baked-in #data-prompts set.
+async function mergeAuthoredPrompts() {
+  if (typeof Backend === "undefined" || !Backend.isConfigured()) return;
+  let d = null;
+  try { d = await Backend.publicPrompts(); } catch (e) { return; }
+  if (!d || (!Array.isArray(d.prompts) && !Array.isArray(d.archivedIds))) return;
+  const archived = new Set(d.archivedIds || []);
+  let changed = 0;
+  (d.prompts || []).forEach((rec) => {
+    if (!rec || !rec.id || archived.has(rec.id)) return;
+    enrichRecord(rec);
+    const existing = ALL_PROMPTS_BY_ID[rec.id];
+    if (existing) Object.assign(existing, rec);
+    else { ALL_PROMPTS.push(rec); ALL_PROMPTS_BY_ID[rec.id] = rec; }
+    changed++;
+  });
+  archived.forEach((id) => {
+    if (!ALL_PROMPTS_BY_ID[id]) return;
+    delete ALL_PROMPTS_BY_ID[id];
+    const i = ALL_PROMPTS.findIndex((r) => r.id === id);
+    if (i >= 0) ALL_PROMPTS.splice(i, 1);
+    changed++;
+  });
+  if (changed && typeof resolveModulePrompts === "function") resolveModulePrompts();
+}
 async function bootApp() {
   document.getElementById("gate-root").innerHTML = "";
   const adminRoot = document.getElementById("admin-root");
@@ -17540,6 +18150,9 @@ async function initApp() {
     const aroute = typeof authRoute === "function" ? authRoute() : null;
     if (aroute) { await handleAuthRoute(aroute); return; }
   } catch (e) {}
+
+  // Pull author-managed prompt edits before the app renders (fail-soft).
+  try { await mergeAuthoredPrompts(); } catch (e) {}
 
   try { await AdminStore.init(); } catch (e) {}
   let adminOk = false;

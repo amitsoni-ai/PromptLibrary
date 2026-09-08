@@ -82,3 +82,17 @@ create index if not exists entitlements_user_idx on entitlements (user_id);
 -- Users list derives last_activity_at from max(ts) per user — a covering
 -- (user_id, ts) index turns that group-by into an index-only scan.
 create index if not exists auth_events_user_ts_idx on auth_events (user_id, ts desc);
+
+-- ── prompts: author-managed curation (SUPER_ADMIN "Prompts" console tab) ─────
+-- The `prompts` table is a mirror of the library (Excel + curriculum + authored
+-- kickstart set). These columns let a SUPER_ADMIN add / edit / archive prompts
+-- at runtime; api/prompts.js serves the delta so the running app reflects the
+-- change with no rebuild, and a bulk export regenerates src/prompts_authored.json
+-- for permanent inclusion via `python3 src/build.py`. All additive/idempotent.
+alter table prompts add column if not exists origin      text;         -- 'authored' | 'excel' | 'curriculum'
+alter table prompts add column if not exists updated_by  text;         -- admin id / email of the last editor
+alter table prompts add column if not exists updated_at  timestamptz not null default now();
+alter table prompts add column if not exists archived_at timestamptz;  -- set by a soft delete (lifecycle -> 'Archived')
+alter table prompts add column if not exists title_norm  text;         -- lower(trim(title)); dedupe key with category
+create index if not exists prompts_title_norm_idx on prompts (title_norm, category);
+create index if not exists prompts_origin_idx     on prompts (origin);

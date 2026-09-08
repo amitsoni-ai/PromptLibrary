@@ -5,7 +5,9 @@ import base64, json, os, re
 HERE = os.path.dirname(os.path.abspath(__file__))
 ASSETS = os.path.normpath(os.path.join(HERE, ".."))
 OUT = os.path.normpath(os.path.join(HERE, "..", "index.html"))
+VERCEL_JSON = os.path.normpath(os.path.join(HERE, "..", "vercel.json"))
 PUSH = os.path.normpath(os.path.join(HERE, "..", "..", "promptlibrary-push-package", "index.html"))
+PUSH_VERCEL = os.path.normpath(os.path.join(HERE, "..", "..", "promptlibrary-push-package", "vercel.json"))
 
 def read(name): return open(os.path.join(HERE, name), encoding="utf-8").read()
 
@@ -59,6 +61,13 @@ def main():
     open(OUT, "w", encoding="utf-8").write(out)
     if os.path.isdir(os.path.dirname(PUSH)):
         open(PUSH, "w", encoding="utf-8").write(out)
+        # Keep the deploy package's vercel.json byte-identical to the canonical
+        # one so the SPA rewrites (/verify-email etc.) can never drift out of the
+        # deployed config again. See prompt-library/ADMIN-PROMPTS-REPORT.md.
+        if os.path.exists(VERCEL_JSON):
+            open(PUSH_VERCEL, "w", encoding="utf-8").write(
+                open(VERCEL_JSON, encoding="utf-8").read())
+            print("  + synced vercel.json ->", PUSH_VERCEL)
     print("wrote", OUT, len(out), "bytes")
 
 if __name__ == "__main__":

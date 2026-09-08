@@ -4,7 +4,7 @@
     {
       "name": "prompt-library",
       "runtimeExecutable": "node",
-      "runtimeArgs": ["devserver.mjs"],
+      "runtimeArgs": ["migrate/devserver_pglite.mjs"],
       "port": 8790
     }
   ]

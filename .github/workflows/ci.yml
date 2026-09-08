@@ -1,0 +1,101 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [publish, main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ── Next app (web/) ─────────────────────────────────────────────────────────
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    env:
+      DATABASE_URL: pglite://memory
+      LEGACY_ORIGIN: http://localhost:8790
+      REVALIDATE_SECRET: ci
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      # Regenerate the seed from the committed index.html and fail if it drifts
+      # from web/seed/prompts.json (Postgres/seed = canonical, Phase 1 §8).
+      - run: node scripts/verify-prompts.mjs
+      - run: git diff --exit-code -- seed/prompts.json || (echo "::error::web/seed/prompts.json is stale — re-run scripts/verify-prompts.mjs" && exit 1)
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run build
+      - run: npm run db:guard # no generated Drizzle migrations
+      - run: node scripts/parity.mjs # catalogue integrity + framework derivation
+      - name: Playwright smoke (Library API)
+        run: |
+          npx playwright install --with-deps chromium
+          npm run test:e2e
+
+  # ── Legacy app (must stay intact) ───────────────────────────────────────────
+  legacy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: npm ci
+      - name: Legacy build is clean (python3 src/build.py)
+        run: python3 src/build.py
+      - name: Auth E2E (PGlite, no DB/email needed)
+        run: node migrate/authtest.mjs
+
+  # ── Guardrails: prove the protected paths are untouched ─────────────────────
+  guardrails:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: No changes under guarded paths
+        run: |
+          BASE="${{ github.event.pull_request.base.sha }}"
+          CHANGED=$(git diff --name-only "$BASE" HEAD)
+          echo "$CHANGED"
+          GUARDED='^(api/auth/|api/_access\.js|api/_session\.js|api/_crypto\.js|migrate/schema(\.sql|_v2\.sql|_v3\.sql)|index\.html|src/part_|src/build\.py|devserver.*\.mjs)'
+          if echo "$CHANGED" | grep -E "$GUARDED"; then
+            echo "::error::A guarded (legacy/auth) path was modified — see AUTH.md guardrails."
+            exit 1
+          fi
+          echo "✓ guarded paths untouched"
+
+  # ── Optional: Neon branch per PR + full authed Library e2e ──────────────────
+  # Activates only when NEON_API_KEY is configured. Until then, CI runs on PGlite.
+  neon-preview:
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'pull_request' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Skip unless Neon is configured
+        run: |
+          if [ -z "${{ secrets.NEON_API_KEY }}" ]; then
+            echo "NEON_API_KEY not set — skipping Neon preview branch (PGlite CI covers correctness)."
+            exit 0
+          fi
+          echo "NEON_API_KEY present — wire neondatabase/create-branch-action here."
+      # - uses: neondatabase/create-branch-action@v5
+      #   with:
+      #     project_id: ${{ vars.NEON_PROJECT_ID }}
+      #     branch_name: pr-${{ github.event.number }}
+      #     api_key: ${{ secrets.NEON_API_KEY }}
+      #   id: neon
+      # - run: node migrate/run.mjs && node migrate/run_v2.mjs && node migrate/run_v3.mjs
+      #   env: { DATABASE_URL: '${{ steps.neon.outputs.db_url }}' }
+      # ... then run the full authenticated Library e2e against the branch.

@@ -88,16 +88,18 @@ export default async function handler(req, res) {
       const status = ENTITLEMENT_STATUSES.includes(b.status) ? b.status : "active";
       await sql`
         insert into entitlements (id, user_id, source, access_code, scope_type, program_ids, feature_flags,
-          license_type, org_name, status, granted_by, expires_at, note)
+          license_type, org_name, status, granted_by, expires_at, note, category_ids, prompt_ids)
         values (${newId("ent")}, ${userId}, 'admin', ${b.accessCode || null}, ${scopeType},
           ${JSON.stringify(b.programIds || [])}, ${JSON.stringify(b.featureFlags || {})},
           ${b.licenseType || "standard"}, ${b.orgName || u.org_name}, ${status}, ${admin.id},
-          ${b.expiresAt || null}, ${b.note || null})
+          ${b.expiresAt || null}, ${b.note || null},
+          ${JSON.stringify(b.categoryIds || [])}, ${JSON.stringify(b.promptIds || [])})
         on conflict (user_id) do update set
           source = 'admin', access_code = excluded.access_code, scope_type = excluded.scope_type,
           program_ids = excluded.program_ids, feature_flags = excluded.feature_flags,
           license_type = excluded.license_type, org_name = excluded.org_name, status = excluded.status,
           granted_by = excluded.granted_by, expires_at = excluded.expires_at, note = excluded.note,
+          category_ids = excluded.category_ids, prompt_ids = excluded.prompt_ids,
           updated_at = now()`;
       for (const pid of (b.programIds || [])) {
         await sql`insert into program_enrollments (id, user_id, program_id, status, enrolled_by)
