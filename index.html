@@ -994,6 +994,8 @@ button.fw-tile:hover{border-color:var(--accent);}
 .auth-social-btn:hover{background:var(--surface-2);}
 .auth-social-btn svg{width:18px; height:18px; flex:none;}
 .auth-social-btn.is-busy{opacity:.7; pointer-events:none;}
+.auth-legal{margin:2px 0 0; font-size:12px; line-height:1.5; color:var(--text-faint); text-align:center;}
+.auth-legal a, .auth-check a, .auth-note a{color:var(--accent-strong); font-weight:600;}
 .auth-divider{display:flex; align-items:center; gap:12px; margin:10px 0 6px; color:var(--text-faint); font-size:12px;}
 .auth-divider::before, .auth-divider::after{content:""; flex:1; height:1px; background:var(--border);}
 .auth-note{font-size:12.5px; color:var(--text-muted); background:var(--surface-2); border-radius:var(--radius-sm); padding:10px 12px; margin:12px 0;}
@@ -1323,6 +1325,7 @@ button.fw-tile:hover{border-color:var(--accent);}
 .lp-foot{border-top:1px solid var(--border); background:var(--surface); font-size:14px; color:var(--text-faint);}
 .lp-foot .lp-wrap{display:flex; flex-wrap:wrap; gap:10px; justify-content:space-between; padding-top:28px; padding-bottom:28px;}
 .lp-foot a{color:var(--accent-strong); font-weight:600;}
+.lp-foot-links{display:flex; gap:18px; flex-wrap:wrap;}
 @media(prefers-color-scheme:dark){ :root:not([data-theme="light"]) .lp-logo{filter:brightness(0) invert(1); opacity:.92;} }
 :root[data-theme="dark"] .lp-logo{filter:brightness(0) invert(1); opacity:.92;}
 @media(max-width:600px){ .lp-sec{padding:52px 0;} .lp-logo{height:34px;} }
@@ -13103,6 +13106,7 @@ function wireSocial(root) {
     if (!list.length || !slot.isConnected) return;
     slot.innerHTML = list.map((k) =>
       `<a class="btn auth-social-btn" href="/api/auth/oauth-start?provider=${k}" data-provider="${k}">${SOCIAL_ICONS[k]}<span>Continue with ${SOCIAL_LABELS[k]}</span></a>`).join("")
+      + '<p class="auth-legal">By continuing with ' + list.map((k) => SOCIAL_LABELS[k]).join(" or ") + ', you agree to our <a href="/terms" target="_blank" rel="noopener">Terms of Service</a> and <a href="/privacy" target="_blank" rel="noopener">Privacy Policy</a>.</p>'
       + '<div class="auth-divider"><span>or use your email</span></div>';
     slot.hidden = false;
     slot.querySelectorAll(".auth-social-btn").forEach((a) => a.addEventListener("click", () => {
@@ -13432,7 +13436,7 @@ function renderSignUp() {
       <select id="su-level" class="auth-select">${SIGNUP_LEVELS.map(([v, l]) => `<option value="${v}" ${d.aiLevel === v ? "selected" : ""}>${l}</option>`).join("")}</select>
       <label for="su-org" style="margin-top:12px;">Organization / company</label>
       <input id="su-org" class="name-input" autocomplete="organization" value="${escapeHtml(d.organization || "")}" />
-      <label class="auth-check" style="margin-top:14px;"><input type="checkbox" id="su-terms" ${d.agreeTerms ? "checked" : ""}/> I agree to the Terms &amp; Privacy Policy</label>
+      <label class="auth-check" style="margin-top:14px;"><input type="checkbox" id="su-terms" ${d.agreeTerms ? "checked" : ""}/> I agree to the <a href="/terms" target="_blank" rel="noopener">Terms of Service</a> and <a href="/privacy" target="_blank" rel="noopener">Privacy Policy</a></label>
       <div class="auth-error" role="alert" aria-live="polite"></div>
       <div class="auth-2col" style="margin-top:6px;">
         <button class="btn" id="su2-back" type="button">Back</button>
@@ -13497,7 +13501,7 @@ function renderSignUpCollection(st, code) {
       ${pwField("suc-pass", "new-password", "At least 5 characters")}
       <label for="suc-pass2" style="margin-top:12px;">Confirm password</label>
       ${pwField("suc-pass2", "new-password", "Re-enter your password")}
-      <label class="auth-check" style="margin-top:14px;"><input type="checkbox" id="suc-terms" ${d.agreeTerms ? "checked" : ""}/> I agree to the Terms &amp; Privacy Policy</label>
+      <label class="auth-check" style="margin-top:14px;"><input type="checkbox" id="suc-terms" ${d.agreeTerms ? "checked" : ""}/> I agree to the <a href="/terms" target="_blank" rel="noopener">Terms of Service</a> and <a href="/privacy" target="_blank" rel="noopener">Privacy Policy</a></label>
       <div class="auth-error" role="alert" aria-live="polite"></div>
       <button class="btn btn-primary" id="suc-go" type="submit">Create account</button>
     </form>
@@ -13571,7 +13575,7 @@ function renderOAuthProfile(me) {
       <select id="op-level" class="auth-select">${SIGNUP_LEVELS.map(([v, l]) => `<option value="${v}" ${u.aiLevel === v ? "selected" : ""}>${l}</option>`).join("")}</select>
       <label for="op-org" style="margin-top:12px;">Organization / company</label>
       <input id="op-org" class="name-input" autocomplete="organization" value="${escapeHtml(u.organization || "")}" />
-      <p class="auth-note">By continuing you agree to the Terms &amp; Privacy Policy.</p>
+      <p class="auth-note">By continuing you agree to the <a href="/terms" target="_blank" rel="noopener">Terms of Service</a> and <a href="/privacy" target="_blank" rel="noopener">Privacy Policy</a>.</p>
       <div class="auth-error" role="alert" aria-live="polite"></div>
       <button class="btn btn-primary" id="op-go" type="submit">Open my library</button>
     </form>
@@ -14084,7 +14088,7 @@ function renderLanding() {
     // 6 · close
     + '<section class="lp-wrap lpx-final"><p class="lp-eyebrow">Don’t just use AI. Think with it.</p><h2 class="lpx-h2">Stop rewriting AI answers.<br>Start with a better prompt.</h2>'
       + '<div class="lpx-cta"><button class="lp-btn lp-btn-primary lpx-big" data-lp-signup>Sign up free</button><button class="lp-btn lp-btn-outline lpx-big" data-lp-login>Log in</button></div></section>'
-    + '<footer class="lp-foot"><div class="lp-wrap"><span>Synottic Prompt Intelligence · Human‑Centred AI</span><a href="#" data-lp-login>Sign in</a></div></footer>'
+    + '<footer class="lp-foot"><div class="lp-wrap"><span>Synottic Prompt Intelligence · Human‑Centred AI</span><nav class="lp-foot-links"><a href="/terms">Terms</a><a href="/privacy">Privacy</a><a href="#" data-lp-login>Sign in</a></nav></div></footer>'
     + '<div class="lpx-sticky" id="lpx-sticky" hidden><span><b>' + total + " prompts</b> waiting for you</span><button class=\"lp-btn lp-btn-primary\" data-lp-signup>Sign up free</button></div>"
     + '<div class="lpx-modal" id="lpx-modal" hidden role="dialog" aria-modal="true" aria-labelledby="lpx-m-title"><div class="lpx-modal-card" id="lpx-modal-card"></div></div>'
     + "</div>";
