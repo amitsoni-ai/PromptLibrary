@@ -70,6 +70,14 @@ export const TEMPLATES = {
        <p style="font-size:13px;">Forgot your password? <a href="${v.resetUrl}" style="color:${BRAND.accent};">Reset it here</a>.</p>`),
     text: `You already have an account. Sign in: ${v.loginUrl}  Forgot your password? ${v.resetUrl}`,
   }),
+  password_changed: (v) => ({
+    subject: v.first ? "You added a password to your account" : "Your password was changed",
+    html: shell(v.first ? "Password added" : "Password changed",
+      `<p>Hi ${esc(v.firstName || "there")}, ${v.first ? "a password was just added to" : "the password was just changed for"} your ${BRAND.name} account. Other devices were signed out.</p>
+       <p>If this wasn't you, reset your password straight away:</p>
+       ${button(v.resetUrl, "Reset my password")}`),
+    text: `${v.first ? "A password was added to" : "The password was changed for"} your account. If this wasn't you, reset it now: ${v.resetUrl}`,
+  }),
   verify_email: (v) => ({
     subject: "Confirm your email",
     html: shell("Confirm your email",

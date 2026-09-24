@@ -386,7 +386,7 @@ const VIEW_TITLES = {
   program: "My Program", learn: "Learn", practice: "Practice", builder: "Create Prompt",
   framework: "Prompt Framework",
   myLibrary: "Saved", favorites: "Saved", me: "Me", insights: "Library Governance",
-  accessCodes: "Access codes", task: "Library", role: "Library",
+  accessCodes: "Access codes", account: "Account", task: "Library", role: "Library",
 };
 /* Which primary nav item lights up for a given (possibly nested) view. */
 const VIEW_PARENT = {
@@ -416,7 +416,7 @@ const SHARED_QUERY_VIEWS = new Set(["home", "search"]);
 // search, Learn and Practice, not by browsing the whole library.
 const SCOPED_HIDDEN_VIEWS = new Set(["categories", "categoryDetail", "role", "insights"]);
 function isViewAllowed(view) {
-  if (view === "accessCodes") {
+  if (view === "accessCodes" || view === "account") {
     // Any signed-in account learner can manage their codes, scoped or not.
     return !!(typeof AuthAPI !== "undefined" && AuthAPI.isConfigured()
       && Store.getSession() && Store.getSession().user);
@@ -515,7 +515,7 @@ function renderContent() {
     program: renderProgramView, learn: renderLearnView, practice: renderPracticeView, builder: renderBuilderView,
     framework: renderFrameworkView,
     myLibrary: renderMeView, favorites: renderMeView, me: renderMeView, insights: renderInsightsView,
-    accessCodes: renderAccessCodesView, task: renderTaskView, role: renderLibraryShell,
+    accessCodes: renderAccessCodesView, account: renderAccountView, task: renderTaskView, role: renderLibraryShell,
   };
   (map[STATE.view] || renderHome)(content);
 }
@@ -618,21 +618,59 @@ function renderAccessCodesView(container) {
   paintList();
 }
 
+/* Bottom-of-sidebar account card: avatar + name, opens a small menu with
+   Account settings, Access codes and Sign out (like most apps). */
 function renderLearnerBox() {
   const sc = currentScope();
   const s = Store.getSession();
   const box = document.getElementById("learner-box");
   if (!s) { box.innerHTML = ""; return; }
-  const line2 = sc && sc.program ? sc.program.name
-    : sc && sc.programs && sc.programs.length ? sc.programs.length + " program" + (sc.programs.length === 1 ? "" : "s")
-    : "";
-  const line3 = sc && sc.cohort ? sc.cohort.name : (s.kind === "admin" ? (s.industry || s.domain || "Organisation access") : "");
+  const account = !!(s.user && typeof AuthAPI !== "undefined" && AuthAPI.isConfigured());
+  const org = (sc && sc.org && sc.org.shortName) || s.orgName || "";
+  const programs = sc && sc.program ? sc.program.name
+    : sc && sc.programs && sc.programs.length ? sc.programs.length + " program" + (sc.programs.length === 1 ? "" : "s") : "";
+  const cohort = sc && sc.cohort ? sc.cohort.name : (s.kind === "admin" ? (s.industry || s.domain || "Organisation access") : "");
+  const access = isScopeRestricted() ? (programs || "Your programme library") : "Full library";
+  const sub = account ? (s.email || org) : (org || cohort || "Access code");
+  const initials = typeof initialsOf === "function" ? initialsOf(s.name) : String(s.name || "?").slice(0, 1).toUpperCase();
+  const onAccount = STATE.view === "account";
   box.innerHTML = `
-    <div class="lb-name">${escapeHtml(s.name)}</div>
-    <div class="lb-meta">${escapeHtml((sc && sc.org && sc.org.shortName) || "")}${line2 ? " · " + escapeHtml(line2) : ""}</div>
-    <div class="lb-meta">${escapeHtml(line3)}${isScopeRestricted() ? " · scoped" : ""}</div>
-    <button class="lb-signout" id="lb-signout">Sign out</button>`;
-  box.querySelector("#lb-signout").addEventListener("click", signOut);
+    <button class="acct-btn${onAccount ? " on" : ""}" id="acct-btn" aria-haspopup="menu" aria-expanded="false" title="${escapeHtml(s.name)}">
+      <span class="acc-av" aria-hidden="true">${escapeHtml(initials)}</span>
+      <span class="acct-txt"><span class="acct-name">${escapeHtml(s.name)}</span><span class="acct-sub">${escapeHtml(sub)}</span></span>
+      <svg class="acct-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 15l5-5 5 5"/></svg>
+    </button>
+    <div class="acct-menu" id="acct-menu" role="menu" hidden>
+      <div class="acct-menu-head">
+        <b>${escapeHtml(s.name)}</b>
+        ${account && s.email ? `<span>${escapeHtml(s.email)}</span>` : ""}
+        <span class="acct-chip">${escapeHtml([org, access].filter(Boolean).join(" · "))}</span>
+        ${cohort && !account ? `<span>${escapeHtml(cohort)}</span>` : ""}
+      </div>
+      ${account ? `<button class="acct-item" role="menuitem" data-acct="account">${icon("slider")}<span>Account settings</span></button>
+      <button class="acct-item" role="menuitem" data-acct="accessCodes">${icon("key")}<span>Access codes</span></button>` : ""}
+      <a class="acct-item" role="menuitem" href="/privacy" target="_blank" rel="noopener">${icon("eye")}<span>Privacy</span></a>
+      <button class="acct-item acct-out" role="menuitem" data-acct="signout">${icon("logout")}<span>Sign out</span></button>
+    </div>`;
+  const btn = box.querySelector("#acct-btn"), menu = box.querySelector("#acct-menu");
+  const setOpen = (open) => {
+    menu.hidden = !open; btn.setAttribute("aria-expanded", open ? "true" : "false");
+    if (open) { const f = menu.querySelector(".acct-item"); if (f) f.focus(); }
+  };
+  btn.addEventListener("click", (e) => { e.stopPropagation(); setOpen(menu.hidden); });
+  menu.addEventListener("click", (e) => e.stopPropagation());
+  if (!renderLearnerBox._wired) {
+    renderLearnerBox._wired = true;
+    document.addEventListener("click", () => { const m = document.getElementById("acct-menu"); if (m && !m.hidden) { m.hidden = true; const b = document.getElementById("acct-btn"); if (b) b.setAttribute("aria-expanded", "false"); } });
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") { const m = document.getElementById("acct-menu"); if (m && !m.hidden) { m.hidden = true; const b = document.getElementById("acct-btn"); if (b) { b.setAttribute("aria-expanded", "false"); b.focus(); } } } });
+  }
+  menu.querySelectorAll("[data-acct]").forEach((b) => b.addEventListener("click", () => {
+    setOpen(false);
+    const k = b.dataset.acct;
+    if (k === "signout") return signOut();
+    if (typeof closeSidebar === "function") closeSidebar();
+    navigate(k);
+  }));
 }
 function libraryCount() { return (typeof scopeInfo === "function" ? scopeInfo().total : scopedLibrary().length); }
 function renderSidebarFooter() {
@@ -865,6 +903,7 @@ async function bootApp() {
   STATE.view = "home";
   renderApp();
   resumeFromLanding();
+  if (typeof consumeAccountNotice === "function") consumeAccountNotice();
   const menuBtn = document.getElementById("mobile-menu-btn");
   const syncMenu = () => { menuBtn.style.display = window.innerWidth <= 880 ? "flex" : "none"; };
   syncMenu();

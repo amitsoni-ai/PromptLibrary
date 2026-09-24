@@ -15,6 +15,7 @@ const RULES = {
   redeem_code:       { limit: 15, windowSec: 3600 },
   admin_login:       { limit: 8,  windowSec: 900 },
   oauth:             { limit: 60, windowSec: 900 },
+  account:           { limit: 20, windowSec: 900 },   // account-settings writes, per user
   account_exists:    { limit: 3,  windowSec: 3600 },  // "you already have an account" emails, per address
   default:           { limit: 60, windowSec: 900 },
 };

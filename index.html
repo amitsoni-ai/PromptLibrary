@@ -181,7 +181,14 @@ body.previewing .topbar{top:var(--pbh);}
   body.sb-collapsed{--sidebar-w:68px;}
   body.sb-collapsed .brand{flex-direction:column; padding:12px 6px 8px; gap:4px;}
   body.sb-collapsed .brand-home{flex:none; justify-content:center;}
-  body.sb-collapsed .brand-text, body.sb-collapsed .learner-box, body.sb-collapsed .sidebar-footer,
+  body.sb-collapsed .acct-txt, body.sb-collapsed .acct-caret{display:none;}
+  body.sb-collapsed .learner-box{padding:8px 6px 10px;}
+  body.sb-collapsed .acct-btn{justify-content:center; padding:6px 0;}
+  .sidebar{z-index:35;}   /* sticky = own stacking layer; keep the account menu above the page */
+  body.sb-collapsed .learner-box{margin-top:auto;}
+  /* the collapsed rail is too narrow (and scrolls), so float the menu beside it */
+  body.sb-collapsed .acct-menu{position:fixed; left:calc(var(--sidebar-w) + 8px); right:auto; bottom:12px; width:250px;}
+  body.sb-collapsed .brand-text, body.sb-collapsed .sidebar-footer,
   body.sb-collapsed .nav-item > span, body.sb-collapsed .nav-kbd, body.sb-collapsed .nav-group-label{display:none;}
   body.sb-collapsed .sb-toggle svg{transform:scaleX(-1);}
   body.sb-collapsed .nav-item{justify-content:center; padding:10px 0;}
@@ -192,10 +199,28 @@ body.previewing .topbar{top:var(--pbh);}
 .brand-name{font-family:var(--font-display); font-weight:700; font-size:13.5px; letter-spacing:-0.01em; line-height:1.25;}
 .brand-sub{font-size:10.5px; color:var(--text-faint); letter-spacing:.04em; text-transform:uppercase; margin-top:1px;}
 
-.learner-box{margin:2px 12px 6px; padding:9px 11px; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--surface-2);}
-.learner-box .lb-name{font-weight:600; font-size:12.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
-.learner-box .lb-meta{font-size:11px; color:var(--text-faint); margin-top:1px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
-.learner-box .lb-signout{margin-top:6px; font-size:11px; color:var(--accent-strong); background:none; border:none; padding:0; font-weight:600;}
+/* account card, pinned to the bottom of the sidebar */
+.learner-box{position:relative; padding:8px 10px 10px; border-top:1px solid var(--border);}
+.learner-box:empty{display:none;}
+.acct-btn{display:flex; align-items:center; gap:10px; width:100%; padding:7px 8px; border:1px solid transparent; border-radius:10px; background:none; color:var(--text); text-align:left;}
+.acct-btn:hover, .acct-btn[aria-expanded="true"], .acct-btn.on{background:var(--surface-2); border-color:var(--border);}
+.acc-av{flex:none; width:32px; height:32px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; background:var(--accent); color:var(--accent-text-on); font-weight:700; font-size:12.5px; letter-spacing:.02em;}
+.acct-txt{display:flex; flex-direction:column; min-width:0; flex:1;}
+.acct-name{font-weight:600; font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.acct-sub{font-size:11.5px; color:var(--text-faint); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.acct-caret{flex:none; width:16px; height:16px; color:var(--text-faint); transition:transform .15s;}
+.acct-btn[aria-expanded="true"] .acct-caret{transform:rotate(180deg);}
+.acct-menu{position:absolute; left:10px; right:10px; bottom:calc(100% - 4px); z-index:80; background:var(--surface); border:1px solid var(--border); border-radius:12px; box-shadow:var(--shadow-lg); padding:6px; animation:acctIn .12s ease-out;}
+@keyframes acctIn{from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:none;}}
+.acct-menu-head{display:flex; flex-direction:column; gap:2px; padding:8px 10px 10px; margin-bottom:4px; border-bottom:1px solid var(--border); font-size:12px; color:var(--text-muted); min-width:0;}
+.acct-menu-head b{font-size:13.5px; color:var(--text);}
+.acct-menu-head span{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.acct-menu-head .acct-chip{white-space:normal; overflow:visible;}
+.acct-chip{align-self:flex-start; max-width:100%; margin-top:6px; padding:3px 9px; border-radius:10px; line-height:1.4; background:var(--accent-soft); color:var(--accent-strong); font-size:11px; font-weight:600;}
+.acct-item{display:flex; align-items:center; gap:10px; width:100%; padding:8px 10px; border:none; border-radius:8px; background:none; color:var(--text); font-size:13px; text-align:left; text-decoration:none;}
+.acct-item:hover, .acct-item:focus-visible{background:var(--surface-2); outline:none;}
+.acct-item svg{width:16px; height:16px; color:var(--text-muted);}
+.acct-out{color:var(--danger);} .acct-out svg{color:var(--danger);}
 
 .nav{padding:8px 10px; display:flex; flex-direction:column; gap:2px;}
 .nav-primary{display:flex; flex-direction:column; gap:2px;}
@@ -1007,6 +1032,56 @@ button.fw-tile:hover{border-color:var(--accent);}
 .verify-banner .vb-x{border:0; background:transparent; color:inherit; font-size:13px; cursor:pointer; opacity:.7;}
 .verify-banner .vb-x:hover{opacity:1;}
 
+/* ---- Account settings (part_auth.js#renderAccountView) ---- */
+.acc-page{max-width:760px; margin:0 auto; display:flex; flex-direction:column; gap:16px; padding-bottom:40px;}
+.acc-loading{color:var(--text-muted); padding:40px 0; text-align:center;}
+.acc-hero{display:flex; align-items:center; gap:16px; padding:6px 2px 4px;}
+.acc-av-lg{width:60px; height:60px; font-size:21px;}
+.acc-hero-body{min-width:0;}
+.acc-hero h2{font-size:22px; margin:0 0 2px;}
+.acc-hero p{margin:0; color:var(--text-muted); font-size:13.5px; display:flex; flex-wrap:wrap; align-items:center; gap:8px; overflow-wrap:anywhere;}
+.acc-hero-meta{margin-top:2px !important; font-size:12.5px !important; color:var(--text-faint) !important;}
+.acc-badge{font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px;}
+.acc-badge.ok{background:var(--accent-soft); color:var(--accent-strong);}
+.acc-badge.warn{background:var(--danger-soft); color:var(--danger);}
+.acc-card{background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:18px 20px;}
+.acc-card h3{font-size:15.5px; margin:0 0 2px;}
+.acc-sub{margin:0 0 14px; color:var(--text-muted); font-size:13px;}
+.acc-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px 14px;}
+.acc-grid label, .acc-form label{display:block; font-size:12.5px; font-weight:600; margin:0 0 5px; color:var(--text-muted);}
+.acc-form label{margin-top:12px;}
+.acc-page input.name-input, .acc-page .auth-select, .modal .acc-form input.name-input{width:100%; padding:10px 12px; font-size:14px; border-radius:var(--radius-sm); border:1.5px solid var(--border-strong); background:var(--surface); color:var(--text); text-transform:none; letter-spacing:normal;}
+.acc-page input.name-input:focus, .acc-page .auth-select:focus, .modal .acc-form input.name-input:focus{border-color:var(--accent); outline:none;}
+.acc-row a.btn{text-decoration:none;}
+.acc-span{grid-column:1 / -1;}
+.acc-actions{display:flex; align-items:center; justify-content:flex-end; gap:12px; margin-top:16px;}
+.acc-msg{font-size:12.5px; color:var(--text-muted);} .acc-msg.err{color:var(--danger);} .acc-msg.ok{color:var(--accent-strong);}
+.acc-row{display:flex; align-items:center; gap:12px; padding:12px 0; border-top:1px solid var(--border);}
+.acc-card h3 + .acc-row, .acc-sub + .acc-row{border-top:none; padding-top:4px;}
+.acc-row-ico{flex:none; width:36px; height:36px; border-radius:10px; border:1px solid var(--border); display:flex; align-items:center; justify-content:center; background:var(--surface);}
+.acc-row-ico svg{width:18px; height:18px;}
+.acc-row-ico-key svg{color:var(--text-muted);}
+.acc-row-body{flex:1; min-width:0; display:flex; flex-direction:column;}
+.acc-row-body b{font-size:13.5px;}
+.acc-row-body span{font-size:12.5px; color:var(--text-muted); overflow-wrap:anywhere;}
+.acc-row .btn{flex:none;}
+.acc-row .btn[disabled]{opacity:.5; cursor:not-allowed;}
+.acc-danger{border-color:color-mix(in srgb, var(--danger) 35%, var(--border));}
+.acc-danger h3{color:var(--danger);}
+.acc-note{font-size:12px; color:var(--text-faint); margin:10px 0 0;}
+.acc-modal-actions{display:flex; justify-content:flex-end; gap:8px; margin-top:16px;}
+.acc-legal{text-align:center; font-size:12.5px; color:var(--text-faint); margin:4px 0 0;}
+.acc-legal a{color:var(--text-muted);}
+@media (max-width:640px){
+  .acc-grid{grid-template-columns:1fr;}
+  .acc-card{padding:16px;}
+  .acc-row{flex-wrap:wrap;}
+  .acc-row-body{flex:1 1 calc(100% - 48px);}
+  .acc-row .btn{margin-left:auto;}
+  .acc-hero h2{font-size:19px;}
+  .acc-page input.name-input, .acc-page .auth-select{font-size:16px;}  /* no iOS zoom on focus */
+}
+
 /* ============================================================================
    Split-screen auth — "Synottic Prompt Intelligence"
    Left = focused authentication. Right = brand composition (navy ground,
@@ -1446,9 +1521,9 @@ button, a, .prompt-card, .task-tile, .h2-tile, .rail-item, .lc-chip{-webkit-tap-
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/><path d="M15 10l-2 2 2 2"/></svg>
       </button>
     </div>
-    <div class="learner-box" id="learner-box"></div>
     <nav class="nav" id="nav"></nav>
     <div class="sidebar-footer" id="sidebar-footer"></div>
+    <div class="learner-box" id="learner-box"></div>
   </aside>
   <div class="sb-resizer" id="sb-resizer" role="separator" tabindex="0" aria-orientation="vertical" aria-label="Resize the main menu" title="Drag to resize the menu · double-click to reset"></div>
 
@@ -13031,6 +13106,9 @@ const AuthAPI = (function () {
     myCodes: () => call("/auth/my-codes"),
     removeCode: (code) => call("/auth/remove-code", { method: "POST", body: { code } }),
     updateProfile: (b) => call("/auth/me", { method: "PATCH", body: b }),
+    // Account settings: sign-in methods, password, devices, delete
+    account: () => call("/auth/account"),
+    accountAction: (b) => call("/auth/account", { method: "POST", body: b }),
     // Google / Microsoft sign-in: which providers this deployment has keys for
     providers: () => call("/auth/oauth-start").then((d) => d.providers || []).catch(() => []),
     adminLogin: (b) => call("/admin/session", { method: "POST", body: b }),
@@ -13597,6 +13675,267 @@ function renderOAuthProfile(me) {
     } catch (err) {
       btn.disabled = false; btn.textContent = "Open my library";
       fieldErr(root, err.soft ? "Couldn't reach the server. Try again." : "We couldn't save that. Please try again.");
+    }
+  });
+}
+
+/* ============================ Account settings ============================
+   Profile · sign-in methods (password / Google / Microsoft) · devices · delete.
+   Server: /api/auth/me (profile) and /api/auth/account (everything else). */
+function initialsOf(name) {
+  const parts = String(name || "").trim().split(/\s+/).filter(Boolean);
+  const s = (parts[0] || "?")[0] + (parts.length > 1 ? parts[parts.length - 1][0] : "");
+  return s.toUpperCase();
+}
+const ACCOUNT_NOTICES = {
+  "linked-google": "Google is now connected. You can use it to sign in.",
+  "linked-microsoft": "Microsoft is now connected. You can use it to sign in.",
+  "identity-in-use": "That account is already connected to a different Synottic account.",
+  "provider-already-linked": "You already have an account from that provider connected. Disconnect it first.",
+  cancelled: "Connecting was cancelled. Nothing changed.",
+  expired: "That took too long. Please try connecting again.",
+  failed: "We couldn't connect that account. Please try again.",
+  "no-email": "We couldn't get an email address from that account, so it wasn't connected.",
+  unavailable: "That sign-in option isn't available right now.",
+  "rate-limited": "Too many attempts. Wait a few minutes and try again.",
+};
+/* After "Connect Google" the provider sends people back to /?account=<code>. */
+function consumeAccountNotice() {
+  let code = null;
+  try { code = new URLSearchParams(location.search).get("account"); } catch (e) {}
+  if (!code) return;
+  try { history.replaceState(null, "", "/"); } catch (e) {}
+  if (typeof navigate === "function") navigate("account");
+  const msg = ACCOUNT_NOTICES[code] || ACCOUNT_NOTICES.failed;
+  if (typeof showToast === "function") showToast(msg);
+}
+
+function renderAccountView(container) {
+  const s = Store.getSession();
+  if (!AuthAPI.isConfigured() || !s || !s.user) {
+    container.innerHTML = `<div class="section-title"><h2>Account</h2></div>` +
+      emptyStateHtml("key", "Sign in to manage your account", "Account settings are available for signed-in learners.");
+    return;
+  }
+  container.innerHTML = `<div class="acc-page"><div class="acc-loading">Loading your account…</div></div>`;
+  Promise.all([AuthAPI.me(), AuthAPI.account()]).then(([me, acc]) => {
+    if (!me || !me.authenticated) { renderAuthGate("Please sign in again."); return; }
+    drawAccount(container, me.user, acc);
+  }).catch(() => {
+    container.innerHTML = `<div class="acc-page"><div class="acc-card"><p>We couldn't load your account. Check your connection and try again.</p>
+      <button class="btn" id="acc-retry">Try again</button></div></div>`;
+    container.querySelector("#acc-retry").addEventListener("click", () => renderAccountView(container));
+  });
+}
+
+function drawAccount(container, u, acc) {
+  const name = [u.firstName, u.lastName].filter(Boolean).join(" ") || "Learner";
+  const linked = {}; (acc.methods || []).forEach((m) => { linked[m.provider] = m; });
+  const providers = Array.from(new Set([...(acc.providers || []), ...Object.keys(linked)])).filter((k) => SOCIAL_ICONS[k]);
+  const methodCount = (acc.hasPassword ? 1 : 0) + Object.keys(linked).length;
+  const fnLabel = (SIGNUP_FUNCTIONS.find(([v]) => v === u.role) || [null, ""])[1];
+
+  const providerRow = (k) => {
+    const m = linked[k];
+    const last = m && methodCount <= 1;
+    return `<div class="acc-row">
+      <span class="acc-row-ico">${SOCIAL_ICONS[k]}</span>
+      <div class="acc-row-body"><b>${SOCIAL_LABELS[k]}</b>
+        <span>${m ? "Connected" + (m.email ? " as " + escapeHtml(m.email) : "") : "Not connected"}</span></div>
+      ${m
+        ? `<button class="btn btn-sm" data-unlink="${k}" ${last ? `disabled title="Add another way to sign in first"` : ""}>Disconnect</button>`
+        : `<a class="btn btn-sm" href="/api/auth/oauth-start?provider=${k}&link=1">Connect</a>`}
+    </div>`;
+  };
+
+  container.innerHTML = `<div class="acc-page">
+    <header class="acc-hero">
+      <span class="acc-av acc-av-lg" aria-hidden="true">${escapeHtml(initialsOf(name))}</span>
+      <div class="acc-hero-body">
+        <h2>${escapeHtml(name)}</h2>
+        <p>${escapeHtml(u.email)} ${u.emailVerified ? `<span class="acc-badge ok">Verified</span>` : `<span class="acc-badge warn">Not verified</span>`}</p>
+        <p class="acc-hero-meta">${[u.organization, fnLabel].filter(Boolean).map(escapeHtml).join(" · ")}</p>
+      </div>
+    </header>
+
+    <section class="acc-card" aria-labelledby="acc-h-profile">
+      <h3 id="acc-h-profile">Profile</h3>
+      <p class="acc-sub">Your function decides which library you see.</p>
+      <form id="acc-profile" novalidate>
+        <div class="acc-grid">
+          <div><label for="ap-first">First name</label><input id="ap-first" class="name-input" autocomplete="given-name" value="${escapeHtml(u.firstName || "")}"></div>
+          <div><label for="ap-last">Last name</label><input id="ap-last" class="name-input" autocomplete="family-name" value="${escapeHtml(u.lastName || "")}"></div>
+          <div><label for="ap-fn">Function / department</label>
+            <select id="ap-fn" class="auth-select">${SIGNUP_FUNCTIONS.map(([v, l]) => `<option value="${v}" ${u.role === v ? "selected" : ""}>${l}</option>`).join("")}</select></div>
+          <div><label for="ap-level">AI proficiency</label>
+            <select id="ap-level" class="auth-select">${SIGNUP_LEVELS.map(([v, l]) => `<option value="${v}" ${u.aiLevel === v ? "selected" : ""}>${l}</option>`).join("")}</select></div>
+          <div class="acc-span"><label for="ap-org">Organization / company</label><input id="ap-org" class="name-input" autocomplete="organization" value="${escapeHtml(u.organization || "")}"></div>
+        </div>
+        <div class="acc-actions"><span class="acc-msg" id="ap-msg" role="status" aria-live="polite"></span>
+          <button class="btn btn-primary" type="submit" id="ap-save">Save changes</button></div>
+      </form>
+    </section>
+
+    <section class="acc-card" aria-labelledby="acc-h-methods">
+      <h3 id="acc-h-methods">Sign-in methods</h3>
+      <p class="acc-sub">The ways you can sign in to this account. Keep at least one.</p>
+      <div class="acc-row">
+        <span class="acc-row-ico acc-row-ico-key">${icon("key")}</span>
+        <div class="acc-row-body"><b>Email and password</b>
+          <span>${acc.hasPassword ? escapeHtml(acc.email) : "No password yet. Add one to sign in without " + (Object.keys(linked).map((k) => SOCIAL_LABELS[k]).join(" or ") || "a provider") + "."}</span></div>
+        <button class="btn btn-sm" id="acc-pw">${acc.hasPassword ? "Change password" : "Set a password"}</button>
+      </div>
+      ${providers.map(providerRow).join("")}
+    </section>
+
+    <section class="acc-card" aria-labelledby="acc-h-devices">
+      <h3 id="acc-h-devices">Devices</h3>
+      <div class="acc-row">
+        <div class="acc-row-body"><b>This device</b><span>You're signed in here.</span></div>
+        <button class="btn btn-sm" id="acc-signout">Sign out</button>
+      </div>
+      <div class="acc-row">
+        <div class="acc-row-body"><b>Other devices</b>
+          <span>${acc.otherSessions ? `Signed in on ${acc.otherSessions} other device${acc.otherSessions === 1 ? "" : "s"}.` : "Not signed in anywhere else."}</span></div>
+        <button class="btn btn-sm" id="acc-others" ${acc.otherSessions ? "" : "disabled"}>Sign out everywhere else</button>
+      </div>
+    </section>
+
+    <section class="acc-card acc-danger" aria-labelledby="acc-h-delete">
+      <h3 id="acc-h-delete">Delete account</h3>
+      <p class="acc-sub">Permanently delete your account, saved prompts, progress and connected sign-in methods. This can't be undone.</p>
+      <button class="btn btn-danger" id="acc-delete">Delete my account…</button>
+    </section>
+
+    <p class="acc-legal"><a href="/privacy" target="_blank" rel="noopener">Privacy Policy</a> · <a href="/terms" target="_blank" rel="noopener">Terms of Service</a> · <a href="mailto:info@synottic.com">Contact</a></p>
+  </div>`;
+
+  const redraw = (nextAcc) => drawAccount(container, u, nextAcc || acc);
+
+  // profile
+  container.querySelector("#acc-profile").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const msg = container.querySelector("#ap-msg");
+    const body = {
+      firstName: container.querySelector("#ap-first").value.trim(),
+      lastName: container.querySelector("#ap-last").value.trim(),
+      function: container.querySelector("#ap-fn").value,
+      aiLevel: container.querySelector("#ap-level").value,
+      organization: container.querySelector("#ap-org").value.trim(),
+    };
+    if (!body.firstName || !body.lastName) { msg.textContent = "Enter your first and last name."; msg.className = "acc-msg err"; return; }
+    if (!body.organization) { msg.textContent = "Enter your organization."; msg.className = "acc-msg err"; return; }
+    const btn = container.querySelector("#ap-save"); btn.disabled = true; btn.textContent = "Saving…";
+    try {
+      await AuthAPI.updateProfile(body);
+      const fresh = await AuthAPI.me();
+      if (fresh && fresh.authenticated) {
+        const fnChanged = fresh.user.role !== u.role;
+        applyUserSession(fresh);
+        u = fresh.user;
+        if (typeof renderApp === "function") { STATE.view = "account"; renderApp(); }
+        showToast(fnChanged ? "Saved. Your library now matches your function." : "Profile saved");
+        return;
+      }
+      msg.textContent = "Saved"; msg.className = "acc-msg ok";
+    } catch (err) {
+      msg.textContent = err.soft ? "Couldn't reach the server. Try again." : "We couldn't save that. Check the fields and try again.";
+      msg.className = "acc-msg err";
+    }
+    btn.disabled = false; btn.textContent = "Save changes";
+  });
+
+  container.querySelector("#acc-pw").addEventListener("click", () => openPasswordModal(acc, redraw));
+  container.querySelector("#acc-signout").addEventListener("click", () => signOut());
+  container.querySelector("#acc-others").addEventListener("click", async (e) => {
+    e.target.disabled = true;
+    try { const r = await AuthAPI.accountAction({ op: "logout-others" }); showToast(r.ended ? "Signed out of " + r.ended + " other device" + (r.ended === 1 ? "" : "s") : "No other devices were signed in"); redraw(r); }
+    catch (err) { e.target.disabled = false; showToast("That didn't work. Try again."); }
+  });
+  container.querySelectorAll("[data-unlink]").forEach((b) => b.addEventListener("click", () => {
+    const k = b.dataset.unlink;
+    const { root, close } = openModal(`
+      <div class="modal-header"><h2>Disconnect ${SOCIAL_LABELS[k]}?</h2><button class="btn btn-icon btn-ghost" data-x>${icon("x")}</button></div>
+      <p class="prose">You won't be able to sign in with ${SOCIAL_LABELS[k]} until you connect it again. Your account and saved work stay as they are.</p>
+      <div class="acc-modal-actions"><button class="btn" data-x>Cancel</button><button class="btn btn-danger" id="un-go">Disconnect</button></div>`);
+    root.querySelectorAll("[data-x]").forEach((x) => x.addEventListener("click", close));
+    root.querySelector("#un-go").addEventListener("click", async () => {
+      try { const r = await AuthAPI.accountAction({ op: "unlink", provider: k }); close(); showToast(SOCIAL_LABELS[k] + " disconnected"); redraw(r); }
+      catch (err) { close(); showToast(err.data && err.data.error === "last-method" ? "Add another way to sign in before disconnecting this one." : "That didn't work. Try again."); }
+    });
+  }));
+  container.querySelector("#acc-delete").addEventListener("click", () => openDeleteModal(acc));
+}
+
+function openPasswordModal(acc, redraw) {
+  const has = acc.hasPassword;
+  const { root, close } = openModal(`
+    <div class="modal-header"><h2>${has ? "Change password" : "Set a password"}</h2><button class="btn btn-icon btn-ghost" data-x>${icon("x")}</button></div>
+    ${has ? "" : `<p class="prose" style="margin-bottom:12px;">Then you can also sign in with <b>${escapeHtml(acc.email)}</b> and this password.</p>`}
+    <form id="pw-form" novalidate class="acc-form">
+      ${has ? `<label for="pw-cur">Current password</label>${pwField("pw-cur", "current-password", "Your current password")}` : ""}
+      <label for="pw-new">New password</label>${pwField("pw-new", "new-password", "At least 5 characters")}
+      <label for="pw-new2">Confirm new password</label>${pwField("pw-new2", "new-password", "Re-enter the new password")}
+      <p class="acc-note">Other devices will be signed out.</p>
+      <div class="auth-error" role="alert" aria-live="polite"></div>
+      <div class="acc-modal-actions"><button class="btn" type="button" data-x>Cancel</button><button class="btn btn-primary" type="submit" id="pw-go">${has ? "Change password" : "Set password"}</button></div>
+    </form>`);
+  wirePwToggles(root);
+  root.querySelectorAll("[data-x]").forEach((x) => x.addEventListener("click", close));
+  const err = (m) => { root.querySelector(".auth-error").textContent = m; };
+  root.querySelector("#pw-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const cur = has ? root.querySelector("#pw-cur").value : undefined;
+    const nw = root.querySelector("#pw-new").value, nw2 = root.querySelector("#pw-new2").value;
+    if (has && !cur) return err("Enter your current password.");
+    if (nw.length < 5) return err("The new password must be at least 5 characters.");
+    if (nw !== nw2) return err("The new passwords don't match.");
+    const btn = root.querySelector("#pw-go"); btn.disabled = true; btn.textContent = "Saving…";
+    try {
+      const r = await AuthAPI.accountAction({ op: "password", currentPassword: cur, newPassword: nw });
+      close(); showToast(has ? "Password changed" : "Password set. You can now sign in with your email too."); redraw(r);
+    } catch (x) {
+      btn.disabled = false; btn.textContent = has ? "Change password" : "Set password";
+      if (x.data && x.data.error === "bad-current-password") err("Your current password isn't right.");
+      else if (x.status === 429) err("Too many attempts. Wait a few minutes and try again.");
+      else err(x.soft ? "Couldn't reach the server. Try again." : "That didn't work. Try again.");
+    }
+  });
+  const first = root.querySelector("#pw-cur") || root.querySelector("#pw-new"); if (first) first.focus();
+}
+
+function openDeleteModal(acc) {
+  const has = acc.hasPassword;
+  const { root, close } = openModal(`
+    <div class="modal-header"><h2>Delete your account?</h2><button class="btn btn-icon btn-ghost" data-x>${icon("x")}</button></div>
+    <p class="prose">This permanently deletes your account, saved and created prompts, practice history and connected sign-in methods. You can't undo it.</p>
+    <form id="del-form" novalidate class="acc-form">
+      ${has
+        ? `<label for="del-pw">Enter your password to confirm</label>${pwField("del-pw", "current-password", "Your password")}`
+        : `<label for="del-email">Type your email to confirm</label><input id="del-email" class="name-input" type="email" autocomplete="off" placeholder="${escapeHtml(acc.email)}">`}
+      <div class="auth-error" role="alert" aria-live="polite"></div>
+      <div class="acc-modal-actions"><button class="btn" type="button" data-x>Cancel</button><button class="btn btn-danger" type="submit" id="del-go">Delete my account</button></div>
+    </form>`);
+  wirePwToggles(root);
+  root.querySelectorAll("[data-x]").forEach((x) => x.addEventListener("click", close));
+  root.querySelector("#del-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const body = { op: "delete" };
+    if (has) body.password = root.querySelector("#del-pw").value; else body.confirmEmail = root.querySelector("#del-email").value.trim();
+    if (!(body.password || body.confirmEmail)) { root.querySelector(".auth-error").textContent = has ? "Enter your password." : "Type your email."; return; }
+    const btn = root.querySelector("#del-go"); btn.disabled = true; btn.textContent = "Deleting…";
+    try {
+      await AuthAPI.accountAction(body);
+      close();
+      Store.clearSession();
+      try { localStorage.removeItem("prompt-lib:session"); sessionStorage.clear(); } catch (x) {}
+      try { history.replaceState(null, "", "/login"); } catch (x) {}
+      renderSignIn("Your account has been deleted. Thanks for using Synottic Prompt Intelligence.");
+    } catch (x) {
+      btn.disabled = false; btn.textContent = "Delete my account";
+      const code = x.data && x.data.error;
+      root.querySelector(".auth-error").textContent = code === "bad-password" ? "That password isn't right."
+        : code === "email-mismatch" ? "That email doesn't match your account." : x.status === 429 ? "Too many attempts. Try again later." : "That didn't work. Try again.";
     }
   });
 }
@@ -20163,7 +20502,7 @@ const VIEW_TITLES = {
   program: "My Program", learn: "Learn", practice: "Practice", builder: "Create Prompt",
   framework: "Prompt Framework",
   myLibrary: "Saved", favorites: "Saved", me: "Me", insights: "Library Governance",
-  accessCodes: "Access codes", task: "Library", role: "Library",
+  accessCodes: "Access codes", account: "Account", task: "Library", role: "Library",
 };
 /* Which primary nav item lights up for a given (possibly nested) view. */
 const VIEW_PARENT = {
@@ -20193,7 +20532,7 @@ const SHARED_QUERY_VIEWS = new Set(["home", "search"]);
 // search, Learn and Practice, not by browsing the whole library.
 const SCOPED_HIDDEN_VIEWS = new Set(["categories", "categoryDetail", "role", "insights"]);
 function isViewAllowed(view) {
-  if (view === "accessCodes") {
+  if (view === "accessCodes" || view === "account") {
     // Any signed-in account learner can manage their codes, scoped or not.
     return !!(typeof AuthAPI !== "undefined" && AuthAPI.isConfigured()
       && Store.getSession() && Store.getSession().user);
@@ -20292,7 +20631,7 @@ function renderContent() {
     program: renderProgramView, learn: renderLearnView, practice: renderPracticeView, builder: renderBuilderView,
     framework: renderFrameworkView,
     myLibrary: renderMeView, favorites: renderMeView, me: renderMeView, insights: renderInsightsView,
-    accessCodes: renderAccessCodesView, task: renderTaskView, role: renderLibraryShell,
+    accessCodes: renderAccessCodesView, account: renderAccountView, task: renderTaskView, role: renderLibraryShell,
   };
   (map[STATE.view] || renderHome)(content);
 }
@@ -20395,21 +20734,59 @@ function renderAccessCodesView(container) {
   paintList();
 }
 
+/* Bottom-of-sidebar account card: avatar + name, opens a small menu with
+   Account settings, Access codes and Sign out (like most apps). */
 function renderLearnerBox() {
   const sc = currentScope();
   const s = Store.getSession();
   const box = document.getElementById("learner-box");
   if (!s) { box.innerHTML = ""; return; }
-  const line2 = sc && sc.program ? sc.program.name
-    : sc && sc.programs && sc.programs.length ? sc.programs.length + " program" + (sc.programs.length === 1 ? "" : "s")
-    : "";
-  const line3 = sc && sc.cohort ? sc.cohort.name : (s.kind === "admin" ? (s.industry || s.domain || "Organisation access") : "");
+  const account = !!(s.user && typeof AuthAPI !== "undefined" && AuthAPI.isConfigured());
+  const org = (sc && sc.org && sc.org.shortName) || s.orgName || "";
+  const programs = sc && sc.program ? sc.program.name
+    : sc && sc.programs && sc.programs.length ? sc.programs.length + " program" + (sc.programs.length === 1 ? "" : "s") : "";
+  const cohort = sc && sc.cohort ? sc.cohort.name : (s.kind === "admin" ? (s.industry || s.domain || "Organisation access") : "");
+  const access = isScopeRestricted() ? (programs || "Your programme library") : "Full library";
+  const sub = account ? (s.email || org) : (org || cohort || "Access code");
+  const initials = typeof initialsOf === "function" ? initialsOf(s.name) : String(s.name || "?").slice(0, 1).toUpperCase();
+  const onAccount = STATE.view === "account";
   box.innerHTML = `
-    <div class="lb-name">${escapeHtml(s.name)}</div>
-    <div class="lb-meta">${escapeHtml((sc && sc.org && sc.org.shortName) || "")}${line2 ? " · " + escapeHtml(line2) : ""}</div>
-    <div class="lb-meta">${escapeHtml(line3)}${isScopeRestricted() ? " · scoped" : ""}</div>
-    <button class="lb-signout" id="lb-signout">Sign out</button>`;
-  box.querySelector("#lb-signout").addEventListener("click", signOut);
+    <button class="acct-btn${onAccount ? " on" : ""}" id="acct-btn" aria-haspopup="menu" aria-expanded="false" title="${escapeHtml(s.name)}">
+      <span class="acc-av" aria-hidden="true">${escapeHtml(initials)}</span>
+      <span class="acct-txt"><span class="acct-name">${escapeHtml(s.name)}</span><span class="acct-sub">${escapeHtml(sub)}</span></span>
+      <svg class="acct-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 15l5-5 5 5"/></svg>
+    </button>
+    <div class="acct-menu" id="acct-menu" role="menu" hidden>
+      <div class="acct-menu-head">
+        <b>${escapeHtml(s.name)}</b>
+        ${account && s.email ? `<span>${escapeHtml(s.email)}</span>` : ""}
+        <span class="acct-chip">${escapeHtml([org, access].filter(Boolean).join(" · "))}</span>
+        ${cohort && !account ? `<span>${escapeHtml(cohort)}</span>` : ""}
+      </div>
+      ${account ? `<button class="acct-item" role="menuitem" data-acct="account">${icon("slider")}<span>Account settings</span></button>
+      <button class="acct-item" role="menuitem" data-acct="accessCodes">${icon("key")}<span>Access codes</span></button>` : ""}
+      <a class="acct-item" role="menuitem" href="/privacy" target="_blank" rel="noopener">${icon("eye")}<span>Privacy</span></a>
+      <button class="acct-item acct-out" role="menuitem" data-acct="signout">${icon("logout")}<span>Sign out</span></button>
+    </div>`;
+  const btn = box.querySelector("#acct-btn"), menu = box.querySelector("#acct-menu");
+  const setOpen = (open) => {
+    menu.hidden = !open; btn.setAttribute("aria-expanded", open ? "true" : "false");
+    if (open) { const f = menu.querySelector(".acct-item"); if (f) f.focus(); }
+  };
+  btn.addEventListener("click", (e) => { e.stopPropagation(); setOpen(menu.hidden); });
+  menu.addEventListener("click", (e) => e.stopPropagation());
+  if (!renderLearnerBox._wired) {
+    renderLearnerBox._wired = true;
+    document.addEventListener("click", () => { const m = document.getElementById("acct-menu"); if (m && !m.hidden) { m.hidden = true; const b = document.getElementById("acct-btn"); if (b) b.setAttribute("aria-expanded", "false"); } });
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") { const m = document.getElementById("acct-menu"); if (m && !m.hidden) { m.hidden = true; const b = document.getElementById("acct-btn"); if (b) { b.setAttribute("aria-expanded", "false"); b.focus(); } } } });
+  }
+  menu.querySelectorAll("[data-acct]").forEach((b) => b.addEventListener("click", () => {
+    setOpen(false);
+    const k = b.dataset.acct;
+    if (k === "signout") return signOut();
+    if (typeof closeSidebar === "function") closeSidebar();
+    navigate(k);
+  }));
 }
 function libraryCount() { return (typeof scopeInfo === "function" ? scopeInfo().total : scopedLibrary().length); }
 function renderSidebarFooter() {
@@ -20642,6 +21019,7 @@ async function bootApp() {
   STATE.view = "home";
   renderApp();
   resumeFromLanding();
+  if (typeof consumeAccountNotice === "function") consumeAccountNotice();
   const menuBtn = document.getElementById("mobile-menu-btn");
   const syncMenu = () => { menuBtn.style.display = window.innerWidth <= 880 ? "flex" : "none"; };
   syncMenu();

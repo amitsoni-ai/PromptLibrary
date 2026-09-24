@@ -179,7 +179,14 @@ body.previewing .topbar{top:var(--pbh);}
   body.sb-collapsed{--sidebar-w:68px;}
   body.sb-collapsed .brand{flex-direction:column; padding:12px 6px 8px; gap:4px;}
   body.sb-collapsed .brand-home{flex:none; justify-content:center;}
-  body.sb-collapsed .brand-text, body.sb-collapsed .learner-box, body.sb-collapsed .sidebar-footer,
+  body.sb-collapsed .acct-txt, body.sb-collapsed .acct-caret{display:none;}
+  body.sb-collapsed .learner-box{padding:8px 6px 10px;}
+  body.sb-collapsed .acct-btn{justify-content:center; padding:6px 0;}
+  .sidebar{z-index:35;}   /* sticky = own stacking layer; keep the account menu above the page */
+  body.sb-collapsed .learner-box{margin-top:auto;}
+  /* the collapsed rail is too narrow (and scrolls), so float the menu beside it */
+  body.sb-collapsed .acct-menu{position:fixed; left:calc(var(--sidebar-w) + 8px); right:auto; bottom:12px; width:250px;}
+  body.sb-collapsed .brand-text, body.sb-collapsed .sidebar-footer,
   body.sb-collapsed .nav-item > span, body.sb-collapsed .nav-kbd, body.sb-collapsed .nav-group-label{display:none;}
   body.sb-collapsed .sb-toggle svg{transform:scaleX(-1);}
   body.sb-collapsed .nav-item{justify-content:center; padding:10px 0;}
@@ -190,10 +197,28 @@ body.previewing .topbar{top:var(--pbh);}
 .brand-name{font-family:var(--font-display); font-weight:700; font-size:13.5px; letter-spacing:-0.01em; line-height:1.25;}
 .brand-sub{font-size:10.5px; color:var(--text-faint); letter-spacing:.04em; text-transform:uppercase; margin-top:1px;}
 
-.learner-box{margin:2px 12px 6px; padding:9px 11px; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--surface-2);}
-.learner-box .lb-name{font-weight:600; font-size:12.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
-.learner-box .lb-meta{font-size:11px; color:var(--text-faint); margin-top:1px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
-.learner-box .lb-signout{margin-top:6px; font-size:11px; color:var(--accent-strong); background:none; border:none; padding:0; font-weight:600;}
+/* account card, pinned to the bottom of the sidebar */
+.learner-box{position:relative; padding:8px 10px 10px; border-top:1px solid var(--border);}
+.learner-box:empty{display:none;}
+.acct-btn{display:flex; align-items:center; gap:10px; width:100%; padding:7px 8px; border:1px solid transparent; border-radius:10px; background:none; color:var(--text); text-align:left;}
+.acct-btn:hover, .acct-btn[aria-expanded="true"], .acct-btn.on{background:var(--surface-2); border-color:var(--border);}
+.acc-av{flex:none; width:32px; height:32px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; background:var(--accent); color:var(--accent-text-on); font-weight:700; font-size:12.5px; letter-spacing:.02em;}
+.acct-txt{display:flex; flex-direction:column; min-width:0; flex:1;}
+.acct-name{font-weight:600; font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.acct-sub{font-size:11.5px; color:var(--text-faint); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.acct-caret{flex:none; width:16px; height:16px; color:var(--text-faint); transition:transform .15s;}
+.acct-btn[aria-expanded="true"] .acct-caret{transform:rotate(180deg);}
+.acct-menu{position:absolute; left:10px; right:10px; bottom:calc(100% - 4px); z-index:80; background:var(--surface); border:1px solid var(--border); border-radius:12px; box-shadow:var(--shadow-lg); padding:6px; animation:acctIn .12s ease-out;}
+@keyframes acctIn{from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:none;}}
+.acct-menu-head{display:flex; flex-direction:column; gap:2px; padding:8px 10px 10px; margin-bottom:4px; border-bottom:1px solid var(--border); font-size:12px; color:var(--text-muted); min-width:0;}
+.acct-menu-head b{font-size:13.5px; color:var(--text);}
+.acct-menu-head span{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.acct-menu-head .acct-chip{white-space:normal; overflow:visible;}
+.acct-chip{align-self:flex-start; max-width:100%; margin-top:6px; padding:3px 9px; border-radius:10px; line-height:1.4; background:var(--accent-soft); color:var(--accent-strong); font-size:11px; font-weight:600;}
+.acct-item{display:flex; align-items:center; gap:10px; width:100%; padding:8px 10px; border:none; border-radius:8px; background:none; color:var(--text); font-size:13px; text-align:left; text-decoration:none;}
+.acct-item:hover, .acct-item:focus-visible{background:var(--surface-2); outline:none;}
+.acct-item svg{width:16px; height:16px; color:var(--text-muted);}
+.acct-out{color:var(--danger);} .acct-out svg{color:var(--danger);}
 
 .nav{padding:8px 10px; display:flex; flex-direction:column; gap:2px;}
 .nav-primary{display:flex; flex-direction:column; gap:2px;}
@@ -1005,6 +1030,56 @@ button.fw-tile:hover{border-color:var(--accent);}
 .verify-banner .vb-x{border:0; background:transparent; color:inherit; font-size:13px; cursor:pointer; opacity:.7;}
 .verify-banner .vb-x:hover{opacity:1;}
 
+/* ---- Account settings (part_auth.js#renderAccountView) ---- */
+.acc-page{max-width:760px; margin:0 auto; display:flex; flex-direction:column; gap:16px; padding-bottom:40px;}
+.acc-loading{color:var(--text-muted); padding:40px 0; text-align:center;}
+.acc-hero{display:flex; align-items:center; gap:16px; padding:6px 2px 4px;}
+.acc-av-lg{width:60px; height:60px; font-size:21px;}
+.acc-hero-body{min-width:0;}
+.acc-hero h2{font-size:22px; margin:0 0 2px;}
+.acc-hero p{margin:0; color:var(--text-muted); font-size:13.5px; display:flex; flex-wrap:wrap; align-items:center; gap:8px; overflow-wrap:anywhere;}
+.acc-hero-meta{margin-top:2px !important; font-size:12.5px !important; color:var(--text-faint) !important;}
+.acc-badge{font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px;}
+.acc-badge.ok{background:var(--accent-soft); color:var(--accent-strong);}
+.acc-badge.warn{background:var(--danger-soft); color:var(--danger);}
+.acc-card{background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:18px 20px;}
+.acc-card h3{font-size:15.5px; margin:0 0 2px;}
+.acc-sub{margin:0 0 14px; color:var(--text-muted); font-size:13px;}
+.acc-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px 14px;}
+.acc-grid label, .acc-form label{display:block; font-size:12.5px; font-weight:600; margin:0 0 5px; color:var(--text-muted);}
+.acc-form label{margin-top:12px;}
+.acc-page input.name-input, .acc-page .auth-select, .modal .acc-form input.name-input{width:100%; padding:10px 12px; font-size:14px; border-radius:var(--radius-sm); border:1.5px solid var(--border-strong); background:var(--surface); color:var(--text); text-transform:none; letter-spacing:normal;}
+.acc-page input.name-input:focus, .acc-page .auth-select:focus, .modal .acc-form input.name-input:focus{border-color:var(--accent); outline:none;}
+.acc-row a.btn{text-decoration:none;}
+.acc-span{grid-column:1 / -1;}
+.acc-actions{display:flex; align-items:center; justify-content:flex-end; gap:12px; margin-top:16px;}
+.acc-msg{font-size:12.5px; color:var(--text-muted);} .acc-msg.err{color:var(--danger);} .acc-msg.ok{color:var(--accent-strong);}
+.acc-row{display:flex; align-items:center; gap:12px; padding:12px 0; border-top:1px solid var(--border);}
+.acc-card h3 + .acc-row, .acc-sub + .acc-row{border-top:none; padding-top:4px;}
+.acc-row-ico{flex:none; width:36px; height:36px; border-radius:10px; border:1px solid var(--border); display:flex; align-items:center; justify-content:center; background:var(--surface);}
+.acc-row-ico svg{width:18px; height:18px;}
+.acc-row-ico-key svg{color:var(--text-muted);}
+.acc-row-body{flex:1; min-width:0; display:flex; flex-direction:column;}
+.acc-row-body b{font-size:13.5px;}
+.acc-row-body span{font-size:12.5px; color:var(--text-muted); overflow-wrap:anywhere;}
+.acc-row .btn{flex:none;}
+.acc-row .btn[disabled]{opacity:.5; cursor:not-allowed;}
+.acc-danger{border-color:color-mix(in srgb, var(--danger) 35%, var(--border));}
+.acc-danger h3{color:var(--danger);}
+.acc-note{font-size:12px; color:var(--text-faint); margin:10px 0 0;}
+.acc-modal-actions{display:flex; justify-content:flex-end; gap:8px; margin-top:16px;}
+.acc-legal{text-align:center; font-size:12.5px; color:var(--text-faint); margin:4px 0 0;}
+.acc-legal a{color:var(--text-muted);}
+@media (max-width:640px){
+  .acc-grid{grid-template-columns:1fr;}
+  .acc-card{padding:16px;}
+  .acc-row{flex-wrap:wrap;}
+  .acc-row-body{flex:1 1 calc(100% - 48px);}
+  .acc-row .btn{margin-left:auto;}
+  .acc-hero h2{font-size:19px;}
+  .acc-page input.name-input, .acc-page .auth-select{font-size:16px;}  /* no iOS zoom on focus */
+}
+
 /* ============================================================================
    Split-screen auth — "Synottic Prompt Intelligence"
    Left = focused authentication. Right = brand composition (navy ground,
@@ -1444,9 +1519,9 @@ button, a, .prompt-card, .task-tile, .h2-tile, .rail-item, .lc-chip{-webkit-tap-
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/><path d="M15 10l-2 2 2 2"/></svg>
       </button>
     </div>
-    <div class="learner-box" id="learner-box"></div>
     <nav class="nav" id="nav"></nav>
     <div class="sidebar-footer" id="sidebar-footer"></div>
+    <div class="learner-box" id="learner-box"></div>
   </aside>
   <div class="sb-resizer" id="sb-resizer" role="separator" tabindex="0" aria-orientation="vertical" aria-label="Resize the main menu" title="Drag to resize the menu · double-click to reset"></div>
 
