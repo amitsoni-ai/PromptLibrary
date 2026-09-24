@@ -12,6 +12,7 @@
     "loadtest": "node migrate/loadtest.mjs",
     "migrate:v3": "node migrate/run_v3.mjs",
     "migrate:v5": "node migrate/run_v5.mjs",
+    "migrate:v6": "node migrate/run_v6.mjs",
     "dev": "node devserver.mjs",
     "dev:auth": "node migrate/devserver_pglite.mjs"
   },

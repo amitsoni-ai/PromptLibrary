@@ -5,7 +5,7 @@ import { clientIp } from "./_http.js";
 
 // action -> { limit, windowSec }
 const RULES = {
-  signup:            { limit: 5,  windowSec: 3600 },
+  signup:            { limit: 30, windowSec: 3600 },   // a workshop room shares one IP
   login:             { limit: 10, windowSec: 900 },
   login_email:       { limit: 8,  windowSec: 900 },   // per-account, feeds lockout
   verify:            { limit: 20, windowSec: 900 },
@@ -14,6 +14,8 @@ const RULES = {
   reset_password:    { limit: 10, windowSec: 3600 },
   redeem_code:       { limit: 15, windowSec: 3600 },
   admin_login:       { limit: 8,  windowSec: 900 },
+  oauth:             { limit: 60, windowSec: 900 },
+  account_exists:    { limit: 3,  windowSec: 3600 },  // "you already have an account" emails, per address
   default:           { limit: 60, windowSec: 900 },
 };
 

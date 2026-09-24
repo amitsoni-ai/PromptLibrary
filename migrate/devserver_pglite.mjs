@@ -31,8 +31,8 @@ const sql = db();
 // Apply v1 (schema.sql) FIRST so the classic access-code path has its tables
 // (admin_codes / seed_codes / activity / learner_state). schema_v2 and _v3 are
 // additive on top of v1 — the same order the production checklist requires.
-console.log("→ applying schema.sql + schema_v2.sql + schema_v3.sql + schema_v5.sql to", process.env.DATABASE_URL);
-for (const file of ["schema.sql", "schema_v2.sql", "schema_v3.sql", "schema_v5.sql"]) {
+console.log("→ applying schema.sql + schema_v2.sql + schema_v3.sql + schema_v5.sql + schema_v6.sql to", process.env.DATABASE_URL);
+for (const file of ["schema.sql", "schema_v2.sql", "schema_v3.sql", "schema_v5.sql", "schema_v6.sql"]) {
   const schema = readFileSync(join(HERE, file), "utf8").replace(/--.*$/gm, "");
   for (const stmt of schema.split(/;\s*(?:\n|$)/).map((s) => s.trim()).filter(Boolean)) await sql(stmt);
 }

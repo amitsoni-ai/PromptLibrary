@@ -62,6 +62,14 @@ export const TEMPLATES = {
        ${button(v.verifyUrl, "Confirm my email")}`),
     text: `Welcome, ${v.firstName}. Confirm your email to open your library: ${v.verifyUrl}`,
   }),
+  account_exists: (v) => ({
+    subject: `You already have a ${BRAND.name} account`,
+    html: shell("You already have an account",
+      `<p>Someone tried to create a new account with this email address. You already have one, so there is nothing to set up.</p>
+       ${button(v.loginUrl, "Sign in")}
+       <p style="font-size:13px;">Forgot your password? <a href="${v.resetUrl}" style="color:${BRAND.accent};">Reset it here</a>.</p>`),
+    text: `You already have an account. Sign in: ${v.loginUrl}  Forgot your password? ${v.resetUrl}`,
+  }),
   verify_email: (v) => ({
     subject: "Confirm your email",
     html: shell("Confirm your email",

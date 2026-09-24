@@ -18,7 +18,7 @@ const AuthAPI = (function () {
     return csrf;
   }
 
-  async function call(path, { method = "GET", body } = {}) {
+  async function call(path, { method = "GET", body, retried } = {}) {
     if (!BASE) { const e = new Error("no-backend"); e.soft = true; throw e; }
     const headers = { "content-type": "application/json" };
     if (method !== "GET") headers["x-csrf-token"] = await ensureCsrf();
@@ -32,6 +32,12 @@ const AuthAPI = (function () {
     let data = null;
     try { data = await res.json(); } catch (e) {}
     if (!data) { const e = new Error("no-backend"); e.soft = true; throw e; }
+    // Stale CSRF token (cookie expired or cleared in another tab): get a fresh
+    // one and try once more, so the learner never has to press the button twice.
+    if (res.status === 403 && data.error === "bad-csrf" && !retried) {
+      csrf = null;
+      return call(path, { method, body, retried: true });
+    }
     if (!res.ok) { const e = new Error(data.error || "http-" + res.status); e.status = res.status; e.data = data; throw e; }
     return data;
   }
@@ -51,6 +57,8 @@ const AuthAPI = (function () {
     myCodes: () => call("/auth/my-codes"),
     removeCode: (code) => call("/auth/remove-code", { method: "POST", body: { code } }),
     updateProfile: (b) => call("/auth/me", { method: "PATCH", body: b }),
+    // Google / Microsoft sign-in: which providers this deployment has keys for
+    providers: () => call("/auth/oauth-start").then((d) => d.providers || []).catch(() => []),
     adminLogin: (b) => call("/admin/session", { method: "POST", body: b }),
     adminLogout: () => call("/admin/session", { method: "DELETE" }).catch(() => {}),
     adminMe: () => call("/admin/session"),
@@ -104,12 +112,57 @@ function wirePwToggles(root) {
   }));
 }
 
+/* ---- "Continue with Google / Microsoft" ----
+   Only providers the server has keys for are shown (GET /api/auth/oauth-start).
+   Each button is a plain link: the server does the redirect dance and lands
+   back on `/` signed in (or `/login?oauth_error=…`). */
+const SOCIAL_ICONS = {
+  google: '<svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>',
+  microsoft: '<svg viewBox="0 0 23 23" aria-hidden="true"><path fill="#F25022" d="M1 1h10v10H1z"/><path fill="#7FBA00" d="M12 1h10v10H12z"/><path fill="#00A4EF" d="M1 12h10v10H1z"/><path fill="#FFB900" d="M12 12h10v10H12z"/></svg>',
+};
+const SOCIAL_LABELS = { google: "Google", microsoft: "Microsoft" };
+let SOCIAL_PROVIDERS = null;   // promise, fetched once per page load
+function socialSlot() { return '<div class="auth-social" data-social hidden></div>'; }
+function wireSocial(root) {
+  const slot = root.querySelector("[data-social]");
+  if (!slot || !AuthAPI.isConfigured()) return;
+  if (!SOCIAL_PROVIDERS) SOCIAL_PROVIDERS = AuthAPI.providers();
+  SOCIAL_PROVIDERS.then((list) => {
+    list = (list || []).filter((k) => SOCIAL_ICONS[k]);
+    if (!list.length || !slot.isConnected) return;
+    slot.innerHTML = list.map((k) =>
+      `<a class="btn auth-social-btn" href="/api/auth/oauth-start?provider=${k}" data-provider="${k}">${SOCIAL_ICONS[k]}<span>Continue with ${SOCIAL_LABELS[k]}</span></a>`).join("")
+      + '<p class="auth-legal">By continuing with ' + list.map((k) => SOCIAL_LABELS[k]).join(" or ") + ', you agree to our <a href="/terms" target="_blank" rel="noopener">Terms of Service</a> and <a href="/privacy" target="_blank" rel="noopener">Privacy Policy</a>.</p>'
+      + '<div class="auth-divider"><span>or use your email</span></div>';
+    slot.hidden = false;
+    slot.querySelectorAll(".auth-social-btn").forEach((a) => a.addEventListener("click", () => {
+      a.classList.add("is-busy");
+      a.querySelector("span").textContent = "Opening " + SOCIAL_LABELS[a.dataset.provider] + "…";
+    }));
+  });
+}
+const OAUTH_ERRORS = {
+  cancelled: "Sign-in was cancelled. Try again, or use your email below.",
+  expired: "That sign-in took too long or was opened in another tab. Please try again.",
+  "email-in-use": "An account with this email already exists. Sign in with your email and password below.",
+  "no-email": "We couldn't get an email address from that account. Please use your email below.",
+  "account-disabled": "This account has been disabled. Contact your programme lead.",
+  "rate-limited": "Too many attempts. Wait a few minutes and try again.",
+  unavailable: "That sign-in option isn't set up yet. Please use your email below.",
+  failed: "Something went wrong signing you in. Please try again.",
+};
+
 // Right-hand brand panel shown beside every auth screen. Desktop/tablet show
 // the full-bleed Synottic artwork (which carries the message); on mobile the
-// artwork is replaced by a compact text banner below the form.
+// artwork is replaced by a compact text banner below the form. The text sits
+// under the artwork on desktop too, so the panel is never an empty block while
+// the image loads or if it fails.
 function authBrandAside() {
   return `<aside class="auth-brand">
-    <img class="auth-brand-img" src="/homepage.png" alt="Synottic Prompt Intelligence — don't just use AI, think with it." fetchpriority="high" decoding="async" />
+    <picture>
+      <source srcset="/auth-art.webp" type="image/webp" />
+      <img class="auth-brand-img" src="/auth-art.jpg" alt="Better prompts. Bigger impact. From ideas to real outcomes, with the power of AI." fetchpriority="high" decoding="async" />
+    </picture>
     <div class="auth-brand-msg">
       <p class="auth-eyebrow">Synottic Prompt Intelligence</p>
       <h2 class="auth-brand-headline">Don&rsquo;t just use AI.<br>Think with it.</h2>
@@ -255,6 +308,8 @@ function authShell(inner) {
     ${authBrandAside()}
   </div>`;
   wirePwToggles(root);
+  const art = root.querySelector(".auth-brand-img");
+  if (art) art.addEventListener("error", () => art.remove());
   // phones: a back arrow to the landing page, like an app's sign-in screen
   const back = root.querySelector("[data-auth-back]");
   if (back) back.addEventListener("click", () => {
@@ -292,6 +347,7 @@ function renderSignIn(msg) {
     <h1>Welcome back</h1>
     <p class="sub">Continue your AI-powered work and learning.</p>
     ${authTabs("signin")}
+    ${socialSlot()}
     <form id="si-form" novalidate>
       <label for="si-email">Email</label>
       <input id="si-email" class="name-input" type="email" autocomplete="username" inputmode="email" placeholder="you@company.com" />
@@ -308,6 +364,7 @@ function renderSignIn(msg) {
       New to Synottic? <button class="auth-link" data-authtab="signup">Create an account</button>
     </div>`);
   authNav(root);
+  wireSocial(root);
   const form = root.querySelector("#si-form");
   root.querySelector("#si-forgot").addEventListener("click", () => renderForgot());
   form.addEventListener("submit", async (e) => {
@@ -356,6 +413,7 @@ function renderSignUp() {
       <h1>Create your account</h1>
       <p class="sub">Step 1 of 2 — the basics. Takes about a minute.</p>
       ${authTabs("signup")}
+      ${socialSlot()}
       <form id="su1" novalidate>
         <div class="auth-2col">
           <div><label for="su-first">First name</label><input id="su-first" class="name-input" autocomplete="given-name" value="${escapeHtml(d.firstName || "")}" /></div>
@@ -372,6 +430,7 @@ function renderSignUp() {
       </form>
       <div class="gate-hint" style="text-align:center;">Already have an account? <button class="auth-link" data-authtab="signin">Sign in</button></div>`);
     authNav(root);
+    wireSocial(root);
     root.querySelector("#su1").addEventListener("submit", (e) => {
       e.preventDefault();
       d.firstName = root.querySelector("#su-first").value.trim();
@@ -403,7 +462,7 @@ function renderSignUp() {
       <select id="su-level" class="auth-select">${SIGNUP_LEVELS.map(([v, l]) => `<option value="${v}" ${d.aiLevel === v ? "selected" : ""}>${l}</option>`).join("")}</select>
       <label for="su-org" style="margin-top:12px;">Organization / company</label>
       <input id="su-org" class="name-input" autocomplete="organization" value="${escapeHtml(d.organization || "")}" />
-      <label class="auth-check" style="margin-top:14px;"><input type="checkbox" id="su-terms" ${d.agreeTerms ? "checked" : ""}/> I agree to the Terms &amp; Privacy Policy</label>
+      <label class="auth-check" style="margin-top:14px;"><input type="checkbox" id="su-terms" ${d.agreeTerms ? "checked" : ""}/> I agree to the <a href="/terms" target="_blank" rel="noopener">Terms of Service</a> and <a href="/privacy" target="_blank" rel="noopener">Privacy Policy</a></label>
       <div class="auth-error" role="alert" aria-live="polite"></div>
       <div class="auth-2col" style="margin-top:6px;">
         <button class="btn" id="su2-back" type="button">Back</button>
@@ -440,8 +499,8 @@ function renderSignUp() {
       btn.disabled = false; btn.textContent = "Create account";
       if (err.status === 422 && err.data) fieldErr(root, humanizeValidation(err.data));
       else if (err.status === 429) fieldErr(root, "Too many sign-ups from here. Try again later.");
-      else if (err.soft) fieldErr(root, "Couldn't reach the server. Try again.");
-      else fieldErr(root, "Something went wrong creating your account.");
+      else if (err.soft) fieldErr(root, "Couldn't reach the server. Check your connection and try again.");
+      else fieldErr(root, "Something went wrong on our side creating your account. Please try again in a minute.");
     }
   });
 }
@@ -468,7 +527,7 @@ function renderSignUpCollection(st, code) {
       ${pwField("suc-pass", "new-password", "At least 5 characters")}
       <label for="suc-pass2" style="margin-top:12px;">Confirm password</label>
       ${pwField("suc-pass2", "new-password", "Re-enter your password")}
-      <label class="auth-check" style="margin-top:14px;"><input type="checkbox" id="suc-terms" ${d.agreeTerms ? "checked" : ""}/> I agree to the Terms &amp; Privacy Policy</label>
+      <label class="auth-check" style="margin-top:14px;"><input type="checkbox" id="suc-terms" ${d.agreeTerms ? "checked" : ""}/> I agree to the <a href="/terms" target="_blank" rel="noopener">Terms of Service</a> and <a href="/privacy" target="_blank" rel="noopener">Privacy Policy</a></label>
       <div class="auth-error" role="alert" aria-live="polite"></div>
       <button class="btn btn-primary" id="suc-go" type="submit">Create account</button>
     </form>
@@ -517,11 +576,55 @@ function renderSignUpCollection(st, code) {
       }
       if (err.status === 422 && err.data) fieldErr(root, humanizeValidation(err.data));
       else if (err.status === 429) fieldErr(root, "Too many sign-ups from here. Try again later.");
-      else if (err.soft) fieldErr(root, "Couldn't reach the server. Try again.");
-      else fieldErr(root, "Something went wrong creating your account.");
+      else if (err.soft) fieldErr(root, "Couldn't reach the server. Check your connection and try again.");
+      else fieldErr(root, "Something went wrong on our side creating your account. Please try again in a minute.");
     }
   });
   root.querySelector("#suc-first").focus();
+}
+
+// New Google / Microsoft account: one short step for what the password
+// sign-up asks in step 2 (function drives the library). Skippable — the
+// account already works with the general library.
+function renderOAuthProfile(me) {
+  const u = (me && me.user) || {};
+  const root = authShell(`
+    <h1>Welcome${u.firstName ? ", " + escapeHtml(u.firstName) : ""}!</h1>
+    <p class="sub">Your account is ready. Tell us a little about you so we open the right library.</p>
+    <form id="op" novalidate>
+      <label for="op-fn">Your function / department</label>
+      <select id="op-fn" class="auth-select">
+        <option value="" selected disabled>Select your function…</option>
+        ${SIGNUP_FUNCTIONS.map(([v, l]) => `<option value="${v}">${l}</option>`).join("")}
+      </select>
+      <label for="op-level" style="margin-top:12px;">AI proficiency</label>
+      <select id="op-level" class="auth-select">${SIGNUP_LEVELS.map(([v, l]) => `<option value="${v}" ${u.aiLevel === v ? "selected" : ""}>${l}</option>`).join("")}</select>
+      <label for="op-org" style="margin-top:12px;">Organization / company</label>
+      <input id="op-org" class="name-input" autocomplete="organization" value="${escapeHtml(u.organization || "")}" />
+      <p class="auth-note">By continuing you agree to the <a href="/terms" target="_blank" rel="noopener">Terms of Service</a> and <a href="/privacy" target="_blank" rel="noopener">Privacy Policy</a>.</p>
+      <div class="auth-error" role="alert" aria-live="polite"></div>
+      <button class="btn btn-primary" id="op-go" type="submit">Open my library</button>
+    </form>
+    <div class="gate-hint" style="text-align:center;"><button class="auth-link" id="op-skip" type="button">Skip for now</button></div>`);
+  const back = root.querySelector("[data-auth-back]"); if (back) back.remove();
+  root.querySelector("#op-skip").addEventListener("click", () => bootApp());
+  root.querySelector("#op").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const fn = root.querySelector("#op-fn").value;
+    const organization = root.querySelector("#op-org").value.trim();
+    if (!fn) return fieldErr(root, "Choose your function so we can open the right library.");
+    if (!organization) return fieldErr(root, "Tell us your organization.");
+    const btn = root.querySelector("#op-go"); btn.disabled = true; btn.textContent = "Saving…";
+    try {
+      await AuthAPI.updateProfile({ function: fn, aiLevel: root.querySelector("#op-level").value, organization });
+      const fresh = await AuthAPI.me().catch(() => null);
+      if (fresh && fresh.authenticated) applyUserSession(fresh);
+      bootApp();
+    } catch (err) {
+      btn.disabled = false; btn.textContent = "Open my library";
+      fieldErr(root, err.soft ? "Couldn't reach the server. Try again." : "We couldn't save that. Please try again.");
+    }
+  });
 }
 
 function humanizeValidation(data) {
@@ -1011,7 +1114,7 @@ function renderLanding() {
     // 6 · close
     + '<section class="lp-wrap lpx-final"><p class="lp-eyebrow">Don’t just use AI. Think with it.</p><h2 class="lpx-h2">Stop rewriting AI answers.<br>Start with a better prompt.</h2>'
       + '<div class="lpx-cta"><button class="lp-btn lp-btn-primary lpx-big" data-lp-signup>Sign up free</button><button class="lp-btn lp-btn-outline lpx-big" data-lp-login>Log in</button></div></section>'
-    + '<footer class="lp-foot"><div class="lp-wrap"><span>Synottic Prompt Intelligence · Human‑Centred AI</span><a href="#" data-lp-login>Sign in</a></div></footer>'
+    + '<footer class="lp-foot"><div class="lp-wrap"><span>Synottic Prompt Intelligence · Human‑Centred AI</span><nav class="lp-foot-links"><a href="/terms">Terms</a><a href="/privacy">Privacy</a><a href="#" data-lp-login>Sign in</a></nav></div></footer>'
     + '<div class="lpx-sticky" id="lpx-sticky" hidden><span><b>' + total + " prompts</b> waiting for you</span><button class=\"lp-btn lp-btn-primary\" data-lp-signup>Sign up free</button></div>"
     + '<div class="lpx-modal" id="lpx-modal" hidden role="dialog" aria-modal="true" aria-labelledby="lpx-m-title"><div class="lpx-modal-card" id="lpx-modal-card"></div></div>'
     + "</div>";
@@ -1173,12 +1276,27 @@ function authRoute() {
   if (/\/reset-password\/?$/.test(path)) return { name: "reset", token: qs.get("token") };
   if (/\/forgot-password\/?$/.test(path)) return { name: "forgot" };
   if (/\/admin\/login\/?$/.test(path) || location.hash === "#/admin/login") return { name: "adminLogin" };
+  if (qs.get("oauth_error")) return { name: "oauthError", code: qs.get("oauth_error") };
+  if (qs.get("oauth") === "new") return { name: "oauthNew" };
   return null;
 }
 async function handleAuthRoute(r) {
   if (r.name === "verify") { r.token ? renderVerifyLanding(r.token) : renderSignIn("Missing confirmation token."); return true; }
   if (r.name === "reset") { r.token ? renderReset(r.token) : renderForgot(); return true; }
   if (r.name === "forgot") { renderForgot(); return true; }
+  if (r.name === "oauthError") {
+    try { history.replaceState(null, "", "/login"); } catch (e) {}
+    renderSignIn(OAUTH_ERRORS[r.code] || OAUTH_ERRORS.failed);
+    return true;
+  }
+  if (r.name === "oauthNew") {
+    try { history.replaceState(null, "", "/"); } catch (e) {}
+    const me = await AuthAPI.me().catch(() => null);
+    if (!me || !me.authenticated) { renderSignIn(OAUTH_ERRORS.failed); return true; }
+    applyUserSession(me);
+    renderOAuthProfile(me);
+    return true;
+  }
   if (r.name === "adminLogin") {
     // legacy link — no separate console sign-in. If already an admin, open the
     // console; otherwise show the one unified sign-in form.

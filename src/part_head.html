@@ -983,6 +983,19 @@ button.fw-tile:hover{border-color:var(--accent);}
 .auth-card .auth-error{color:var(--danger); font-size:12.5px; margin:10px 0 2px; min-height:16px;}
 .auth-card .btn-primary{width:100%; justify-content:center; padding:11px; margin-top:12px; font-size:14px;}
 .auth-2col .btn{width:100%; justify-content:center; padding:11px; margin-top:12px;}
+.auth-social{display:flex; flex-direction:column; gap:10px; margin:0 0 4px;}
+.auth-social-btn{
+  display:flex; align-items:center; justify-content:center; gap:10px; width:100%; height:44px;
+  border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--surface);
+  color:var(--text); font-weight:600; font-size:14px; text-decoration:none;
+}
+.auth-social-btn:hover{background:var(--surface-2);}
+.auth-social-btn svg{width:18px; height:18px; flex:none;}
+.auth-social-btn.is-busy{opacity:.7; pointer-events:none;}
+.auth-legal{margin:2px 0 0; font-size:12px; line-height:1.5; color:var(--text-faint); text-align:center;}
+.auth-legal a, .auth-check a, .auth-note a{color:var(--accent-strong); font-weight:600;}
+.auth-divider{display:flex; align-items:center; gap:12px; margin:10px 0 6px; color:var(--text-faint); font-size:12px;}
+.auth-divider::before, .auth-divider::after{content:""; flex:1; height:1px; background:var(--border);}
 .auth-note{font-size:12.5px; color:var(--text-muted); background:var(--surface-2); border-radius:var(--radius-sm); padding:10px 12px; margin:12px 0;}
 .verify-banner{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
   background:var(--warn-soft,#fff7ed); color:var(--warn-strong,#9a3412); border-bottom:1px solid var(--border);
@@ -1031,12 +1044,20 @@ button.fw-tile:hover{border-color:var(--accent);}
 
 /* right-hand brand composition */
 /* Desktop / tablet — the artwork fills the whole right side, edge to edge */
-.auth-brand{position:relative; overflow:hidden; background:#022A4B; padding:0; display:block;}
+.auth-brand{
+  position:relative; overflow:hidden; padding:0; display:block;
+  background:
+    radial-gradient(560px 300px at 100% 0%, rgba(3,201,177,0.22), transparent 60%),
+    linear-gradient(158deg,#022A4B 4%, #011D35 88%);
+}
 .auth-brand-img{
-  position:absolute; inset:0; width:100%; height:100%; display:block;
+  position:absolute; inset:0; z-index:1; width:100%; height:100%; display:block;
   object-fit:cover; object-position:0% 38%;
 }
-.auth-brand-msg{display:none;}
+/* under the artwork: shows while it loads, or if it fails */
+.auth-brand-msg{position:absolute; left:12%; right:12%; top:50%; transform:translateY(-50%);}
+.auth-brand-msg .auth-brand-headline{font-size:38px;}
+.auth-brand-msg .auth-brand-sub{font-size:15px;}
 /* eyebrow / headline / sub — reused only by the mobile banner below the form */
 .auth-eyebrow{font-size:11px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:#66E0CF; margin:0 0 12px;}
 .auth-brand-headline{
@@ -1056,7 +1077,9 @@ button.fw-tile:hover{border-color:var(--accent);}
       linear-gradient(158deg,#022A4B 4%, #011D35 88%);
   }
   .auth-brand-img{display:none;}
-  .auth-brand-msg{display:block;}
+  .auth-brand-msg{display:block; position:static; transform:none;}
+  .auth-brand-msg .auth-brand-headline{font-size:24px;}
+  .auth-brand-msg .auth-brand-sub{font-size:13px;}
 }
 
 /* ============================================================================
@@ -1300,6 +1323,7 @@ button.fw-tile:hover{border-color:var(--accent);}
 .lp-foot{border-top:1px solid var(--border); background:var(--surface); font-size:14px; color:var(--text-faint);}
 .lp-foot .lp-wrap{display:flex; flex-wrap:wrap; gap:10px; justify-content:space-between; padding-top:28px; padding-bottom:28px;}
 .lp-foot a{color:var(--accent-strong); font-weight:600;}
+.lp-foot-links{display:flex; gap:18px; flex-wrap:wrap;}
 @media(prefers-color-scheme:dark){ :root:not([data-theme="light"]) .lp-logo{filter:brightness(0) invert(1); opacity:.92;} }
 :root[data-theme="dark"] .lp-logo{filter:brightness(0) invert(1); opacity:.92;}
 @media(max-width:600px){ .lp-sec{padding:52px 0;} .lp-logo{height:34px;} }
@@ -1398,6 +1422,7 @@ button, a, .prompt-card, .task-tile, .h2-tile, .rail-item, .lc-chip{-webkit-tap-
   .auth-card .btn-primary{height:56px; border-radius:16px; font-size:16px; font-weight:700; margin-top:18px; box-shadow:0 10px 24px rgba(14,124,107,.25);}
   .auth-card .btn-primary:active{transform:scale(.98);}
   .auth-check input{width:22px; height:22px;}
+  .auth-social-btn{height:52px; border-radius:14px; font-size:15px;}
   .auth-brand{display:none !important;} /* the marketing banner under the form felt like a website */
 }
 </style>

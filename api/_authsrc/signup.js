@@ -16,7 +16,7 @@
 //    (no enumeration); a still-unverified account just gets a fresh link.
 import { db, json, readBody, normCode } from "../_db.js";
 import { checkCsrf, issueCsrf } from "../_http.js";
-import { rateLimit, ipKey, tooMany } from "../_ratelimit.js";
+import { rateLimit, ipKey, emailKey, tooMany } from "../_ratelimit.js";
 import { validateSignup } from "../_validate.js";
 import { hashPassword, randomToken, sha256, newId } from "../_crypto.js";
 import { createUserSession, attachUserSessionCookie } from "../_session.js";
@@ -27,6 +27,17 @@ import { authEvent, auditLog, entitlementEvent } from "../_audit.js";
 const VERIFY_TTL_HOURS = 24;
 
 export default async function handler(req, res) {
+  try {
+    return await signup(req, res);
+  } catch (e) {
+    // A crash would reach the browser as a non-JSON error page, which the SPA
+    // can only report as "couldn't reach the server". Log it and answer in JSON.
+    console.error("signup failed", String(e && e.stack || e));
+    if (!res.headersSent) return json(res, 500, { error: "server-error" });
+  }
+}
+
+async function signup(req, res) {
   if (req.method !== "POST") return json(res, 405, { error: "method-not-allowed" });
   let sql;
   try { sql = db(); } catch { return json(res, 503, { error: "no-backend" }); }
@@ -74,6 +85,12 @@ export default async function handler(req, res) {
     const u = existing[0];
     authEvent(sql, { email: d.email, event: "signup", req, meta: { duplicate: true } });
     if (u.email_verified || u.account_status !== "pending_verification") {
+      // Same generic reply (no enumeration), but the owner gets an email saying
+      // they already have an account, instead of waiting for a link that never comes.
+      if ((await rateLimit(sql, "account_exists", emailKey(d.email))).ok) {
+        const base = appBaseUrl(req);
+        await sendEmail("account_exists", d.email, { loginUrl: `${base}/login`, resetUrl: `${base}/forgot-password` });
+      }
       return json(res, 201, { ok: true, pending: true });   // generic, no session
     }
     userId = u.id;                                            // resend for the still-pending account
@@ -114,6 +131,9 @@ export default async function handler(req, res) {
   attachUserSessionCookie(res, value, ttl);
   issueCsrf(res, req);
   const u = (await sql`select * from users where id = ${userId} limit 1`)[0];
-  const access = await getUserAccess(sql, u);
+  const access = await getUserAccess(sql, u).catch((e) => {
+    console.error("signup: getUserAccess failed", String(e && e.message || e));
+    return null;   // the account + session exist; /api/auth/me recomputes access
+  });
   return json(res, 201, { ok: true, pending: true, signedIn: true, access, emailSent: !!(mail && mail.ok) });
 }

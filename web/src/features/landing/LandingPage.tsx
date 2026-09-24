@@ -505,9 +505,17 @@ export function LandingPage({ data }: { data: LandingData }) {
             />
             <span>— Human‑Centred AI.</span>
           </div>
-          <a href="/legacy" className="font-medium text-accent-strong underline-offset-2 hover:underline">
-            Sign in
-          </a>
+          <nav aria-label="Legal" className="flex flex-wrap items-center gap-5">
+            <a href="/terms" className="underline-offset-2 hover:underline">
+              Terms
+            </a>
+            <a href="/privacy" className="underline-offset-2 hover:underline">
+              Privacy
+            </a>
+            <a href="/legacy" className="font-medium text-accent-strong underline-offset-2 hover:underline">
+              Sign in
+            </a>
+          </nav>
         </div>
       </footer>
     </div>

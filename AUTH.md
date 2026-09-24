@@ -326,3 +326,31 @@ first (`entitlements` is one row per user).
   before launch.
 - `program_enrollments` / `access_codes.program_ids` reference `programs.id` from
   v1 — seed v1 first so program-scoped entitlements resolve to real content.
+
+## Sign in with Google / Microsoft
+
+`/api/auth/oauth-start?provider=google|microsoft` → the provider → `/api/auth/oauth-callback`
+(OpenID Connect code flow + PKCE, state and nonce in a 10-minute `syn_oauth` cookie).
+`GET /api/auth/oauth-start` with no provider returns `{ providers: [...] }`; the sign-in and
+create-account screens show a button only for providers listed there.
+
+**Setup.** Set `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` and/or `MICROSOFT_CLIENT_ID` /
+`MICROSOFT_CLIENT_SECRET` (optional `MICROSOFT_TENANT`, default `common`) on the legacy Vercel
+project, and register `<APP_BASE_URL>/api/auth/oauth-callback` as the redirect URI with each
+provider (e.g. `https://prompting.synottic.com/api/auth/oauth-callback`). Set `APP_BASE_URL` to
+the public domain, or the redirect URI will use the legacy project's own host behind the proxy.
+
+**Accounts** (`user_identities`, `migrate/schema_v6.sql`; also created lazily on first use):
+
+| case | result |
+|---|---|
+| provider account seen before | signs that learner in |
+| verified email matches a learner | links it, confirms a still-pending email, signs in |
+| unverified email matches a learner | refused (`email-in-use`), never linked |
+| new person, verified email | account created `active`, auto-grant, lands on `/?oauth=new` (function / org step, skippable) |
+| new person, unverified email | account created `pending_verification`, welcome email sent, limited access |
+
+"Verified": Google's `email_verified`; for Microsoft, a personal account (MSA tenant) or the
+`xms_edov` claim. A work-tenant admin can put any address in `email`, so those are not trusted
+for linking. Social-only accounts get an unguessable password hash; "Forgot password" sets one.
+Errors land on `/login?oauth_error=<code>` with a plain message.

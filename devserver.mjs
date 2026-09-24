@@ -71,6 +71,8 @@ const server = createServer(async (req, res) => {
   // file — mirror vercel.json's rewrites and serve index.html for any
   // extension-less path.
   const looksLikeRoute = !extname(url.pathname);
+  // vercel.json `cleanUrls`: /terms serves terms.html when that file exists
+  if (looksLikeRoute && url.pathname !== "/" && existsSync(p + ".html")) p += ".html";
   try {
     if ((await stat(p)).isDirectory()) p = join(p, "index.html");
     const buf = await readFile(p);

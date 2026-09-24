@@ -17,6 +17,8 @@ const ROUTES = {
   "redeem-code": () => import("../_authsrc/redeem-code.js"),
   "my-codes": () => import("../_authsrc/my-codes.js"),
   "remove-code": () => import("../_authsrc/remove-code.js"),
+  "oauth-start": () => import("../_authsrc/oauth-start.js"),
+  "oauth-callback": () => import("../_authsrc/oauth-callback.js"),
 };
 
 export default async function handler(req, res) {
