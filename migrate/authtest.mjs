@@ -45,7 +45,7 @@ async function resetLimits() { try { await sql`delete from rate_limits`; await s
 // ---- schema + seed (same as run_v2, in-process so it shares the pglite singleton)
 const sql = db();
 {
-  for (const file of ["schema.sql", "schema_v2.sql", "schema_v3.sql", "schema_v5.sql"]) {
+  for (const file of ["schema.sql", "schema_v2.sql", "schema_v3.sql", "schema_v5.sql", "schema_v6.sql"]) {
     const schema = readFileSync(join(HERE, file), "utf8").replace(/--.*$/gm, "");
     for (const stmt of schema.split(/;\s*(?:\n|$)/).map((s) => s.trim()).filter(Boolean)) await sql(stmt);
   }
