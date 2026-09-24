@@ -49,7 +49,12 @@ async function run() {
   const model = readJson("part_orgmodel.json");
   const curriculum = readJson("part_curriculum.json");
   const adminSeed = readJson("part_admin_seed.json");
-  const libPrompts = extractDataBlock("data-prompts");
+  // Same overlay src/build.py applies: framework rewrites per id, `_remove`
+  // drops junk rows and merged near-duplicates.
+  const rewrites = existsSync(join(SRC, "prompts_library_rewrites.json")) ? readJson("prompts_library_rewrites.json") : {};
+  const libPrompts = extractDataBlock("data-prompts")
+    .filter((r) => !(rewrites[r.id] && rewrites[r.id]._remove))
+    .map((r) => (rewrites[r.id] ? { ...r, ...rewrites[r.id] } : r));
 
   console.log(`→ orgs (${model.organizations.length})`);
   for (const o of model.organizations) {

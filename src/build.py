@@ -36,10 +36,41 @@ def merge_authored(data_blocks):
     return data_blocks
 
 
+def apply_rewrites(data_blocks):
+    """Overlay src/prompts_library_rewrites.json on the imported library:
+    framework-structured prompt text + clean titles per id, and `_remove`
+    for junk rows. data_blocks.html on disk is never touched. No-op if absent."""
+    path = os.path.join(HERE, "prompts_library_rewrites.json")
+    if not os.path.exists(path):
+        return data_blocks
+    rw = json.loads(open(path, encoding="utf-8").read())
+    head = '<script type="application/json" id="data-prompts">'
+    start = data_blocks.index(head) + len(head)
+    end = data_blocks.index("</script>", start)
+    prompts = json.loads(data_blocks[start:end])
+    kept, removed, changed = [], 0, 0
+    for r in prompts:
+        o = rw.get(r["id"])
+        if o and o.get("_remove"):
+            removed += 1
+            continue
+        if o:
+            r.update(o)
+            changed += 1
+        kept.append(r)
+    data_blocks = data_blocks[:start] + "\n" + json.dumps(kept, ensure_ascii=False, separators=(",", ":")) + data_blocks[end:]
+    data_blocks = re.sub(r'("totalPrompts":\s*)(\d+)',
+                         lambda m: m.group(1) + str(int(m.group(2)) - removed),
+                         data_blocks, count=1)
+    print(f"  + rewrote {changed} library prompts, removed {removed} (prompts_library_rewrites.json)")
+    return data_blocks
+
+
 def main():
     data_blocks = read("data_blocks.html")
     assert data_blocks.startswith('<script type="application/json" id="data-prompts">')
     assert data_blocks.rstrip().endswith("</script>")
+    data_blocks = apply_rewrites(data_blocks)
     data_blocks = merge_authored(data_blocks)
     head = read("part_head.html")
     head = head.replace("{{LOGO_DATA_URI}}", data_uri("Synottic_Logo.png"))

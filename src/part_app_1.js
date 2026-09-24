@@ -248,6 +248,15 @@ const Store = (function () {
     },
     getBackendLabel() { return neon ? "Synced to Neon" : backend === "db" ? "Synced to your account" : "Saved in this browser"; },
 
+    // Saved ids that point at a merged duplicate move to the prompt it merged into.
+    remapFavorites(aliases) {
+      let changed = false;
+      favorites = new Set(Array.from(favorites, (id) => {
+        if (aliases[id]) { changed = true; return aliases[id]; }
+        return id;
+      }));
+      if (changed) pFav();
+    },
     isFavorite: (id) => favorites.has(id),
     getFavorites: () => favorites,
     toggleFavorite(id) {
@@ -1007,7 +1016,9 @@ function enrichRecord(rec) {
   // Only the imported library needs its generated titles tidied; authored
   // collections (Synottic Programs, Everyday Essentials) and user prompts
   // are already written in sentence case and must be shown as written.
-  if (!rec.source || rec.source === "Original Library") rec.title = cleanTitle(rec.title);
+  // Library prompts rewritten into the framework (rewrittenLevel) have
+  // hand-written titles too.
+  if ((!rec.source || rec.source === "Original Library") && !rec.rewrittenLevel) rec.title = cleanTitle(rec.title);
   rec.skill = rec.skill || CATEGORY_SKILL[rec.category] || "General";
   rec.difficulty = rec.difficulty || deriveDifficulty(rec);
   rec.lifecycle = rec.lifecycle || deriveLifecycle(rec);

@@ -404,9 +404,12 @@ let STATE = {
 function emptyFilters() { return { category: null, skill: null, promptType: null, role: null, difficulty: null, aiTool: null, source: null, fwLevel: null, hasVariables: false, favoritesOnly: false }; }
 
 let ALL_PROMPTS = [], ALL_PROMPTS_BY_ID = {}, CATEGORIES = [], STATS = {};
+// Old ids of near-duplicate prompts that were merged into one (record.aliases).
+let PROMPT_ALIASES = {};
 function findPromptById(id) {
   if (!id) return null;
-  return ALL_PROMPTS_BY_ID[id] || Store.getMyPrompts().find((p) => p.id === id) || null;
+  return ALL_PROMPTS_BY_ID[id] || ALL_PROMPTS_BY_ID[PROMPT_ALIASES[id]]
+    || Store.getMyPrompts().find((p) => p.id === id) || null;
 }
 const SHARED_QUERY_VIEWS = new Set(["home", "search"]);
 // Views a scoped learner never sees — they discover through their program,
@@ -713,7 +716,10 @@ function loadData() {
   // Synottic course-companion prompts join the central library as their own
   // curated source layer (the Excel originals are never touched).
   ALL_PROMPTS = ALL_PROMPTS.concat(CURRICULUM_PROMPTS);
-  ALL_PROMPTS.forEach((r) => { enrichRecord(r); ALL_PROMPTS_BY_ID[r.id] = r; });
+  ALL_PROMPTS.forEach((r) => {
+    enrichRecord(r); ALL_PROMPTS_BY_ID[r.id] = r;
+    (r.aliases || []).forEach((a) => { PROMPT_ALIASES[a] = r.id; });
+  });
   PROGRAM_FLAGSHIP = {};
   CURRICULUM_PROMPTS.forEach((r) => { if (r.programId) PROGRAM_FLAGSHIP[r.programId] = r.id; });
   resolveModulePrompts();
@@ -763,6 +769,7 @@ async function bootApp() {
   // signing up has it stashed — redeem it now that there's a verified account.
   if (typeof redeemPendingCode === "function") { try { await redeemPendingCode(); } catch (e) {} }
   Store.getMyPrompts().forEach((r) => enrichRecord(r));
+  Store.remapFavorites(PROMPT_ALIASES);
   STATE.view = "home";
   renderApp();
   const menuBtn = document.getElementById("mobile-menu-btn");
