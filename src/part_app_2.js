@@ -371,6 +371,7 @@ function promptCardHtml(rec, opts) {
     <div class="prompt-card-desc">${escapeHtml(rec.description)}</div>
     <div class="prompt-card-meta">
       ${opts.starter ? `<span class="chip chip-blue">Starter</span>` : ""}
+      ${rec.source === "Everyday Essentials" && !opts.starter ? `<span class="chip chip-essential" title="Hand-written, framework-built prompt for an everyday task">Essential</span>` : ""}
       <span class="chip">${escapeHtml(rec.category)}</span>
       ${renderDifficulty(rec.difficulty)}
       ${srcTag}
@@ -423,9 +424,81 @@ const GOALS = [
   { label: "Brainstorm", promptType: "Brainstorm", query: "" },
 ];
 const SEARCH_EXAMPLES = [
-  "Prepare an AI strategy for leadership", "Write an executive email", "Analyze competitors",
-  "Create a training program", "Handle a customer complaint", "Build a product roadmap",
+  "How do I make a presentation?", "Reply to a difficult email", "Turn meeting notes into action items",
+  "Excel formula for my data", "Improve my resume", "Give feedback to a team member",
 ];
+
+/* ---------- Task hubs (TASK_HUBS lives in part_app_1 with the search) ---------- */
+/* Prompts for a hub inside the learner's scope: the curated Everyday
+   Essentials first (in authored order), then — when `withLibrary` — the best
+   of the wider library for the hub's query, de-duplicated. */
+function hubEssentials(hubId) {
+  return scopedLibrary().filter((r) => r.hub === hubId);
+}
+function hubLibraryMatches(hub, limit) {
+  const own = new Set(hubEssentials(hub.id).map((r) => r.id));
+  // Only strong neighbours: skip weak imports and ones whose text still
+  // carries pasted file metadata ("--- date: … tags: …").
+  const res = searchPrompts(scopedLibrary(), hub.query, null, { quiet: true }).filter((r) =>
+    !own.has(r.id) && r.lifecycle !== "Archived" && (r.qualityScore || 0) >= 62 &&
+    !(r.flags && r.flags.embeddedMetadata) && !/^\s*(---|\*\*|certainly)/i.test(r.description || ""));
+  return typeof limit === "number" ? res.slice(0, limit) : res;
+}
+function hubsInScope() {
+  const counts = {};
+  scopedLibrary().forEach((r) => { if (r.hub) counts[r.hub] = (counts[r.hub] || 0) + 1; });
+  return TASK_HUBS.filter((h) => counts[h.id]).map((h) => Object.assign({ count: counts[h.id] }, h));
+}
+/* A grid of task tiles. `limit` shows the first N with a "Show all" toggle. */
+function taskGridHtml(opts) {
+  opts = opts || {};
+  const hubs = hubsInScope();
+  if (!hubs.length) return "";
+  const tile = (h) => `
+    <button class="task-tile" data-hub="${h.id}">
+      <span class="tt-ico" aria-hidden="true">${h.icon}</span>
+      <span class="tt-body"><span class="tt-label">${escapeHtml(h.label)}</span>
+        <span class="tt-sub">${h.count} ready-to-use prompt${h.count === 1 ? "" : "s"}</span></span>
+    </button>`;
+  const limit = opts.limit && hubs.length > opts.limit + 1 ? opts.limit : hubs.length;
+  const head = hubs.slice(0, limit), rest = hubs.slice(limit);
+  return `<div class="task-grid">${head.map(tile).join("")}</div>` +
+    (rest.length ? `<div class="task-grid task-grid-more" data-hub-more hidden>${rest.map(tile).join("")}</div>
+      <button class="btn btn-sm btn-ghost" data-hub-toggle data-show-all="Show all ${hubs.length} tasks" style="margin-top:8px;">Show all ${hubs.length} tasks</button>` : "");
+}
+function wireTaskGrid(el) {
+  el.querySelectorAll("[data-hub]").forEach((b) => b.addEventListener("click", () => openHub(b.dataset.hub)));
+  const t = el.querySelector("[data-hub-toggle]");
+  if (t) t.addEventListener("click", () => {
+    const more = el.querySelector("[data-hub-more]");
+    more.hidden = !more.hidden;
+    t.textContent = more.hidden ? t.dataset.showAll : "Show fewer tasks";
+  });
+}
+function openHub(hubId) {
+  if (!TASK_HUBS_BY_ID[hubId]) return;
+  STATE.activeHub = hubId;
+  STATE.query = "";
+  STATE.filters = emptyFilters();
+  navigate("task");
+  if (typeof Backend !== "undefined" && Backend.logActivity) { try { Backend.logActivity("task_hub", hubId, {}); } catch (e) {} }
+}
+/* "Looks like you want to…" shortcut + typo line above search results. */
+function searchUnderstoodHtml(results) {
+  const m = SEARCH_META || {};
+  let html = "";
+  if (m.corrected) {
+    html += `<div class="search-fix">Showing results for <b>${escapeHtml(m.corrected)}</b>. <button data-search-literal>Search “${escapeHtml(m.query)}” exactly instead</button></div>`;
+  }
+  if (m.hub && hubEssentials(m.hub.id).length) {
+    const n = hubEssentials(m.hub.id).length;
+    html += `<button class="intent-banner" data-hub="${m.hub.id}">
+      <span class="ib-ico" aria-hidden="true">${m.hub.icon}</span>
+      <span class="ib-text"><b>${escapeHtml(m.hub.label)}</b><span>${n} step-by-step prompt${n === 1 ? "" : "s"} for this, plus the best of the library</span></span>
+      <span class="ib-go">Open toolkit →</span></button>`;
+  }
+  return html;
+}
 function getSearchCorpus() { return scopedLibrary().concat(Store.getMyPrompts()); }
 function getUsageForSearch() { const u = Store.getUsage(); return { counts: u.counts, favorites: Store.getFavorites() }; }
 
@@ -446,7 +519,7 @@ function computeResults(query, filters, sort, baseCorpus) {
   const corpus = baseCorpus || getSearchCorpus();
   let results;
   const q = (query || "").trim();
-  if (q) results = searchPrompts(corpus, q, getUsageForSearch());
+  if (q) results = searchPrompts(corpus, q, getUsageForSearch(), { literal: STATE.searchLiteral === q });
   else results = corpus.slice();
   results = results.filter((r) => passesFilters(r, filters));
 

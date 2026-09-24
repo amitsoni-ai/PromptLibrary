@@ -585,16 +585,36 @@ async function usePrompt(rec) {
   renderSidebarFooter();
   showToast(ok ? "Copied — paste it into your AI assistant" : "Couldn't copy — select the text and copy manually");
 }
+/* "[PASTE_NOTES_OR_DOCUMENT]" -> { label: "Paste notes or document" };
+   "[TONE, e.g. warm and direct]" -> { label: "Tone", hint: "e.g. warm and direct" }. */
+function varLabelParts(raw) {
+  const inner = String(raw || "").replace(/^[\[{<]+|[\]}>]+$/g, "").trim();
+  const m = inner.match(/^([^,:]+)[,:]\s*(.+)$/);
+  const name = (m ? m[1] : inner).trim();
+  let hint = m ? m[2].trim() : "";
+  if (hint && !/^e\.g\./i.test(hint)) hint = "e.g. " + hint;
+  let label = name;
+  if (/^[A-Z0-9_ /'-]+$/.test(name)) {
+    label = name.replace(/_/g, " ").toLowerCase().replace(/\s+/g, " ").trim();
+    label = label.charAt(0).toUpperCase() + label.slice(1);
+  }
+  return { label, hint };
+}
+function varFieldHtml(v, i) {
+  const { label, hint } = varLabelParts(v);
+  const long = /^paste|notes|text|draft|data|description|situation|context|background|feedback|resume|document|code|schema/i.test(label);
+  const ph = hint || (long ? "Paste or type here…" : "Enter " + label.toLowerCase() + "…");
+  return `<div class="form-field"><label>${escapeHtml(label)}</label>${long
+    ? `<textarea rows="3" ${i != null ? `data-var-idx="${i}" ` : ""}data-var-raw="${escapeHtml(v)}" placeholder="${escapeHtml(ph)}"></textarea>`
+    : `<input type="text" ${i != null ? `data-var-idx="${i}" ` : ""}data-var-raw="${escapeHtml(v)}" placeholder="${escapeHtml(ph)}"/>`}</div>`;
+}
 function openUseModal(rec) {
   const vars = rec.variablesRaw && rec.variablesRaw.length ? rec.variablesRaw : (rec.variables || []).map((v) => `[${v}]`);
   const base = currentLayerText(rec);
   const { root, close } = openModal(`
     <div class="modal-header"><h2>Use “${escapeHtml(truncate(rec.title, 48))}”</h2><button class="btn btn-icon btn-ghost" id="modal-close">${icon("x")}</button></div>
     <p class="prose" style="color:var(--text-muted);margin-bottom:12px;">Fill in what you can — anything you leave blank stays as a <code>[placeholder]</code> for you to edit later.</p>
-    ${vars.map((v, i) => {
-      const label = v.replace(/[\[\]{}<>]/g, "");
-      return `<div class="form-field"><label>${escapeHtml(label)}</label><input type="text" data-var-raw="${escapeHtml(v)}" placeholder="Enter ${escapeHtml(label.toLowerCase())}…"/></div>`;
-    }).join("")}
+    ${vars.map((v) => varFieldHtml(v)).join("")}
     <div class="block-header" style="margin-top:6px;"><span class="label">Preview</span></div>
     <div class="prompt-block" id="use-preview" style="max-height:240px;">${escapeHtml(base)}</div>
     <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:14px;">
@@ -675,10 +695,7 @@ function customizePanelHtml(rec) {
   const vars = rec.variablesRaw && rec.variablesRaw.length ? rec.variablesRaw : (rec.variables || []).map((v) => `[${v}]`);
   return `
     <div style="border:1px solid var(--border); border-radius:var(--radius); padding:14px; background:var(--surface-2);">
-      ${vars.map((v, i) => {
-        const label = v.replace(/[\[\]{}<>]/g, "");
-        return `<div class="form-field"><label>${escapeHtml(label)}</label><input type="text" data-var-idx="${i}" data-var-raw="${escapeHtml(v)}" placeholder="Enter ${escapeHtml(label.toLowerCase())}…"/></div>`;
-      }).join("")}
+      ${vars.map((v, i) => varFieldHtml(v, i)).join("")}
       <div class="block-header" style="margin-top:6px;"><span class="label">Preview</span></div>
       <div class="prompt-block" id="customize-preview" style="max-height:220px;">${escapeHtml(rec.originalPrompt)}</div>
       <button class="btn btn-primary btn-sm" id="copy-customized" style="margin-top:10px;">${icon("copy")} Copy customized prompt</button>
