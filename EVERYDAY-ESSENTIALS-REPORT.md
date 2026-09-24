@@ -230,3 +230,23 @@ The landing (`renderLanding`, `src/part_auth.js`) went from 8 dense sections to 
 - Left-aligned hero, a swipeable quick-task row, a 2-column role grid, and a bottom-sheet preview.
 - A sticky "Sign up free" bar appears once the hero scrolls away.
 - No horizontal overflow at 390 px.
+
+## Phone: app feel, not a website (follow-up)
+
+On screens up to 880 px:
+
+- **Bottom tab bar:** Home · Library · **＋ Create** (a raised centre button) · Learn · Me.
+  - It sits on a frosted bar that respects the iPhone home indicator.
+  - Tapping the tab you're already on scrolls back to the top, with a light haptic tap where the phone supports it.
+- **Slim top bar:** the title is centred and a round menu button opens the side menu for everything else. It is translucent and aware of the notch.
+- **Prompt detail is a bottom sheet:** it slides up, has a grab handle, and closes when you swipe it down. All dialogs are bottom sheets too.
+- **Native touch:** cards and buttons shrink slightly when pressed, there's no tap flash or 300 ms delay, inputs don't zoom, pages fade in, and there's no rubber-band bounce.
+- **Sign in / sign up:**
+  - A full app screen with a back arrow to the landing, a centred app icon, a large title, 54 px fields and a 56 px primary button.
+  - The navy website banner under the form is gone on phones.
+- **Installable (PWA):** `manifest.webmanifest`, 192/512/maskable icons, Apple web-app meta tags and a light/dark theme colour.
+  - Home shows a one-time "Get the app" card on phones: Share → Add to Home Screen on iOS, an Install button on Android.
+  - Once installed, it opens full-screen with no browser bars.
+- **Me:** the tabs scroll sideways and the stats sit in a 2×2 grid.
+
+Desktop is unchanged.

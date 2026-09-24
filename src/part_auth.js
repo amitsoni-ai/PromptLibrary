@@ -245,6 +245,7 @@ function authShell(inner) {
   const ar = document.getElementById("admin-root"); if (ar) ar.hidden = true;
   root.innerHTML = `<div class="gate auth-layout">
     <div class="auth-pane"><div class="gate-card auth-card">
+      <button class="auth-back" type="button" aria-label="Back" data-auth-back>‹</button>
       <div class="auth-brandline">
         <div class="gate-mark" role="img" aria-label="Synottic"></div>
         <span class="auth-product">Synottic Prompt Intelligence</span>
@@ -254,6 +255,13 @@ function authShell(inner) {
     ${authBrandAside()}
   </div>`;
   wirePwToggles(root);
+  // phones: a back arrow to the landing page, like an app's sign-in screen
+  const back = root.querySelector("[data-auth-back]");
+  if (back) back.addEventListener("click", () => {
+    if (typeof renderLanding !== "function") return;
+    try { history.pushState(null, "", "/"); } catch (e) {}
+    renderLanding();
+  });
   return root;
 }
 function authTabs(activeKey) {
