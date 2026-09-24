@@ -364,9 +364,56 @@ const INTENT_SYNONYMS = {
   "pitch deck": ["slide deck", "investor deck"],
   "ecommerce": ["online store", "product listing"],
   "coaching": ["development plan", "mentoring session"],
+  // everyday words people actually type
+  "powerpoint": ["presentation", "slide deck"],
+  "ppt": ["presentation", "slide deck"],
+  "slides": ["presentation", "slide deck"],
+  "deck": ["presentation", "slide deck"],
+  "cv": ["resume"],
+  "spreadsheet": ["excel", "formula", "google sheets"],
+  "excel": ["spreadsheet", "formula", "pivot table"],
+  "sheets": ["spreadsheet", "formula"],
+  "minutes": ["meeting notes", "action items"],
+  "meeting": ["agenda", "meeting notes", "action items"],
+  "summarize": ["summary", "key points"],
+  "summarise": ["summary", "key points"],
+  "tldr": ["summary", "key points"],
+  "todo": ["to do list", "prioritize tasks"],
+  "prioritize": ["to do list", "plan my week"],
+  "prioritise": ["to do list", "plan my week"],
+  "okr": ["goals", "key results"],
+  "goals": ["okr", "objectives"],
+  "feedback": ["constructive feedback", "sbi"],
+  "raise": ["salary negotiation", "pay rise"],
+  "salary": ["salary negotiation", "compensation"],
+  "trip": ["travel plan", "itinerary"],
+  "vacation": ["travel plan", "itinerary"],
+  "holiday": ["travel plan", "itinerary"],
+  "diet": ["meal plan", "healthy eating"],
+  "gym": ["workout plan", "fitness"],
+  "procrastinating": ["procrastination", "focus"],
+  "stressed": ["stress", "burnout"],
+  "grammar": ["proofread", "spelling"],
+  "proofread": ["grammar check", "spelling"],
+  "rephrase": ["rewrite", "change tone"],
+  "paraphrase": ["rewrite", "rephrase"],
+  "bug": ["debug", "error"],
+  "error": ["debug", "fix my code"],
+  "script": ["automate", "automation"],
+  "sop": ["standard operating procedure", "process document"],
+  "decision": ["decision matrix", "pros and cons"],
+  "decide": ["decision matrix", "pros and cons"],
+  "angry": ["unhappy customer", "complaint response"],
+  "quit": ["resignation letter"],
+  "resign": ["resignation letter"],
 };
 const FIELD_WEIGHTS = { title: 10, originalTitle: 6, useCase: 6, outcome: 4, description: 4, category: 5, role: 4, skill: 5, tags: 6, promptType: 2, aiTool: 1, originalPrompt: 2 };
-const QUERY_STOPWORDS = new Set(["a", "an", "the", "for", "to", "of", "in", "on", "with", "my", "me", "and", "or", "i", "need", "want", "how", "do", "some", "please", "am", "is", "are"]);
+const QUERY_STOPWORDS = new Set(["a", "an", "the", "for", "to", "of", "in", "on", "with", "my", "me", "and", "or", "i", "need", "want", "how", "do", "some", "please", "am", "is", "are",
+  "can", "you", "your", "what", "whats", "which", "should", "could", "would", "will", "best", "way", "ways", "good", "great", "get", "give", "about", "it", "its", "this", "that", "be", "at", "from", "by", "we", "our", "us", "im", "ive", "help", "tips", "idea", "someone", "something", "really", "just", "quick", "quickly", "new", "using", "any", "better"]);
+/* Generic action verbs ("make a presentation", "write an email") carry almost
+   no signal on their own, so they are dropped from a query when there is a
+   more specific word left to rank on. */
+const GENERIC_VERBS = new Set(["make", "making", "create", "creating", "write", "writing", "build", "prepare", "draft", "do", "doing", "put", "together", "plan", "come", "up", "generate", "produce"]);
 
 /* Intent -> category routing. Lets a query land on the right shelf of the
    library even when its words are too common to rank on their own
@@ -445,7 +492,104 @@ const INTENT_CATEGORY = {
   "coaching": ["Coaching & Self-Development"],
   "productivity": ["Productivity & Automation"],
   "workflow": ["Productivity & Automation"],
+  "powerpoint": ["Presentation & Slides"],
+  "ppt": ["Presentation & Slides"],
+  "deck": ["Presentation & Slides"],
+  "meeting": ["Productivity & Automation", "Communication & Leadership"],
+  "agenda": ["Productivity & Automation"],
+  "excel": ["Research & Data Analysis"],
+  "spreadsheet": ["Research & Data Analysis"],
+  "formula": ["Research & Data Analysis"],
+  "cv": ["Career Growth"],
+  "cover letter": ["Career Growth"],
+  "salary": ["Career Growth"],
+  "feedback": ["Communication & Leadership"],
+  "habit": ["Coaching & Self-Development"],
+  "stress": ["Coaching & Self-Development"],
+  "workout": ["Health & Fitness"],
+  "meal": ["Health & Fitness"],
+  "code": ["Coding & Tech"],
+  "sql": ["Coding & Tech", "Research & Data Analysis"],
 };
+
+/* Task hubs — the everyday jobs people come to the library with. Each hub is
+   a front door: a tile on Home / Library, its own toolkit page (curated
+   "Everyday Essentials" prompts first, then the best of the wider library),
+   and an intent the search engine recognises in plain-language queries
+   ("how do I make a presentation" -> present). `match` phrases are tested
+   against the normalised query; the longest matching phrase wins so
+   "cold email" routes to customers, not email. */
+const TASK_HUBS = [
+  { id: "present", label: "Make a presentation", icon: "🎤", blurb: "Build a deck, turn notes into slides, write speaker notes and prep for Q&A.", query: "presentation slides deck",
+    match: ["presentation", "present", "slides", "slide", "deck", "powerpoint", "ppt", "keynote", "google slides", "speaker notes", "pitch deck", "talk track"] },
+  { id: "email", label: "Write an email or message", icon: "✉️", blurb: "Draft, reply, follow up, say no or apologise, in the right tone.", query: "email message reply",
+    match: ["email", "e-mail", "mail", "reply", "respond", "message", "follow up", "follow-up", "apology", "apologize", "apologise", "decline", "say no", "announcement", "out of office", "thank you note"] },
+  { id: "meetings", label: "Run better meetings", icon: "🗓️", blurb: "Agendas, minutes, action items, follow-ups and retros.", query: "meeting agenda minutes",
+    match: ["meeting", "meetings", "agenda", "minutes", "action items", "retrospective", "retro", "transcript", "workshop", "one on one", "1:1"] },
+  { id: "docs", label: "Summarize & write reports", icon: "📄", blurb: "Summaries, status updates, reports, SOPs, FAQs and policies.", query: "summary report document",
+    match: ["summarize", "summarise", "summary", "tldr", "report", "status update", "weekly update", "sop", "procedure", "faq", "document", "policy", "explain this", "contract", "project update"] },
+  { id: "plan", label: "Plan a project or your week", icon: "🧭", blurb: "Project plans, priorities, goals, OKRs, launches and 90-day plans.", query: "plan project priorities goals",
+    match: ["project plan", "plan", "planning", "timeline", "milestone", "prioritize", "prioritise", "priorities", "to do", "to-do", "todo", "okr", "goals", "launch", "checklist", "business case", "strategy on a page", "user stories", "90 day", "30 60 90"],
+    hint: ["week", "strategy", "roadmap", "project"] },
+  { id: "data", label: "Excel, data & charts", icon: "📊", blurb: "Formulas, pivot tables, dashboards, SQL and finding insights.", query: "excel data analysis formula",
+    match: ["excel", "spreadsheet", "google sheets", "sheets", "formula", "vlookup", "xlookup", "pivot", "data", "chart", "graph", "dashboard", "kpi", "sql", "survey", "statistics", "numbers", "csv"] },
+  { id: "decide", label: "Solve a problem or decide", icon: "⚖️", blurb: "Decision matrices, root cause, SWOT, risks and competitor analysis.", query: "decision problem solving",
+    match: ["decide", "decision", "choose", "should i", "dilemma", "pros and cons", "root cause", "swot", "risk", "competitor", "stuck", "5 whys"],
+    hint: ["problem"] },
+  { id: "ideas", label: "Brainstorm ideas", icon: "💡", blurb: "Fresh ideas, names, campaigns, marketing plans and events.", query: "brainstorm ideas",
+    match: ["brainstorm", "ideas", "idea", "creative", "name", "naming", "marketing plan", "ad copy", "tagline", "slogan", "event", "party", "team building", "product description"] },
+  { id: "career", label: "Job search & career", icon: "🚀", blurb: "Resume, cover letter, interviews, salary talks and career plans.", query: "resume interview career",
+    match: ["resume", "cv", "cover letter", "interview", "job", "career", "salary", "raise", "promotion", "resign", "resignation", "networking", "self review", "appraisal", "job search"] },
+  { id: "lead", label: "Manage people & teams", icon: "👥", blurb: "Feedback, reviews, 1:1s, delegation, conflict and hiring.", query: "feedback team manager",
+    match: ["feedback", "performance review", "delegate", "delegation", "conflict", "hire", "hiring", "job description", "onboarding", "one on one", "1:1", "motivate", "morale", "recognition", "direct report", "team member", "new hire"],
+    hint: ["team", "employee", "manager", "manage", "staff", "colleague"] },
+  { id: "learn", label: "Learn anything faster", icon: "🎓", blurb: "Simple explanations, study plans, quizzes and training design.", query: "learn explain study",
+    match: ["learn", "learning", "explain", "understand", "study", "quiz", "exam", "flashcard", "flashcards", "teach", "training", "course", "homework", "book summary", "eli5"] },
+  { id: "write", label: "Edit, rewrite & proofread", icon: "✍️", blurb: "Fix grammar, change tone, simplify, write articles, bios and speeches.", query: "rewrite proofread writing",
+    match: ["proofread", "grammar", "spelling", "rewrite", "rephrase", "paraphrase", "tone", "simplify", "edit", "blog", "article", "bio", "speech", "toast", "translate", "writing"] },
+  { id: "life", label: "Personal life & money", icon: "🏠", blurb: "Budgets, trips, meal plans, workouts, gifts and life admin.", query: "budget travel meal plan",
+    match: ["budget", "money", "save money", "saving", "trip", "travel", "itinerary", "vacation", "holiday", "meal", "recipe", "grocery", "workout", "fitness", "gift", "doctor", "landlord", "complaint letter", "invest", "organize", "declutter"] },
+  { id: "brand", label: "LinkedIn & personal brand", icon: "🌐", blurb: "LinkedIn posts and profile, content calendars and press releases.", query: "linkedin post personal brand",
+    match: ["linkedin", "personal brand", "social media", "post", "content calendar", "press release", "instagram"] },
+  { id: "customers", label: "Customers & sales", icon: "🤝", blurb: "Unhappy customers, cold emails, proposals and objections.", query: "customer sales proposal",
+    match: ["customer", "client", "complaint", "cold email", "sales", "prospect", "proposal", "objection", "reviews", "support reply"] },
+  { id: "ai", label: "Get more from AI", icon: "🤖", blurb: "Improve your prompts, find AI time-savers and check AI answers.", query: "improve prompt ai",
+    match: ["prompt", "chatgpt", "claude", "gemini", "copilot", "fact check", "hallucination", "use ai", "ai tool"],
+    hint: ["ai"] },
+  { id: "wellbeing", label: "Focus, stress & habits", icon: "🌿", blurb: "Beat procrastination, manage stress, build habits, hard talks.", query: "focus habit stress",
+    match: ["focus", "procrastinate", "procrastination", "stress", "burnout", "burnt out", "burned out", "overwhelmed", "habit", "routine", "motivation", "difficult conversation", "reflect", "journal", "anxiety"] },
+  { id: "tech", label: "Code & tech help", icon: "💻", blurb: "Debug code, understand code, automate tasks, fix tech issues.", query: "code debug automate",
+    match: ["code", "coding", "debug", "bug", "error", "python", "javascript", "script", "automate", "automation", "macro", "laptop", "wifi", "tech support", "software"] },
+];
+const TASK_HUBS_BY_ID = {};
+TASK_HUBS.forEach((h) => { TASK_HUBS_BY_ID[h.id] = h; });
+/* Best matching hub for a free-text query, or null. A `match` phrase names
+   the job itself ("email", "presentation") and scores its length x 2; a
+   `hint` only says who or what it's about ("manager", "team") and scores 2,
+   so "email to my manager" is an email, while "my manager" alone still
+   leans towards managing people. Longest / strongest phrase wins. */
+function hubPhraseHit(q, m) {
+  let i = q.indexOf(" " + m);
+  while (i !== -1) {
+    // allow a plural / verb ending ("slides", "emailing") but not a longer word
+    const tail = q.slice(i + 1 + m.length).match(/^[a-z]*/)[0];
+    if (!tail || /^(s|es|ed|ing|er|ers)$/.test(tail)) return true;
+    i = q.indexOf(" " + m, i + 1);
+  }
+  return false;
+}
+function detectTaskHub(query) {
+  const q = " " + normalizeQuery(query).replace(/[^a-z0-9: -]+/g, " ") + " ";
+  if (q.trim().length < 2) return null;
+  let best = null, bestScore = 0;
+  for (const h of TASK_HUBS) {
+    let score = 0;
+    for (const m of h.match) if (hubPhraseHit(q, m)) score = Math.max(score, m.length * 2);
+    for (const m of (h.hint || [])) if (hubPhraseHit(q, m)) score = Math.max(score, 2);
+    if (score > bestScore) { best = h; bestScore = score; }
+  }
+  return best;
+}
 function routedCategories(normQuery) {
   const set = new Set();
   for (const key in INTENT_CATEGORY) {
@@ -454,17 +598,86 @@ function routedCategories(normQuery) {
   return set;
 }
 
-function normalizeQuery(q) { return (q || "").toLowerCase().trim().replace(/\s+/g, " "); }
-function tokenize(q) { return q.split(" ").filter((w) => w.length >= 2 && !QUERY_STOPWORDS.has(w)); }
-function expandQueryTerms(q) {
-  const norm = normalizeQuery(q);
+function normalizeQuery(q) { return (q || "").toLowerCase().trim().replace(/[’']/g, "").replace(/[?!.,;"()]+/g, " ").replace(/\s+/g, " ").trim(); }
+/* Light stemmer: fold plurals and -ing/-ed so "presentations", "meetings",
+   "summarizing" meet the library's wording. Matching is prefix-based
+   (wordHit), so a shorter stem still hits the longer forms. */
+function stemWord(w) {
+  if (w.length <= 4) return w;
+  if (/ies$/.test(w)) return w.slice(0, -3) + "y";
+  if (/(ss|us|is)$/.test(w)) return w;
+  if (/(xes|ches|shes|sses)$/.test(w)) return w.slice(0, -2);
+  if (/s$/.test(w)) return w.slice(0, -1);
+  if (w.length > 6 && /ing$/.test(w)) return w.slice(0, -3);
+  if (w.length > 5 && /ed$/.test(w)) return w.slice(0, -2);
+  return w;
+}
+function tokenize(q) {
+  const all = q.split(" ").filter((w) => w.length >= 2 && !QUERY_STOPWORDS.has(w));
+  const specific = all.filter((w) => !GENERIC_VERBS.has(w));
+  return (specific.length ? specific : all).map(stemWord);
+}
+/* Typo tolerance: an unknown query word is swapped for the closest word the
+   library actually uses (edit distance 1, or 2 for long words), preferring
+   common words. Words that are a prefix of a real word (still typing) are
+   left alone. */
+function editDistance(a, b, max) {
+  if (Math.abs(a.length - b.length) > max) return max + 1;
+  let prev = new Array(b.length + 1);
+  for (let j = 0; j <= b.length; j++) prev[j] = j;
+  for (let i = 1; i <= a.length; i++) {
+    const cur = [i];
+    let rowMin = i;
+    for (let j = 1; j <= b.length; j++) {
+      cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      if (cur[j] < rowMin) rowMin = cur[j];
+    }
+    if (rowMin > max) return max + 1;
+    prev = cur;
+  }
+  return prev[b.length];
+}
+function correctWord(word, df) {
+  if (!df || word.length < 4 || df[word] || /\d/.test(word)) return word;
+  const max = word.length >= 8 ? 2 : 1;
+  let best = null, bestD = max + 1, bestDf = 0;
+  for (const v in df) {
+    const n = df[v];
+    if (n < 3) continue;
+    if (v.length > word.length && v.startsWith(word)) return word; // still typing
+    if (Math.abs(v.length - word.length) > max) continue;
+    const d = editDistance(word, v, max);
+    if (d < bestD || (d === bestD && n > bestDf)) { best = v; bestD = d; bestDf = n; }
+  }
+  return best && bestD <= max ? best : word;
+}
+function dfIndexFor(all) {
+  if (!all || !all.length) return null;
+  if (!__dfCacheMap) return buildDfIndex(all);
+  let df = __dfCacheMap.get(all);
+  if (!df) { df = buildDfIndex(all); __dfCacheMap.set(all, df); }
+  return df;
+}
+function expandQueryTerms(q, all, literal) {
+  let norm = normalizeQuery(q);
+  const df = all && !literal ? dfIndexFor(all) : null;
+  let corrected = null;
+  if (df) {
+    const fixed = norm.split(" ").map((w) => (QUERY_STOPWORDS.has(w) || GENERIC_VERBS.has(w)) ? w : correctWord(w, df));
+    const fixedNorm = fixed.join(" ");
+    if (fixedNorm !== norm) { corrected = fixedNorm; norm = fixedNorm; }
+  }
   const words = tokenize(norm);
   const synonymTerms = new Set();
   for (const key in INTENT_SYNONYMS) {
     if (norm === key || norm.includes(key)) INTENT_SYNONYMS[key].forEach((s) => synonymTerms.add(s));
   }
+  norm.split(" ").forEach((w) => { if (INTENT_SYNONYMS[w]) INTENT_SYNONYMS[w].forEach((s) => synonymTerms.add(s)); });
   words.forEach((w) => { if (INTENT_SYNONYMS[w]) INTENT_SYNONYMS[w].forEach((s) => synonymTerms.add(s)); });
-  return { phrase: norm, words, synonymTerms: Array.from(synonymTerms) };
+  // The phrase used for exact-phrase bonuses drops filler ("how do i make a
+  // presentation" -> "presentation") so it can actually appear in a title.
+  const phrase = words.length ? words.join(" ") : norm;
+  return { phrase, words, synonymTerms: Array.from(synonymTerms), corrected, full: norm };
 }
 const __dfCacheMap = (typeof WeakMap !== "undefined") ? new WeakMap() : null;
 function buildDfIndex(all) {
@@ -550,11 +763,16 @@ function usageBoost(rec, usage) {
   if (usage.favorites && usage.favorites.has(rec.id)) b += 2;
   return b;
 }
+/* What the last search understood — read by the results UI for the
+   "Showing results for…" correction line and the task-hub shortcut. */
+let SEARCH_META = { query: "", corrected: null, hub: null };
 function searchPrompts(all, query, usage, opts) {
   opts = opts || {};
-  const expanded = expandQueryTerms(query);
+  const expanded = expandQueryTerms(query, all, opts.literal);
   if (!expanded.phrase) return [];
-  const routed = routedCategories(expanded.phrase);
+  const hub = detectTaskHub(expanded.full);
+  if (!opts.quiet) SEARCH_META = { query: query, corrected: expanded.corrected, hub: hub };
+  const routed = routedCategories(expanded.full);
   const results = [];
   for (let i = 0; i < all.length; i++) {
     const rec = all[i];
@@ -566,7 +784,13 @@ function searchPrompts(all, query, usage, opts) {
       if (tier === 0 && expanded.words.some((w) => wordHit((rec.title + " " + rec.description).toLowerCase(), w))) tier = 1;
       if (tier > 0) score += 14 + (tier === 2 ? 8 : 0);
     }
+    // Task-hub intent: the curated everyday prompt for this job leads. A
+    // hub prompt that shares no word with the query still surfaces (the
+    // query "how do I prepare slides" should reach "Build a complete
+    // presentation"), just lower than one that also matches directly.
+    if (hub && rec.hub === hub.id) { score += tier === 2 ? 25 : 4; if (tier === 0) tier = 1; }
     if (tier === 0) continue;
+    if (rec.source === "Everyday Essentials" && tier === 2) score += 6;
     results.push([score + usageBoost(rec, usage), rec]);
   }
   results.sort((a, b) => b[0] - a[0]);
@@ -779,7 +1003,10 @@ function cleanTitle(t) {
 }
 function enrichRecord(rec) {
   if (!rec.originalTitle) rec.originalTitle = rec.title;
-  rec.title = cleanTitle(rec.title);
+  // Only the imported library needs its generated titles tidied; authored
+  // collections (Synottic Programs, Everyday Essentials) and user prompts
+  // are already written in sentence case and must be shown as written.
+  if (!rec.source || rec.source === "Original Library") rec.title = cleanTitle(rec.title);
   rec.skill = rec.skill || CATEGORY_SKILL[rec.category] || "General";
   rec.difficulty = rec.difficulty || deriveDifficulty(rec);
   rec.lifecycle = rec.lifecycle || deriveLifecycle(rec);

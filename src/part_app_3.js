@@ -258,11 +258,14 @@ function recommendedForYou(limit) {
     : { Advanced: 0, Intermediate: 1, Beginner: 2 };
 
   const pool = scopedLibrary().filter((r) =>
-    !seen.has(r.id) && r.lifecycle !== "Archived" && r.source === "Original Library" && !isCurriculumPrompt(r));
+    !seen.has(r.id) && r.lifecycle !== "Archived" && (r.source === "Original Library" || r.source === "Everyday Essentials") && !isCurriculumPrompt(r));
 
   const scored = pool.map((r) => {
     let s = (r.qualityScore || 0) * 0.25;
     let reason = "Popular in your library";
+    // New learners start with the hand-built everyday prompts — the fastest
+    // way to see what a well-structured prompt does for real work.
+    if (r.source === "Everyday Essentials") { s += engaged < 4 ? 16 : 6; reason = "Everyday essentials"; }
     const inFn = si.functionName && fnCats.has(r.category);
     const inScopeFocus = si.restricted && !si.functionName && primary.has(r.category);
     if (savedCats.has(r.category) || savedSkills.has(r.skill)) { s += 12; reason = "Based on what you saved"; }
@@ -320,7 +323,7 @@ function renderHome(container) {
     <h1>What do you want to accomplish?</h1>
     <div class="search-hero">
       ${icon("search", "icon-search")}
-      <input type="text" id="hero-search" placeholder="Describe your task in your own words — e.g. write a launch email to unhappy customers" value="${escapeHtml(STATE.query)}" autocomplete="off"/>
+      <input type="text" id="hero-search" aria-label="Describe what you need to do" placeholder="Describe what you need to do, e.g. make a presentation for my team" value="${escapeHtml(STATE.query)}" autocomplete="off"/>
       ${q ? `<button class="icon-clear" id="hero-clear" aria-label="Clear search">${icon("x")}</button>` : ""}
     </div>
     ${!q ? `<div class="search-examples">${SEARCH_EXAMPLES.map((x) => `<button class="search-example-chip" data-example="${escapeHtml(x)}">${escapeHtml(x)}</button>`).join("")}</div>` : ""}
@@ -348,7 +351,12 @@ function renderHome(container) {
       else groups.push({ reason, recs: [rec] });
     });
 
-    html += `
+    const taskGrid = taskGridHtml({ limit: 8 });
+    html += (taskGrid ? `
+    <div class="task-block" id="home-tasks">
+      <div class="section-title"><div><h2>Popular tasks</h2><p>Pick what you're doing. Each one opens a ready-made toolkit of prompts.</p></div></div>
+      ${taskGrid}
+    </div>` : "") + `
     <div class="continue-card" data-cont="1" role="button" tabindex="0">
       <div class="cc-ico">${icon(cont.kind === "module" ? "path" : "book")}</div>
       <div>
@@ -398,6 +406,8 @@ function renderHome(container) {
     container.innerHTML = html;
     wireHomeStatic(container);
     wireCardActions(container);
+    const tasksEl = container.querySelector("#home-tasks");
+    if (tasksEl) wireTaskGrid(tasksEl);
   }
 
   const input = container.querySelector("#hero-search");
@@ -438,10 +448,25 @@ function renderResultsInto(el, opts) {
   let html = "";
   if (!opts.compactFilters) html += renderFilterBar(STATE);
   const scopeTag = isScopeRestricted() && !opts.baseCorpus ? ` · scoped to ${escapeHtml(((currentScope() || {}).program || {}).name || ((currentScope() || {}).org || {}).name || "your program")}` : "";
+  const q = (STATE.query || "").trim();
+  if (q && !opts.baseCorpus) html += searchUnderstoodHtml(results);
   html += `<div class="result-count">${results.length.toLocaleString()} prompt${results.length === 1 ? "" : "s"}${scopeTag}</div><div id="results-list-target"></div>`;
   el.innerHTML = html;
   wireFilterBar(el, () => renderResultsInto(el, opts));
-  renderPaginatedList(el.querySelector("#results-list-target"), results, {});
+  el.querySelectorAll(".intent-banner[data-hub]").forEach((b) => b.addEventListener("click", () => openHub(b.dataset.hub)));
+  const lit = el.querySelector("[data-search-literal]");
+  if (lit) lit.addEventListener("click", () => { STATE.searchLiteral = STATE.query.trim(); renderResultsInto(el, opts); });
+  const tasks = taskGridHtml({ limit: 6 });
+  const emptyHtml = emptyStateHtml("search", q ? `Nothing matched “${q}” yet` : "No prompts found",
+      "Try describing the task in a few plain words, or start from one of these popular tasks.",
+      `<button class="btn btn-sm" data-nav-builder style="margin-top:4px;">${icon("build")} Create your own prompt</button>`) +
+    (tasks ? `<div class="task-block" id="empty-tasks">${tasks}</div>` : "");
+  const target = el.querySelector("#results-list-target");
+  renderPaginatedList(target, results, { emptyHtml });
+  const et = target.querySelector("#empty-tasks");
+  if (et) wireTaskGrid(et);
+  const nb = target.querySelector("[data-nav-builder]");
+  if (nb) nb.addEventListener("click", () => navigate("builder"));
 }
 /* Up to 3 gentle starters: the program companion prompt first, then the
    highest-quality non-curriculum prompts in the learner's primary categories. */
@@ -449,9 +474,12 @@ function starterPrompts(si) {
   const out = [];
   const comp = programCompanionPrompt();
   if (comp) out.push(comp);
-  const base = scopedLibrary()
-    .filter((r) => r.source === "Original Library" && r.lifecycle !== "Archived" && !isCurriculumPrompt(r))
-    .sort((a, b) => (b.qualityScore || 0) - (a.qualityScore || 0));
+  const lib = scopedLibrary().filter((r) => r.lifecycle !== "Archived" && !isCurriculumPrompt(r));
+  // Hand-built everyday prompts make the best first impression; the imported
+  // library fills in when a scope has none.
+  const byQ = (a, b) => (b.qualityScore || 0) - (a.qualityScore || 0);
+  const base = lib.filter((r) => r.source === "Everyday Essentials").sort(byQ)
+    .concat(lib.filter((r) => r.source === "Original Library").sort(byQ));
   const fnSet = new Set((si.functionCats && si.functionCats.length ? si.functionCats : si.primaryCats) || []);
   const take = (r) => { if (out.length < 3 && !out.some((x) => x.id === r.id)) out.push(r); };
   base.filter((r) => !fnSet.size || fnSet.has(r.category)).forEach(take);
@@ -561,10 +589,10 @@ function renderSearchView(container) {
 
   const searchHero = `
     <div class="lib-landing" ${active ? 'style="margin:0 0 12px;max-width:none;"' : ""}>
-      ${active ? "" : `<h1>Find a prompt for what you're doing</h1>`}
+      ${active ? "" : `<h1>What do you need to get done?</h1>`}
       <div class="search-hero">
         ${icon("search", "icon-search")}
-        <input type="text" id="lib-search" placeholder="Search by goal, task, role or keyword…" autocomplete="off" value="${escapeHtml(STATE.query)}"/>
+        <input type="text" id="lib-search" aria-label="Search prompts" placeholder="Search by task or problem, e.g. write meeting minutes" autocomplete="off" value="${escapeHtml(STATE.query)}"/>
         ${q ? `<button class="icon-clear" id="lib-clear" aria-label="Clear search">${icon("x")}</button>` : ""}
       </div>
       ${active ? "" : `<div class="lib-quicklinks">
@@ -603,7 +631,13 @@ function renderSearchView(container) {
     } else {
       mainBody = `<div class="section-title"><h2>Browse by category</h2></div><div id="lib-grid"></div>`;
     }
-    bodyHtml = banner + starterBlock + mainBody + browseAllBtn;
+    const taskGrid = taskGridHtml({ limit: 8 });
+    const taskBlock = taskGrid ? `
+      <div class="task-block" id="lib-tasks">
+        <div class="section-title"><div><h2>Start with what you need to do</h2><p>Everyday tasks, each with a toolkit of step-by-step prompts.</p></div></div>
+        ${taskGrid}
+      </div>` : "";
+    bodyHtml = banner + taskBlock + starterBlock + mainBody + browseAllBtn;
   }
 
   container.innerHTML = searchHero + bodyHtml;
@@ -615,6 +649,8 @@ function renderSearchView(container) {
     if (gridEl) renderCategoryGridInto(gridEl, { grouped: si.restricted });
     const modEl = container.querySelector("#lib-modules");
     if (modEl && si.programId) renderModuleListInto(modEl, ORG_INDEX.programs[si.programId]);
+    const tEl = container.querySelector("#lib-tasks");
+    if (tEl) wireTaskGrid(tEl);
   }
 
   container.querySelectorAll("[data-nav]").forEach((el) => el.addEventListener("click", () => navigate(el.dataset.nav)));
@@ -629,6 +665,43 @@ function renderSearchView(container) {
   }
   const clr = container.querySelector("#lib-clear");
   if (clr) clr.addEventListener("click", () => { STATE.query = ""; STATE.libBrowseAll = false; renderContent(); });
+}
+
+/* ---------- Task toolkit (one page per TASK_HUBS entry) ---------- */
+function renderTaskView(container) {
+  const hub = TASK_HUBS_BY_ID[STATE.activeHub];
+  if (!hub) { navigate("search"); return; }
+  const essentials = hubEssentials(hub.id);
+  const more = hubLibraryMatches(hub, 12);
+  const others = hubsInScope().filter((h) => h.id !== hub.id);
+  container.innerHTML = `
+    <button class="btn btn-ghost btn-sm" data-back style="margin-bottom:10px;">← All tasks</button>
+    <div class="hub-head">
+      <div class="hh-ico" aria-hidden="true">${hub.icon}</div>
+      <div><h1>${escapeHtml(hub.label)}</h1><p>${escapeHtml(hub.blurb)}</p></div>
+    </div>
+    <div class="hub-howto">
+      <span><b>1.</b> Pick the prompt that fits</span>
+      <span><b>2.</b> Click <b>Use</b> and fill in the blanks</span>
+      <span><b>3.</b> Paste into ChatGPT, Claude, Gemini or Copilot</span>
+    </div>
+    ${essentials.length ? `
+    <div class="section-title"><h2>Step-by-step prompts</h2><span style="font-size:12px;color:var(--text-faint)">${essentials.length} hand-built with the prompt framework</span></div>
+    <div id="hub-essentials" style="margin-bottom:26px;"></div>` : ""}
+    ${more.length ? `
+    <div class="section-title"><h2>More from the library</h2><button class="linklike" data-hub-search>See all results →</button></div>
+    <div id="hub-more" style="margin-bottom:26px;"></div>` : ""}
+    ${others.length ? `
+    <div class="section-title"><h2>Other popular tasks</h2></div>
+    <div class="hub-others">${others.map((h) => `<button class="search-example-chip" data-hub="${h.id}">${h.icon} ${escapeHtml(h.label)}</button>`).join("")}</div>` : ""}`;
+  const ess = container.querySelector("#hub-essentials");
+  if (ess) renderPaginatedList(ess, essentials, {});
+  const mo = container.querySelector("#hub-more");
+  if (mo) renderPaginatedList(mo, more, {});
+  container.querySelector("[data-back]").addEventListener("click", () => navigate("search"));
+  container.querySelectorAll(".hub-others [data-hub]").forEach((b) => b.addEventListener("click", () => openHub(b.dataset.hub)));
+  const hs = container.querySelector("[data-hub-search]");
+  if (hs) hs.addEventListener("click", () => { STATE.view = "search"; STATE.query = hub.query; STATE.filters = emptyFilters(); renderApp(); });
 }
 
 /* ---------- Categories ---------- */

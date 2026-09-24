@@ -330,7 +330,7 @@ function openAskLibrary() {
     if (!text) return;
     const resultBox = root.querySelector("#ask-result");
     resultBox.innerHTML = `<div class="skel" style="height:80px;"></div>`;
-    const candidates = searchPrompts(getSearchCorpus(), text, getUsageForSearch()).slice(0, 12);
+    const candidates = searchPrompts(getSearchCorpus(), text, getUsageForSearch(), { quiet: true }).slice(0, 12);
     let why = "These prompts share the most relevant category, skill, role and keywords with what you described.";
     if (Store.hasSample() && candidates.length) {
       try {
@@ -386,11 +386,11 @@ const VIEW_TITLES = {
   program: "My Program", learn: "Learn", practice: "Practice", builder: "Create Prompt",
   framework: "Prompt Framework",
   myLibrary: "Saved", favorites: "Saved", me: "Me", insights: "Library Governance",
-  accessCodes: "Access codes",
+  accessCodes: "Access codes", task: "Task toolkit",
 };
 /* Which primary nav item lights up for a given (possibly nested) view. */
 const VIEW_PARENT = {
-  categories: "search", categoryDetail: "search", builder: "search",
+  categories: "search", categoryDetail: "search", builder: "search", task: "search",
   program: "learn", framework: "learn",
   myLibrary: "me", favorites: "me", insights: "me",
 };
@@ -398,7 +398,7 @@ let STATE = {
   view: "home", query: "", filters: emptyFilters(), sort: "relevance",
   activeCategory: null, favoritesTab: "favorites", myLibTab: "mine", insightsTab: "overview",
   meTab: "overview", savedFilter: "all", frameworkLevel: 1,
-  libBrowseAll: false, libOpenModules: null,
+  libBrowseAll: false, libOpenModules: null, activeHub: null, searchLiteral: null,
   detailId: null, detailLayer: "original", builder: null, practice: null, openModules: null, lcStage: "Recommended",
 };
 function emptyFilters() { return { category: null, skill: null, promptType: null, role: null, difficulty: null, aiTool: null, source: null, fwLevel: null, hasVariables: false, favoritesOnly: false }; }
@@ -509,7 +509,7 @@ function renderContent() {
     program: renderProgramView, learn: renderLearnView, practice: renderPracticeView, builder: renderBuilderView,
     framework: renderFrameworkView,
     myLibrary: renderMeView, favorites: renderMeView, me: renderMeView, insights: renderInsightsView,
-    accessCodes: renderAccessCodesView,
+    accessCodes: renderAccessCodesView, task: renderTaskView,
   };
   (map[STATE.view] || renderHome)(content);
 }
