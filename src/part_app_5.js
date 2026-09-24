@@ -398,7 +398,7 @@ let STATE = {
   view: "home", query: "", filters: emptyFilters(), sort: "relevance",
   activeCategory: null, favoritesTab: "favorites", myLibTab: "mine", insightsTab: "overview",
   meTab: "overview", savedFilter: "all", frameworkLevel: 1,
-  libBrowseAll: false, libOpenModules: null, activeHub: null, searchLiteral: null, libTab: "all", libLayout: null,
+  libBrowseAll: false, libOpenModules: null, activeHub: null, searchLiteral: null, searchPin: null, libTab: "all", libLayout: null,
   detailId: null, detailLayer: "original", builder: null, practice: null, openModules: null, lcStage: "Recommended",
 };
 function emptyFilters() { return { category: null, skill: null, promptType: null, role: null, difficulty: null, aiTool: null, source: null, fwLevel: null, hasVariables: false, favoritesOnly: false }; }
@@ -739,13 +739,14 @@ async function mergeAuthoredPrompts() {
     if (!rec || !rec.id || archived.has(rec.id)) return;
     enrichRecord(rec);
     const existing = ALL_PROMPTS_BY_ID[rec.id];
-    if (existing) Object.assign(existing, rec);
+    if (existing) { Object.assign(existing, rec); SearchIndex.add(existing); }
     else { ALL_PROMPTS.push(rec); ALL_PROMPTS_BY_ID[rec.id] = rec; }
     changed++;
   });
   archived.forEach((id) => {
     if (!ALL_PROMPTS_BY_ID[id]) return;
     delete ALL_PROMPTS_BY_ID[id];
+    SearchIndex.remove(id);
     const i = ALL_PROMPTS.findIndex((r) => r.id === id);
     if (i >= 0) ALL_PROMPTS.splice(i, 1);
     changed++;
@@ -770,6 +771,10 @@ async function bootApp() {
   if (typeof redeemPendingCode === "function") { try { await redeemPendingCode(); } catch (e) {} }
   Store.getMyPrompts().forEach((r) => enrichRecord(r));
   Store.remapFavorites(PROMPT_ALIASES);
+  SearchIndex.reset();
+  // build the search index while the browser is idle, so the first search is instant
+  const warm = () => { try { SearchIndex.sync(getSearchCorpus()); } catch (e) {} };
+  if (window.requestIdleCallback) requestIdleCallback(warm, { timeout: 2500 }); else setTimeout(warm, 600);
   STATE.view = "home";
   renderApp();
   const menuBtn = document.getElementById("mobile-menu-btn");
