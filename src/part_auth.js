@@ -865,108 +865,289 @@ function lpSampleCard(rec, locked) {
     + '<button class="lp-copy" data-lp-copy="' + escapeHtml(rec.id) + '">Copy prompt</button></div>';
 }
 
+/* Landing (logged out). Built on a few ideas about how people decide:
+   show the product working in the first screen (search is the hero), let
+   people get real value before asking for anything (a live playground and
+   3 free full previews), make the gap visible (a vague request next to a
+   framework prompt), and ask for the sign-up exactly when they want more.
+   Whatever they searched or opened is kept for after they sign up. */
+const LPX_FREE_PREVIEWS = 3;
+const LPX_PLAY_IDS = ["ev-email-3", "ev-meetings-1", "ev-life-7"];
+const LPX_DEMO_ID = "ev-present-1";
+function lpxUnlocked() {
+  try { const v = JSON.parse(localStorage.getItem("prompt-lib:lpUnlocked") || "[]"); return Array.isArray(v) ? v : []; } catch (e) { return []; }
+}
+function lpxUnlock(id) {
+  const u = lpxUnlocked();
+  if (u.includes(id)) return true;
+  if (u.length >= LPX_FREE_PREVIEWS) return false;
+  u.push(id);
+  try { localStorage.setItem("prompt-lib:lpUnlocked", JSON.stringify(u)); } catch (e) {}
+  return true;
+}
+function lpxLeft() { return Math.max(0, LPX_FREE_PREVIEWS - lpxUnlocked().length); }
+function lpxCorpus() {
+  if (lpxCorpus._c) return lpxCorpus._c;
+  const all = typeof ALL_PROMPTS !== "undefined" ? ALL_PROMPTS : [];
+  return (lpxCorpus._c = all.filter((r) => r && !r.programId && r.lifecycle !== "Archived"));
+}
+// keep what they were doing so the app can pick it up after sign-up / log-in
+function lpxRemember(state) { try { sessionStorage.setItem("prompt-lib:pending", JSON.stringify(state || {})); } catch (e) {} }
+function lpxOpenIn(tool, text) {
+  const q = encodeURIComponent(text);
+  const url = tool === "claude" ? "https://claude.ai/new?q=" + q : "https://chatgpt.com/?q=" + q;
+  window.open(url, "_blank", "noopener");
+}
+// the prompt with its framework labels picked out, and fill-ins highlighted
+function lpxPromptHtml(text, max) {
+  let t = String(text || "");
+  if (max && t.length > max) { const c = t.slice(0, max), i = c.lastIndexOf(" "); t = (i > max * 0.6 ? c.slice(0, i) : c) + "…"; }
+  return escapeHtml(t)
+    .replace(/^(Role|Context|Goal|Task|Constraints|Example|Format|Verification|Validation):/gm, '<b class="lpx-lbl lpx-lbl-$1">$1</b>')
+    .replace(/\[([A-Z][A-Z0-9_]*(?:[ ,:][^\]\n]*)?)\]/g, '<span class="lpx-var">[$1]</span>');
+}
+function lpxCardHtml(r) {
+  const open = lpxUnlocked().includes(r.id);
+  const lock = !open && !lpxLeft();
+  return '<button class="lpx-card" data-lpx-open="' + escapeHtml(r.id) + '">'
+    + '<span class="lpx-card-top"><span class="lpx-ico" aria-hidden="true">' + (typeof promptIcon === "function" ? promptIcon(r) : "📝") + "</span>"
+    + '<span class="lpx-card-state">' + (open ? "Unlocked" : lock ? "🔒 Members" : "Preview free") + "</span></span>"
+    + "<b>" + escapeHtml(r.title) + "</b>"
+    + "<span>" + escapeHtml(lpClip(r.description || "", 110)) + "</span>"
+    + '<em>' + escapeHtml(r.category || "") + "</em></button>";
+}
+
 function renderLanding() {
   document.getElementById("app").hidden = true;
   const ar = document.getElementById("admin-root"); if (ar) ar.hidden = true;
   const root = document.getElementById("gate-root");
   const byId = (typeof ALL_PROMPTS_BY_ID !== "undefined") ? ALL_PROMPTS_BY_ID : {};
   const d = lpData();
-  const freeRecs = LP_FREE_IDS.map((id) => byId[id]).filter(Boolean);
-  const premRecs = LP_PREMIUM_IDS.map((id) => byId[id]).filter(Boolean);
-  const roles = ["Founders", "Managers", "Executives", "Sales", "Marketing", "L&D / HR", "Finance", "Product", "Support", "Consultants"];
-  const steps = [
-    ["Find", "Search " + lpNum(d.total) + "+ ready-to-use prompts by role and outcome."],
-    ["Learn", "See why each prompt works — the framework is shown, not hidden."],
-    ["Create", "Build your own with the R‑C‑T‑F guardrails so you don't miss a part."],
-    ["Save", "Keep the prompts that work in your personal library."],
-    ["Use anywhere", "Copy into ChatGPT, Claude, Gemini or Copilot — nothing to install."],
-  ];
-  const levels = (typeof FRAMEWORK !== "undefined" && FRAMEWORK.levels) ? FRAMEWORK.levels : [];
+  const total = lpNum(d.total);
+  const hubCount = typeof TASK_HUBS !== "undefined" ? TASK_HUBS.length : 18;
+  const roles = typeof ROLES !== "undefined" ? ROLES.map((r) => {
+    const cats = new Set(r.cats);
+    return Object.assign({}, r, { count: lpxCorpus().filter((p) => cats.has(p.category)).length });
+  }) : [];
+  const demo = byId[LPX_DEMO_ID];
+  const plays = LPX_PLAY_IDS.map((id) => byId[id]).filter(Boolean);
+  const quick = [["📊", "Make a presentation"], ["✉️", "Reply to a difficult email"], ["🗓️", "Plan my week"], ["🎤", "Prepare for a job interview"]];
 
   root.innerHTML =
-    '<div id="lp">'
+    '<div id="lp" class="lpx">'
     + '<header class="lp-bar"><div class="lp-wrap">'
       + '<img class="lp-logo" src="/prompt-intelligence.png" alt="Prompt Intelligence by Synottic">'
       + '<nav class="lp-bar-nav"><button class="lp-btn lp-btn-ghost" data-lp-login>Log in</button>'
       + '<button class="lp-btn lp-btn-primary" data-lp-signup>Sign up free</button></nav>'
     + "</div></header>"
 
-    + '<section class="lp-hero"><div class="lp-wrap lp-sec"><div class="lp-hero-grid"><div>'
-      + '<p class="lp-eyebrow">AI workspace for real work</p>'
-      + '<h1 class="lp-h1">Don’t just use AI. Think with it.</h1>'
-      + '<p class="lp-lead">A library of <b>' + lpNum(d.total) + " role‑based prompts</b> and a simple framework for writing "
-      + "your own — so AI gives you sharper thinking and finished work, not first drafts you have to redo.</p>"
-      + '<div class="lp-cta-row"><button class="lp-btn lp-btn-primary" data-lp-signup>Sign up free →</button>'
-      + '<button class="lp-btn lp-btn-outline" data-lp-login>Log in</button></div>'
-      + '<p class="lp-fine">Free to start · no credit card · <a href="#" data-lp-code>have an access code?</a></p>'
-      + '<div class="lp-stats"><div class="lp-stat"><b>' + lpNum(d.total) + "</b><span>curated prompts</span></div>"
-      + '<div class="lp-stat"><b>' + d.cats.length + "</b><span>categories</span></div>"
-      + '<div class="lp-stat"><b>3</b><span>framework levels</span></div></div>'
-    + "</div><div><div class=\"lp-preview\"><div class=\"lp-preview-bar\"><i></i><i></i><i></i></div>"
-      + '<div class="lp-preview-body"><div class="lp-preview-nav"><b>Library</b><span>Learn</span><span>Practice</span><span>My Prompts</span></div>'
-      + '<div class="lp-preview-main"><div class="lp-preview-search">🔍 Find the right prompt for your work…</div>'
-      + '<div class="lp-preview-row"><span>Strategic planning prompt</span><b>Use prompt →</b></div>'
-      + '<div class="lp-preview-row"><span>Customer interview → themes</span><span style="color:var(--text-faint)">Use prompt →</span></div>'
-      + '<div class="lp-preview-row"><span>Weekly team update</span><span style="color:var(--text-faint)">Use prompt →</span></div>'
-      + '</div></div></div><p class="lp-preview-cap">From prompt to progress.</p></div></div></div></section>'
+    // 1 · hero: the product itself
+    + '<section class="lpx-hero"><div class="lp-wrap">'
+      + '<p class="lpx-pill"><span>New</span>' + total + " expert prompts · free to start</p>"
+      + '<h1 class="lpx-h1">Get expert‑level answers from AI.<br><em>Every time.</em></h1>'
+      + '<p class="lpx-lead">Most people get average results because they ask average questions. Tell us what you need, and we’ll hand you the prompt an expert would write.</p>'
+      + '<div class="lpx-search" role="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>'
+      + '<input id="lpx-q" type="text" autocomplete="off" aria-label="What do you need to get done?" placeholder="What do you need to get done? e.g. prepare for a salary talk">'
+      + '<button class="lpx-go" id="lpx-go" aria-label="Search">Find prompts</button></div>'
+      + '<div class="lpx-quick">' + quick.map((x) => '<button data-lpx-q="' + escapeHtml(x[1]) + '"><span aria-hidden="true">' + x[0] + "</span>" + escapeHtml(x[1]) + "</button>").join("") + "</div>"
+      + '<p class="lpx-trust">Works with <b>ChatGPT</b> · <b>Claude</b> · <b>Gemini</b> · <b>Copilot</b><span>No credit card. No install.</span></p>'
+      + '<div class="lpx-results" id="lpx-results" hidden></div>'
+    + "</div></section>"
 
-    + '<section class="lp-band"><div class="lp-wrap" style="padding:36px 24px;">'
-      + '<p style="font-weight:600; color:var(--text-muted); margin:0;">Built for the work your team already does</p>'
-      + '<div class="lp-chips">' + roles.map((r) => '<span class="lp-chip">' + escapeHtml(r) + "</span>").join("") + "</div></div></section>"
+    // 2 · the gap, made visible
+    + (demo ? '<section class="lp-wrap lpx-sec"><div class="lpx-head"><p class="lp-eyebrow">Why your AI answers feel generic</p>'
+      + '<h2 class="lpx-h2">Same AI. Very different result.</h2>'
+      + '<p class="lpx-sub">AI can only be as good as what you ask. Every prompt here tells it who to be, what you need and what good looks like.</p></div>'
+      + '<div class="lpx-vs">'
+        + '<div class="lpx-vs-a"><span class="lpx-vs-tag">What most people type</span><div class="lpx-bubble">make a presentation about our Q3 results</div>'
+        + '<ul class="lpx-cons"><li>Generic slides you have to rewrite</li><li>No story, no clear ask</li><li>Guesses your audience</li></ul></div>'
+        + '<div class="lpx-vs-b"><span class="lpx-vs-tag lpx-vs-tag-good">What Prompt Intelligence gives you</span>'
+        + '<pre class="lpx-prompt">' + lpxPromptHtml(demo.originalPrompt, 620) + "</pre>"
+        + '<ul class="lpx-pros"><li>A deck with a story and one clear message</li><li>Built for your audience and time slot</li><li>Speaker notes included</li></ul></div>'
+      + "</div></section>" : "")
 
-    + '<section class="lp-wrap lp-sec"><p class="lp-eyebrow">Why Synottic</p>'
-      + '<h2 class="lp-h2">A prompt is a way of thinking — not a magic phrase.</h2>'
-      + '<p class="lp-lead">Most “prompt packs” are a pile of one‑liners. Synottic is built on <b>R‑C‑T‑F</b> — a repeatable '
-      + "structure you can feel yourself getting better at. Every prompt in the library is scored against it, so you always see <i>why</i> it works.</p>"
-      + '<div class="lp-levels">' + levels.map((L) => {
-          const c = d.levels[L.level] || 0;
-          return '<div class="lp-level"><code>' + escapeHtml(L.code) + "</code><h3>Level " + L.level + " — " + escapeHtml(L.name)
-            + "</h3><p>" + escapeHtml(L.summary) + '</p><p class="lp-count">' + lpNum(c) + " <span>prompts at this level</span></p></div>";
-        }).join("") + "</div></section>"
+    // 3 · playground: value before any ask
+    + (plays.length ? '<section class="lpx-band"><div class="lp-wrap lpx-sec"><div class="lpx-head"><p class="lp-eyebrow">Try it now · no account</p>'
+      + '<h2 class="lpx-h2">Fill in two lines. Get a prompt that works.</h2>'
+      + '<p class="lpx-sub">Pick one, type your details, then copy it or open it straight in your AI tool.</p></div>'
+      + '<div class="lpx-play"><div class="lpx-tabs" role="tablist">' + plays.map((r, i) => '<button role="tab" data-lpx-play="' + i + '" aria-selected="' + (i === 0) + '">' + escapeHtml(r.title) + "</button>").join("") + "</div>"
+      + '<div class="lpx-play-body"><div class="lpx-fields" id="lpx-fields"></div>'
+      + '<div class="lpx-out"><pre class="lpx-prompt" id="lpx-out"></pre>'
+      + '<div class="lpx-actions"><button class="lp-btn lp-btn-primary" id="lpx-copy">Copy prompt</button>'
+      + '<button class="lp-btn lp-btn-outline" data-lpx-openin="chatgpt">Open in ChatGPT</button>'
+      + '<button class="lp-btn lp-btn-outline" data-lpx-openin="claude">Open in Claude</button></div></div></div></div>'
+      + '<p class="lpx-note">Liked that? There are <b>' + total + "</b> more, and a builder to make your own. <button class=\"lpx-link\" data-lp-signup>Get them free →</button></p>"
+      + "</div></section>" : "")
 
-    + '<section class="lp-band"><div class="lp-wrap lp-sec"><p class="lp-eyebrow">How it works</p>'
-      + '<h2 class="lp-h2">From prompt to progress</h2><div class="lp-steps">'
-      + steps.map((s, i) => '<div class="lp-step"><div class="lp-step-n">' + (i + 1) + "</div><h3>" + escapeHtml(s[0])
-          + "</h3><p>" + escapeHtml(s[1]) + "</p></div>").join("") + "</div></div></section>"
+    // 4 · browse by role
+    + (roles.length ? '<section class="lp-wrap lpx-sec"><div class="lpx-head"><p class="lp-eyebrow">Built for the work you do</p>'
+      + '<h2 class="lpx-h2">Find your shelf in one click</h2>'
+      + '<p class="lpx-sub">' + hubCount + " everyday tasks and " + d.cats.length + " fields, grouped the way you work.</p></div>"
+      + '<div class="lpx-roles">' + roles.map((r) => '<button class="lpx-role" data-lpx-role="' + r.id + '"><span class="lpx-ico" aria-hidden="true">' + r.icon + "</span>"
+        + "<b>" + escapeHtml(r.label) + "</b><span>" + escapeHtml(r.sub) + "</span><em>" + lpNum(r.count) + " prompts</em></button>").join("") + "</div>"
+      + "</section>" : "")
 
-    + '<section class="lp-wrap lp-sec"><p class="lp-eyebrow">Start now, no account</p>'
-      + '<h2 class="lp-h2">' + freeRecs.length + ' prompts you can copy right now</h2>'
-      + '<p class="lp-lead">Fully readable, ready to paste into any AI tool. No sign‑up, no email.</p>'
-      + '<div class="lp-cards">' + freeRecs.map((r) => lpSampleCard(r, false)).join("") + "</div></section>"
+    // 5 · what the free account unlocks
+    + '<section class="lpx-band"><div class="lp-wrap lpx-sec"><div class="lpx-head"><p class="lp-eyebrow">Your free account</p>'
+      + '<h2 class="lpx-h2">Everything you need to work smarter with AI</h2></div>'
+      + '<div class="lpx-gets">'
+        + '<div><span class="lpx-ico">🔓</span><b>The full library</b><p>' + total + " prompts across " + d.cats.length + " fields and " + hubCount + " everyday tasks, all written in the framework.</p></div>"
+        + '<div><span class="lpx-ico">🛠️</span><b>Build your own</b><p>A guided builder turns your idea into a strong prompt, step by step.</p></div>'
+        + '<div><span class="lpx-ico">📁</span><b>Your prompt library</b><p>Save favourites, keep your own versions and find them instantly with search.</p></div>'
+        + '<div><span class="lpx-ico">🎯</span><b>Learn and practise</b><p>Short lessons and practice with feedback, so you get better every week.</p></div>'
+      + "</div>"
+      + '<div class="lpx-cta"><button class="lp-btn lp-btn-primary lpx-big" data-lp-signup>Create my free account</button>'
+      + '<p>Takes 20 seconds · no credit card · <a href="#" data-lp-code>have an access code?</a></p></div>'
+    + "</div></section>"
 
-    + '<section class="lp-band"><div class="lp-wrap lp-sec"><p class="lp-eyebrow">Inside the full library</p>'
-      + '<h2 class="lp-h2">' + d.cats.length + " categories. " + lpNum(d.total) + " prompts. One free account.</h2>"
-      + '<p class="lp-lead">Whatever your work touches, there’s a shelf for it. Sign up free to open any category.</p>'
-      + '<div class="lp-catgrid">' + d.cats.map((c) => '<button class="lp-cat" data-lp-signup><span class="lp-cat-name"><b>'
-          + escapeHtml(c.name) + '</b><span class="lp-cat-n">' + lpNum(c.count) + " prompts</span></span><span>🔒</span></button>").join("") + "</div>"
-      + '<div class="lp-cta-row"><button class="lp-btn lp-btn-primary" data-lp-signup>Unlock the full library — free</button>'
-      + '<button class="lp-btn lp-btn-outline" data-lp-login>Log in</button></div>'
-      + '<h3 style="font-family:var(--font-display); margin:44px 0 4px;">A few, locked for now</h3>'
-      + '<p style="color:var(--text-muted); margin:0; font-size:14px;">The kind of prompt waiting behind the sign‑up.</p>'
-      + '<div class="lp-cards">' + premRecs.map((r) => lpSampleCard(r, true)).join("") + "</div></div></section>"
-
-    + '<section class="lp-final"><div class="lp-wrap lp-sec"><h2 class="lp-h2">Don’t just use AI. Think with it.</h2>'
-      + '<p class="lp-lead">Start with the free prompts. Create an account when you want the whole library.</p>'
-      + '<div class="lp-cta-row"><button class="lp-btn lp-btn-primary" data-lp-signup>Sign up free →</button>'
-      + '<button class="lp-btn lp-btn-outline" data-lp-login>Log in</button></div></div></section>'
-
-    + '<footer class="lp-foot"><div class="lp-wrap"><span>Synottic Prompt Intelligence — Human‑Centred AI.</span>'
-      + '<a href="#" data-lp-login>Sign in</a></div></footer></div>';
+    // 6 · close
+    + '<section class="lp-wrap lpx-final"><p class="lp-eyebrow">Don’t just use AI. Think with it.</p><h2 class="lpx-h2">Stop rewriting AI answers.<br>Start with a better prompt.</h2>'
+      + '<div class="lpx-cta"><button class="lp-btn lp-btn-primary lpx-big" data-lp-signup>Sign up free</button><button class="lp-btn lp-btn-outline lpx-big" data-lp-login>Log in</button></div></section>'
+    + '<footer class="lp-foot"><div class="lp-wrap"><span>Synottic Prompt Intelligence · Human‑Centred AI</span><a href="#" data-lp-login>Sign in</a></div></footer>'
+    + '<div class="lpx-sticky" id="lpx-sticky" hidden><span><b>' + total + " prompts</b> waiting for you</span><button class=\"lp-btn lp-btn-primary\" data-lp-signup>Sign up free</button></div>"
+    + '<div class="lpx-modal" id="lpx-modal" hidden role="dialog" aria-modal="true" aria-labelledby="lpx-m-title"><div class="lpx-modal-card" id="lpx-modal-card"></div></div>'
+    + "</div>";
 
   const go = (fn) => { try { history.pushState(null, "", "/login"); } catch (e) {} fn(); window.scrollTo(0, 0); };
-  root.querySelectorAll("[data-lp-login]").forEach((b) => b.addEventListener("click", (e) => { e.preventDefault(); go(renderSignIn); }));
-  root.querySelectorAll("[data-lp-signup]").forEach((b) => b.addEventListener("click", (e) => { e.preventDefault(); go(renderSignUp); }));
-  root.querySelectorAll("[data-lp-code]").forEach((b) => b.addEventListener("click", (e) => {
-    e.preventDefault(); go(() => renderGate(null, { classic: true }));
-  }));
-  root.querySelectorAll("[data-lp-copy]").forEach((b) => b.addEventListener("click", () => {
-    const rec = (typeof ALL_PROMPTS_BY_ID !== "undefined") ? ALL_PROMPTS_BY_ID[b.getAttribute("data-lp-copy")] : null;
-    if (rec && navigator.clipboard) {
-      navigator.clipboard.writeText(rec.originalPrompt || "").then(() => {
-        const t = b.textContent; b.textContent = "Copied ✓"; setTimeout(() => { b.textContent = t; }, 1500);
-      }).catch(() => {});
+  const toSignUp = () => go(renderSignUp);
+  const wireAuth = (el) => {
+    el.querySelectorAll("[data-lp-login]").forEach((b) => b.addEventListener("click", (e) => { e.preventDefault(); go(renderSignIn); }));
+    el.querySelectorAll("[data-lp-signup]").forEach((b) => b.addEventListener("click", (e) => { e.preventDefault(); toSignUp(); }));
+    el.querySelectorAll("[data-lp-code]").forEach((b) => b.addEventListener("click", (e) => { e.preventDefault(); go(() => renderGate(null, { classic: true })); }));
+  };
+  wireAuth(root);
+  const copy = (text, btn) => {
+    const done = () => { const t = btn.textContent; btn.textContent = "Copied ✓"; setTimeout(() => { btn.textContent = t; }, 1500); };
+    if (navigator.clipboard) navigator.clipboard.writeText(text).then(done).catch(() => {}); else done();
+  };
+
+  // ---- search: real results from the real library ----
+  const q = root.querySelector("#lpx-q");
+  if (window.matchMedia && window.matchMedia("(max-width: 600px)").matches) q.placeholder = "What do you need to get done?";
+  const out = root.querySelector("#lpx-results");
+  let lastQ = "";
+  function showResults(title, recs, query, totalN) {
+    lastQ = query || "";
+    const left = lpxLeft();
+    out.innerHTML = '<div class="lpx-res-head"><b>' + escapeHtml(title) + "</b>"
+      + '<span class="lpx-left">' + (left ? left + " free full preview" + (left === 1 ? "" : "s") + " left" : "Free previews used · sign up to open all") + "</span></div>"
+      + '<div class="lpx-grid">' + recs.slice(0, 5).map(lpxCardHtml).join("")
+      + '<button class="lpx-card lpx-more" data-lpx-all><span class="lpx-ico" aria-hidden="true">🔓</span><b>See all ' + lpNum(totalN) + " results</b>"
+      + "<span>Open every prompt, save favourites and make your own. Free.</span><em>Sign up free →</em></button></div>";
+    out.hidden = false;
+    out.querySelectorAll("[data-lpx-open]").forEach((b) => b.addEventListener("click", () => openPrompt(b.getAttribute("data-lpx-open"))));
+    out.querySelector("[data-lpx-all]").addEventListener("click", () => { lpxRemember({ q: lastQ }); toSignUp(); });
+  }
+  function runSearch(text) {
+    text = String(text || "").trim();
+    if (text.length < 2) { out.hidden = true; return; }
+    const res = typeof searchPrompts === "function" ? searchPrompts(lpxCorpus(), text, null, { quiet: true }) : [];
+    if (!res.length) {
+      out.innerHTML = '<div class="lpx-empty"><b>No exact match for “' + escapeHtml(text) + '”</b><span>With a free account you can build this prompt yourself in under a minute.</span>'
+        + '<button class="lp-btn lp-btn-primary" data-lpx-build>Build it free</button></div>';
+      out.hidden = false;
+      out.querySelector("[data-lpx-build]").addEventListener("click", () => { lpxRemember({ q: text, build: true }); toSignUp(); });
+      return;
     }
+    showResults(lpNum(res.length) + " prompts match “" + text + "”", res, text, res.length);
+  }
+  const deb = (fn, ms) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
+  q.addEventListener("input", deb(() => runSearch(q.value), 160));
+  q.addEventListener("keydown", (e) => { if (e.key === "Enter") runSearch(q.value); });
+  root.querySelector("#lpx-go").addEventListener("click", () => { runSearch(q.value); q.focus(); });
+  root.querySelectorAll("[data-lpx-q]").forEach((b) => b.addEventListener("click", () => { q.value = b.getAttribute("data-lpx-q"); runSearch(q.value); }));
+  root.querySelectorAll("[data-lpx-role]").forEach((b) => b.addEventListener("click", () => {
+    const r = ROLES_BY_ID[b.getAttribute("data-lpx-role")];
+    const cats = new Set(r.cats);
+    const recs = lpxCorpus().filter((p) => cats.has(p.category)).sort((a, c) => (c.source === "Everyday Essentials") - (a.source === "Everyday Essentials") || (c.qualityScore || 0) - (a.qualityScore || 0));
+    q.value = "";
+    showResults(r.icon + " " + r.label + ": our best prompts", recs, "", recs.length);
+    lpxRemember({ role: r.id });
+    root.querySelector(".lpx-hero").scrollIntoView({ behavior: "smooth", block: "start" });
   }));
+
+  // ---- prompt preview: 3 full previews, then the ask ----
+  const modal = root.querySelector("#lpx-modal");
+  const card = root.querySelector("#lpx-modal-card");
+  const closeModal = () => { modal.hidden = true; document.body.style.overflow = ""; };
+  modal.addEventListener("click", (e) => { if (e.target === modal) closeModal(); });
+  renderLanding._esc = () => { if (!modal.hidden) closeModal(); };
+  if (!renderLanding._escWired) {
+    renderLanding._escWired = true;
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape" && renderLanding._esc && document.getElementById("lpx-modal")) renderLanding._esc(); });
+  }
+  function openPrompt(id) {
+    const r = byId[id];
+    if (!r) return;
+    const open = lpxUnlock(id);
+    const left = lpxLeft();
+    card.innerHTML = '<button class="lpx-x" aria-label="Close">×</button>'
+      + '<div class="lpx-m-top"><span class="lpx-ico" aria-hidden="true">' + (typeof promptIcon === "function" ? promptIcon(r) : "📝") + '</span><div><h3 id="lpx-m-title">' + escapeHtml(r.title) + "</h3>"
+      + "<span>" + escapeHtml(r.category || "") + (lpTagFor(r) ? " · " + lpTagFor(r).replace(/<[^>]+>/g, "") : "") + "</span></div></div>"
+      + (r.description ? '<p class="lpx-m-desc">' + escapeHtml(r.description) + "</p>" : "")
+      + (r.outcome ? '<p class="lpx-m-get"><b>What you’ll get:</b> ' + escapeHtml(r.outcome) + "</p>" : "")
+      + (open
+        ? '<pre class="lpx-prompt lpx-m-prompt">' + lpxPromptHtml(r.originalPrompt) + "</pre>"
+          + '<div class="lpx-actions"><button class="lp-btn lp-btn-primary" data-lpx-copy>Copy prompt</button>'
+          + '<button class="lp-btn lp-btn-outline" data-lpx-openin="chatgpt">Open in ChatGPT</button><button class="lp-btn lp-btn-outline" data-lpx-openin="claude">Open in Claude</button></div>'
+          + '<div class="lpx-m-nudge"><span>' + (left ? "You have <b>" + left + "</b> free preview" + (left === 1 ? "" : "s") + " left." : "That was your last free preview.")
+          + " A free account opens all " + total + ' prompts and lets you save this one.</span><button class="lp-btn lp-btn-primary" data-lpx-save>Save it free</button></div>'
+        : '<div class="lpx-locked"><pre class="lpx-prompt lpx-m-prompt">' + lpxPromptHtml(r.originalPrompt, 260) + "</pre>"
+          + '<div class="lpx-lockcard"><b>You’ve seen your 3 free previews</b><span>Create a free account to open this prompt and all ' + total + " others, save the ones you like and build your own.</span>"
+          + '<button class="lp-btn lp-btn-primary lpx-big" data-lpx-save>Unlock free · 20 seconds</button><button class="lpx-link" data-lp-login>I already have an account</button></div></div>');
+    modal.hidden = false;
+    document.body.style.overflow = "hidden";
+    card.querySelector(".lpx-x").addEventListener("click", closeModal);
+    const cp = card.querySelector("[data-lpx-copy]");
+    if (cp) cp.addEventListener("click", () => copy(r.originalPrompt, cp));
+    card.querySelectorAll("[data-lpx-openin]").forEach((b) => b.addEventListener("click", () => lpxOpenIn(b.getAttribute("data-lpx-openin"), r.originalPrompt)));
+    card.querySelectorAll("[data-lpx-save]").forEach((b) => b.addEventListener("click", () => { lpxRemember({ q: lastQ, id }); closeModal(); toSignUp(); }));
+    wireAuth(card);
+    card.querySelector(".lpx-x").focus();
+    // cards reflect the new state (unlocked / previews left)
+    out.querySelectorAll("[data-lpx-open]").forEach((b) => { const rec = byId[b.getAttribute("data-lpx-open")]; if (rec) b.outerHTML = lpxCardHtml(rec); });
+    out.querySelectorAll("[data-lpx-open]").forEach((b) => b.addEventListener("click", () => openPrompt(b.getAttribute("data-lpx-open"))));
+    const leftEl = out.querySelector(".lpx-left");
+    if (leftEl) leftEl.textContent = left ? left + " free full preview" + (left === 1 ? "" : "s") + " left" : "Free previews used · sign up to open all";
+  }
+
+  // ---- playground: fill-ins update the prompt live ----
+  const fields = root.querySelector("#lpx-fields");
+  const outPre = root.querySelector("#lpx-out");
+  if (fields && plays.length) {
+    let cur = 0, vals = {};
+    const varsOf = (text) => Array.from(new Set((text.match(/\[[A-Z][A-Z0-9_]*(?:[ ,:][^\]\n]*)?\]/g) || [])));
+    const filled = () => {
+      let t = plays[cur].originalPrompt;
+      varsOf(t).forEach((v) => { if (vals[v]) t = t.split(v).join(vals[v]); });
+      return t;
+    };
+    const paint = () => { outPre.innerHTML = lpxPromptHtml(filled()); };
+    const load = (i) => {
+      cur = i; vals = {};
+      fields.innerHTML = varsOf(plays[i].originalPrompt).slice(0, 5).map((v) => {
+        const lp = typeof varLabelParts === "function" ? varLabelParts(v) : { label: v, hint: "" };
+        return '<label class="lpx-field"><span>' + escapeHtml(lp.label.replace(/\bi\b/g, "I")) + '</span><input type="text" data-v="' + escapeHtml(v) + '" placeholder="' + escapeHtml(lp.hint || "Type here…") + '"></label>';
+      }).join("");
+      fields.querySelectorAll("input").forEach((inp) => inp.addEventListener("input", () => { vals[inp.getAttribute("data-v")] = inp.value.trim(); paint(); }));
+      paint();
+    };
+    root.querySelectorAll("[data-lpx-play]").forEach((b) => b.addEventListener("click", () => {
+      root.querySelectorAll("[data-lpx-play]").forEach((x) => x.setAttribute("aria-selected", String(x === b)));
+      load(+b.getAttribute("data-lpx-play"));
+    }));
+    load(0);
+    const cpy = root.querySelector("#lpx-copy");
+    cpy.addEventListener("click", () => copy(filled(), cpy));
+    root.querySelectorAll(".lpx-play [data-lpx-openin]").forEach((b) => b.addEventListener("click", () => lpxOpenIn(b.getAttribute("data-lpx-openin"), filled())));
+  }
+
+  // ---- phones: a quiet sign-up bar once the hero is out of view ----
+  const sticky = root.querySelector("#lpx-sticky");
+  const hero = root.querySelector(".lpx-hero");
+  if (window.IntersectionObserver && sticky && hero) {
+    new IntersectionObserver((es) => { sticky.hidden = es[0].isIntersecting; }).observe(hero);
+  }
   window.scrollTo(0, 0);
 }
 
