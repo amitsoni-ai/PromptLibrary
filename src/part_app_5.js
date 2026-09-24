@@ -679,8 +679,7 @@ function renderSidebarFooter() {
   document.getElementById("sidebar-footer").innerHTML = `
     <div class="stat-row"><span>${restricted ? "Prompts in your program" : "Prompts available"}</span><b class="tabular">${n.toLocaleString()}</b></div>
     <div class="stat-row"><span>Saved</span><b class="tabular">${Store.getFavorites().size + Store.getMyPrompts().length}</b></div>
-    <div class="stat-row"><span>Practice attempts</span><b class="tabular">${Store.getProgress().practice.length}</b></div>
-    <div class="stat-row" style="margin-top:6px;color:var(--text-faint)"><span>${Store.getBackendLabel()}</span></div>`;
+    <div class="stat-row"><span>Practice attempts</span><b class="tabular">${Store.getProgress().practice.length}</b></div>`;
   document.getElementById("brand-sub").textContent = n.toLocaleString() + (restricted ? " in your program" : " prompts");
 }
 function renderApp() {
