@@ -193,3 +193,15 @@ The app reads the baked-in data, so nothing shows them. A `--reset` run clears t
   - Double-click resets it.
   - Arrow, Home and End keys work when the edge has focus.
   - The width is remembered, and the collapse button still works.
+
+## Home redesign: premium, low cognitive load (follow-up)
+
+- **One question, one box.** The hero is centred: "What do you want to get done?", one short line of help, a large search box with an Enter hint, and 3 quiet "Try" links instead of 6 chips.
+- **One way to browse at a time.** A "By task / By role" switch shows 8 tiles.
+  - Tasks: 7 tasks plus "All 18 tasks", which expands the grid in place.
+  - Roles: Marketing, Sales & customers, Managers & leaders, HR & people, Tech & product, Finance & operations, Writers & creators, Learning & growth.
+  - Your choice is remembered.
+- **Roles are a new way to browse** (`ROLES`, view `role`). Each role groups the categories that person uses. Roles also appear in the Library rail and in the mobile chip row, between Tasks and Categories. Scoped learners don't see them, the same rule as categories.
+- **"Pick up where you left off."** A continue-learning card sits next to your last 3 opened prompts. This replaces two separate "Recently used" and "Saved" lists.
+- **Recommended for you.** Now 3 tiles in one row with a single reason line, instead of several grouped rows.
+- **Visual system.** Generous spacing (52 px between sections), 16 px radius tiles with a soft hover lift, a subtle accent glow behind the hero, display font for headings, and dark mode support. On phones the grids are 2 columns (1 for lists) and the Try links become a swipeable row.

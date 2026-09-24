@@ -386,11 +386,11 @@ const VIEW_TITLES = {
   program: "My Program", learn: "Learn", practice: "Practice", builder: "Create Prompt",
   framework: "Prompt Framework",
   myLibrary: "Saved", favorites: "Saved", me: "Me", insights: "Library Governance",
-  accessCodes: "Access codes", task: "Library",
+  accessCodes: "Access codes", task: "Library", role: "Library",
 };
 /* Which primary nav item lights up for a given (possibly nested) view. */
 const VIEW_PARENT = {
-  categories: "search", categoryDetail: "search", builder: "search", task: "search",
+  categories: "search", categoryDetail: "search", builder: "search", task: "search", role: "search",
   program: "learn", framework: "learn",
   myLibrary: "me", favorites: "me", insights: "me",
 };
@@ -398,7 +398,7 @@ let STATE = {
   view: "home", query: "", filters: emptyFilters(), sort: "relevance",
   activeCategory: null, favoritesTab: "favorites", myLibTab: "mine", insightsTab: "overview",
   meTab: "overview", savedFilter: "all", frameworkLevel: 1,
-  libBrowseAll: false, libOpenModules: null, activeHub: null, searchLiteral: null, searchPin: null, libTab: "all", libLayout: null,
+  libBrowseAll: false, libOpenModules: null, activeHub: null, activeRole: null, searchLiteral: null, searchPin: null, libTab: "all", libLayout: null,
   detailId: null, detailLayer: "original", builder: null, practice: null, openModules: null, lcStage: "Recommended",
 };
 function emptyFilters() { return { category: null, skill: null, promptType: null, role: null, difficulty: null, aiTool: null, source: null, fwLevel: null, hasVariables: false, favoritesOnly: false }; }
@@ -414,7 +414,7 @@ function findPromptById(id) {
 const SHARED_QUERY_VIEWS = new Set(["home", "search"]);
 // Views a scoped learner never sees — they discover through their program,
 // search, Learn and Practice, not by browsing the whole library.
-const SCOPED_HIDDEN_VIEWS = new Set(["categories", "categoryDetail", "insights"]);
+const SCOPED_HIDDEN_VIEWS = new Set(["categories", "categoryDetail", "role", "insights"]);
 function isViewAllowed(view) {
   if (view === "accessCodes") {
     // Any signed-in account learner can manage their codes, scoped or not.
@@ -508,14 +508,14 @@ function renderTopbar() {
 function renderContent() {
   const content = document.getElementById("content");
   if (!isViewAllowed(STATE.view)) STATE.view = "search";
-  const LIB_VIEWS = { search: 1, categories: 1, categoryDetail: 1, task: 1 };
-  content.className = "content" + (LIB_VIEWS[STATE.view] ? " content-lib" : STATE.view === "insights" || STATE.view === "myLibrary" || STATE.view === "me" || STATE.view === "accessCodes" ? " wide" : "");
+  const LIB_VIEWS = { search: 1, categories: 1, categoryDetail: 1, task: 1, role: 1 };
+  content.className = "content" + (STATE.view === "home" ? " content-home" : "") + (LIB_VIEWS[STATE.view] ? " content-lib" : STATE.view === "insights" || STATE.view === "myLibrary" || STATE.view === "me" || STATE.view === "accessCodes" ? " wide" : "");
   const map = {
     home: renderHome, search: renderSearchView, categories: renderCategoriesView, categoryDetail: renderCategoryDetail,
     program: renderProgramView, learn: renderLearnView, practice: renderPracticeView, builder: renderBuilderView,
     framework: renderFrameworkView,
     myLibrary: renderMeView, favorites: renderMeView, me: renderMeView, insights: renderInsightsView,
-    accessCodes: renderAccessCodesView, task: renderTaskView,
+    accessCodes: renderAccessCodesView, task: renderTaskView, role: renderLibraryShell,
   };
   (map[STATE.view] || renderHome)(content);
 }

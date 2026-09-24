@@ -313,22 +313,48 @@ function continueLearning() {
   if (progs.length) return { kind: "module", title: progs[0].name, sub: "Open your program", nav: "program", programId: progs[0].id };
   return { kind: "lesson", title: "How good prompts are built", sub: "5 short principles", nav: "learn" };
 }
+/* Home: one clear question, one search box, then one way to browse at a
+   time (by task or by role), what you were last doing, and three picks.
+   Everything else lives in the Library and Me. */
+function homeBrowseMode() {
+  if (STATE.homeBrowse) return STATE.homeBrowse;
+  try { STATE.homeBrowse = localStorage.getItem("prompt-lib:homeBrowse") || "tasks"; } catch (e) { STATE.homeBrowse = "tasks"; }
+  return STATE.homeBrowse;
+}
+function homeBrowseGridHtml(mode, expanded) {
+  const tile = (attr, ico, label, sub, badge) => `
+    <button class="h2-tile" ${attr}>
+      <span class="h2-tile-top"><span class="h2-ico" aria-hidden="true">${ico}</span>${badge ? `<span class="h2-badge">${escapeHtml(badge)}</span>` : ""}<span class="h2-arrow" aria-hidden="true">${icon("chevronRight")}</span></span>
+      <span class="h2-tbody"><span class="h2-tlabel">${escapeHtml(label)}</span><span class="h2-tsub">${escapeHtml(sub)}</span></span>
+    </button>`;
+  if (mode === "roles") {
+    return rolesInScope().map((r) => tile(`data-role="${r.id}"`, r.icon, r.label, `${r.sub}`, `${r.count.toLocaleString()} prompts`)).join("");
+  }
+  const hubs = hubsInScope();
+  const shown = expanded || hubs.length <= 8 ? hubs : hubs.slice(0, 7);
+  return shown.map((h) => tile(`data-hub="${h.id}"`, h.icon, h.label, `${h.count} ready-to-use prompt${h.count === 1 ? "" : "s"}`)).join("") +
+    (shown.length < hubs.length ? `<button class="h2-tile h2-more" data-more-tasks><span class="h2-ico" aria-hidden="true">＋</span><span class="h2-tbody"><span class="h2-tlabel">All ${hubs.length} tasks</span><span class="h2-tsub">Meetings, career, learning, AI…</span></span></button>` : "");
+}
 function renderHome(container) {
   const q = STATE.query.trim();
   const s = Store.getSession();
   const sc = currentScope();
+  const first = s && s.name ? escapeHtml(s.name.split(" ")[0]) : "";
+  const where = sc && sc.program ? escapeHtml(sc.program.name) : sc && sc.programs && sc.programs.length ? escapeHtml(sc.org.name) : "";
+  const total = scopedLibrary().length;
   let html = `
-  <div class="hero">
-    <div class="greeting">${greeting()}${s && s.name ? ", " + escapeHtml(s.name.split(" ")[0]) : ""}${sc && sc.program ? " · " + escapeHtml(sc.program.name) : sc && sc.programs && sc.programs.length ? " · " + escapeHtml(sc.org.name) : ""}</div>
-    <h1>What do you want to accomplish?</h1>
-    <div class="search-hero" role="combobox" aria-expanded="false" aria-haspopup="listbox">
+  <section class="h2-hero${q ? " h2-hero-compact" : ""}">
+    <div class="h2-greet">${greeting()}${first ? ", " + first : ""}${where ? ` <span>· ${where}</span>` : ""}</div>
+    <h1>What do you want to get done?</h1>
+    ${q ? "" : `<p class="h2-lead">Describe it in your own words. We'll find the right prompt from ${total.toLocaleString()} ready-to-use ones.</p>`}
+    <div class="search-hero h2-search" role="combobox" aria-expanded="false" aria-haspopup="listbox">
       <div class="suggest-panel" id="hero-suggest" role="listbox" hidden></div>
       ${icon("search", "icon-search")}
-      <input type="text" id="hero-search" aria-label="Describe what you need to do" placeholder="Describe what you need to do, e.g. make a presentation for my team" value="${escapeHtml(STATE.query)}" autocomplete="off"/>
-      ${q ? `<button class="icon-clear" id="hero-clear" aria-label="Clear search">${icon("x")}</button>` : ""}
+      <input type="text" id="hero-search" aria-label="Describe what you need to do" placeholder="e.g. make a presentation for my team" value="${escapeHtml(STATE.query)}" autocomplete="off"/>
+      ${q ? `<button class="icon-clear" id="hero-clear" aria-label="Clear search">${icon("x")}</button>` : `<kbd class="h2-kbd" aria-hidden="true">Enter</kbd>`}
     </div>
-    ${!q ? `<div class="search-examples">${SEARCH_EXAMPLES.map((x) => `<button class="search-example-chip" data-example="${escapeHtml(x)}">${escapeHtml(x)}</button>`).join("")}</div>` : ""}
-  </div>`;
+    ${q ? "" : `<div class="h2-try"><span>Try</span>${SEARCH_EXAMPLES.slice(0, 3).map((x) => `<button data-example="${escapeHtml(x)}">${escapeHtml(x.replace(/\?$/, ""))}</button>`).join("")}</div>`}
+  </section>`;
 
   if (q) {
     html += `<div id="home-results"></div>`;
@@ -336,79 +362,79 @@ function renderHome(container) {
     renderResultsInto(container.querySelector("#home-results"), { compactFilters: true });
     wireHomeStatic(container);
   } else {
-    const recPicks = recommendedForYou(6);
-    const si = (typeof scopeInfo === "function") ? scopeInfo() : { restricted: false, mode: "full" };
-    const isNew = Store.getFavorites().size === 0 && Object.keys(Store.getUsage().counts).length === 0;
-    const companion = programCompanionPrompt();
-    const recent = Store.getUsage().recent.map((r) => findPromptById(r.id)).filter(Boolean).slice(0, 5);
-    const saved = Array.from(Store.getFavorites()).map(findPromptById).filter(Boolean).slice(0, 5);
+    const roles = rolesInScope();
+    const hubs = hubsInScope();
+    let mode = homeBrowseMode();
+    if (mode === "roles" && !roles.length) mode = "tasks";
+    if (mode === "tasks" && !hubs.length && roles.length) mode = "roles";
+    const canSwitch = roles.length && hubs.length;
+    const recent = Store.getUsage().recent.map((r) => findPromptById(r.id)).filter(Boolean)
+      .filter((r, i, a) => a.findIndex((x) => x.id === r.id) === i).slice(0, 3);
     const cont = continueLearning();
+    const companion = programCompanionPrompt();
+    const picks = recommendedForYou(6).map((x) => x.rec).filter((r) => !recent.some((x) => x.id === r.id));
+    const recs = (companion ? [companion] : []).concat(picks.filter((r) => !companion || r.id !== companion.id)).slice(0, 3);
+    const reason = (recommendedForYou(1)[0] || {}).reason || "";
 
-    // group consecutive picks that share a reason so each row gets one caption
-    const groups = [];
-    recPicks.forEach(({ rec, reason }) => {
-      const last = groups[groups.length - 1];
-      if (last && last.reason === reason) last.recs.push(rec);
-      else groups.push({ reason, recs: [rec] });
-    });
-
-    const taskGrid = taskGridHtml({ limit: 8 });
-    html += (taskGrid ? `
-    <div class="task-block" id="home-tasks">
-      <div class="section-title"><div><h2>Popular tasks</h2><p>Pick what you're doing. Each one opens a ready-made toolkit of prompts.</p></div></div>
-      ${taskGrid}
-    </div>` : "") + `
-    <div class="continue-card" data-cont="1" role="button" tabindex="0">
-      <div class="cc-ico">${icon(cont.kind === "module" ? "path" : "book")}</div>
-      <div>
-        <h3>Continue: ${escapeHtml(cont.title)}</h3>
-        <p>${escapeHtml(cont.sub)}</p>
-      </div>
-      <span class="cc-go">${icon("chevronRight")}</span>
-    </div>
-
-    <div class="home-block">
-      <div class="section-title"><h2>Recommended for you</h2><button class="linklike" data-nav="search">Browse the library</button></div>
-      ${isNew ? `<div class="empty-mini" style="margin-bottom:10px;">Tell us what you're working on and we'll tailor this. For now, here's a strong place to start.</div>` : ""}
-      ${groups.length ? groups.map((g) => `
-        <div class="rec-reason">${escapeHtml(g.reason)}</div>
-        <div class="rec-grid">${g.recs.map((r) => promptCardHtml(r)).join("")}</div>`).join("")
-        : `<div class="empty-mini">Save and use a few prompts and this list will sharpen.</div>`}
-    </div>
-
-    ${companion ? `
-    <div class="home-block">
-      <div class="section-title"><h2>Your program's companion prompt</h2></div>
-      <div class="potd" data-id="${companion.id}" role="button" tabindex="0">
+    html += (hubs.length || roles.length ? `
+    <section class="h2-section" id="home-browse">
+      <div class="h2-head">
         <div>
-          <div class="potd-badge">Course companion</div>
-          <h3>${escapeHtml(companion.title.replace(" — Course Companion Prompt", ""))}</h3>
-          <p>${escapeHtml(companion.description)}</p>
+          <h2>Start from what you're doing</h2>
+          <p>${mode === "roles" ? "Pick your role to see the prompts people in it use most." : "Pick a task. Each one opens a ready-made toolkit."}</p>
         </div>
+        ${canSwitch ? `<div class="h2-seg" role="tablist" aria-label="Browse by">
+          <button role="tab" data-browse="tasks" aria-selected="${mode === "tasks"}">By task</button>
+          <button role="tab" data-browse="roles" aria-selected="${mode === "roles"}">By role</button>
+        </div>` : ""}
       </div>
-    </div>` : ""}
+      <div class="h2-grid" id="h2-grid">${homeBrowseGridHtml(mode)}</div>
+    </section>` : "") + `
 
-    <div class="home-cols">
-      <div class="home-block">
-        <div class="section-title"><h2>Recently used</h2>${recent.length ? `<button class="linklike" data-nav="me">See all</button>` : ""}</div>
-        <div class="mini-list">
-          ${recent.length ? recent.map((r) => `<div class="mini-item" data-id="${r.id}" role="button" tabindex="0"><span class="mini-item-title">${escapeHtml(r.title)}</span><span class="chip">${escapeHtml(r.category)}</span></div>`).join("")
-            : `<div class="empty-mini">Prompts you open, copy, or use show up here.</div>`}
-        </div>
+    <section class="h2-section h2-split">
+      <div class="h2-col">
+        <div class="h2-head"><h2>Pick up where you left off</h2></div>
+        <button class="h2-cont" data-cont="1">
+          <span class="h2-cont-ico">${icon(cont.kind === "module" ? "path" : "book")}</span>
+          <span class="h2-tbody"><span class="h2-kicker">Continue learning</span><span class="h2-tlabel">${escapeHtml(cont.title)}</span><span class="h2-tsub">${escapeHtml(cont.sub)}</span></span>
+          <span class="h2-arrow" aria-hidden="true">${icon("chevronRight")}</span>
+        </button>
+        ${recent.map((r) => `
+        <button class="h2-recent" data-id="${r.id}">
+          <span class="h2-ico h2-ico-sm" aria-hidden="true">${promptIcon(r)}</span>
+          <span class="h2-tbody"><span class="h2-tlabel">${escapeHtml(r.title)}</span><span class="h2-tsub">${escapeHtml(r.category)}</span></span>
+        </button>`).join("")}
+        ${recent.length ? "" : `<p class="h2-note">Prompts you open show up here, so you can get back to them in one click.</p>`}
       </div>
-      <div class="home-block">
-        <div class="section-title"><h2>Saved</h2>${saved.length ? `<button class="linklike" data-nav="me">See all</button>` : ""}</div>
-        <div class="mini-list">
-          ${saved.length ? saved.map((r) => `<div class="mini-item" data-id="${r.id}" role="button" tabindex="0"><span class="mini-item-title">${escapeHtml(r.title)}</span><span class="chip">${escapeHtml(r.category)}</span></div>`).join("")
-            : `<div class="empty-mini">Tap the star on any prompt to keep it here.</div>`}
-        </div>
+      <div class="h2-col h2-col-wide">
+        <div class="h2-head"><div><h2>Recommended for you</h2>${reason ? `<p>${escapeHtml(reason)}</p>` : ""}</div><button class="linklike" data-nav="search">See all</button></div>
+        <div class="h2-recs">${recs.map((r) => promptTileHtml(r, { hideCategory: false })).join("")}</div>
       </div>
-    </div>`;
+    </section>`;
     container.innerHTML = html;
     wireHomeStatic(container);
     wireCardActions(container);
-    const tasksEl = container.querySelector("#home-tasks");
-    if (tasksEl) wireTaskGrid(tasksEl);
+    const browse = container.querySelector("#home-browse");
+    if (browse) {
+      const grid = browse.querySelector("#h2-grid");
+      const wireGrid = () => {
+        grid.querySelectorAll("[data-hub]").forEach((b) => b.addEventListener("click", () => openHub(b.dataset.hub)));
+        grid.querySelectorAll("[data-role]").forEach((b) => b.addEventListener("click", () => openRole(b.dataset.role)));
+        const more = grid.querySelector("[data-more-tasks]");
+        if (more) more.addEventListener("click", () => { grid.innerHTML = homeBrowseGridHtml("tasks", true); wireGrid(); });
+      };
+      wireGrid();
+      browse.querySelectorAll("[data-browse]").forEach((b) => b.addEventListener("click", () => {
+        STATE.homeBrowse = b.dataset.browse;
+        try { localStorage.setItem("prompt-lib:homeBrowse", b.dataset.browse); } catch (e) {}
+        browse.querySelectorAll("[data-browse]").forEach((x) => x.setAttribute("aria-selected", String(x === b)));
+        browse.querySelector(".h2-head p").textContent = b.dataset.browse === "roles"
+          ? "Pick your role to see the prompts people in it use most." : "Pick a task. Each one opens a ready-made toolkit.";
+        grid.innerHTML = homeBrowseGridHtml(b.dataset.browse);
+        wireGrid();
+      }));
+    }
+    container.querySelectorAll(".h2-recent").forEach((b) => b.addEventListener("click", () => openDetail(b.dataset.id)));
   }
 
   const input = container.querySelector("#hero-search");
@@ -543,6 +569,7 @@ function renderModuleListInto(el, prog) {
 function libSelection() {
   if (STATE.view === "categoryDetail" && STATE.activeCategory) return { kind: "category", id: STATE.activeCategory };
   if (STATE.view === "task" && STATE.activeHub && TASK_HUBS_BY_ID[STATE.activeHub]) return { kind: "hub", id: STATE.activeHub };
+  if (STATE.view === "role" && STATE.activeRole && ROLES_BY_ID[STATE.activeRole]) return { kind: "role", id: STATE.activeRole };
   return { kind: "all", id: null };
 }
 function selectLibrary(sel) {
@@ -557,6 +584,7 @@ function selectLibrary(sel) {
   STATE.filters = f;
   if (sel.kind === "category") { STATE.activeCategory = sel.id; STATE.view = "categoryDetail"; }
   else if (sel.kind === "hub") { STATE.activeHub = sel.id; STATE.view = "task"; }
+  else if (sel.kind === "role") { STATE.activeRole = sel.id; STATE.view = "role"; }
   else STATE.view = "search";
   renderApp();
   window.scrollTo({ top: 0, behavior: "auto" });
@@ -584,6 +612,7 @@ function libCategoryList() {
 function libBaseRecords(sel) {
   if (sel.kind === "category") return getSearchCorpus().filter((r) => r.category === sel.id);
   if (sel.kind === "hub") { const h = TASK_HUBS_BY_ID[sel.id]; return hubEssentials(h.id).concat(hubLibraryMatches(h, 24)); }
+  if (sel.kind === "role") { const cats = new Set(ROLES_BY_ID[sel.id].cats); return getSearchCorpus().filter((r) => cats.has(r.category)); }
   return getSearchCorpus();
 }
 function libFilterRowHtml() {
@@ -667,13 +696,16 @@ function renderLibraryShell(container) {
   // single-program scopes have no category browse (see isViewAllowed)
   const cats = isViewAllowed("categoryDetail") ? libCategoryList() : [];
   const hub = sel.kind === "hub" ? TASK_HUBS_BY_ID[sel.id] : null;
+  const role = sel.kind === "role" ? ROLES_BY_ID[sel.id] : null;
+  const roles = rolesInScope();
   const catMeta = sel.kind === "category" ? CATEGORIES.find((c) => c.name === sel.id) : null;
   if (sel.kind === "category" && !cats.some((c) => c.name === sel.id)) { selectLibrary({ kind: "all" }); return; }
   const tab = STATE.libTab || "all";
   const layout = libLayout();
-  const title = hub ? hub.label : sel.kind === "category" ? sel.id : "All prompts";
-  const icon0 = hub ? hub.icon : sel.kind === "category" ? (CATEGORY_ICONS[sel.id] || "📝") : "📚";
+  const title = hub ? hub.label : role ? role.label : sel.kind === "category" ? sel.id : "All prompts";
+  const icon0 = hub ? hub.icon : role ? role.icon : sel.kind === "category" ? (CATEGORY_ICONS[sel.id] || "📝") : "📚";
   const blurb = hub ? hub.blurb
+    : role ? `${role.sub}`
     : catMeta ? `Prompts for ${catMeta.role || CATEGORY_SKILL[sel.id] || "any professional"}.`
     : si.restricted ? `${si.label}${si.functionName && si.functionName !== si.label ? " · " + si.functionName : ""}`
     : "Every prompt, built to be copied, filled in and used.";
@@ -686,21 +718,23 @@ function renderLibraryShell(container) {
   const chip = (k, id, ico, label) => `<button class="lc-chip ${isActive(k, id) ? "on" : ""}" data-sel-kind="${k}" ${id ? `data-sel-id="${escapeHtml(id)}"` : ""} ${isActive(k, id) ? 'aria-current="true"' : ""}><span aria-hidden="true">${ico}</span>${escapeHtml(label)}</button>`;
   const chipRow = chip("all", null, "📚", "All") +
     hubs.map((h) => chip("hub", h.id, h.icon, h.label)).join("") +
+    (roles.length ? `<span class="lc-sep" aria-hidden="true"></span>` + roles.map((r) => chip("role", r.id, r.icon, r.label)).join("") : "") +
     (cats.length ? `<span class="lc-sep" aria-hidden="true"></span>` : "") +
     cats.map((c) => chip("category", c.name, CATEGORY_ICONS[c.name] || "📝", c.name)).join("");
   const crumb = sel.kind === "all" ? "" : `
     <div class="lib-crumb">
       <button class="lc-link" data-crumb-all>Library</button><span aria-hidden="true">›</span>
-      <span>${sel.kind === "hub" ? "Tasks" : "Categories"}</span><span aria-hidden="true">›</span>
+      <span>${sel.kind === "hub" ? "Tasks" : sel.kind === "role" ? "Roles" : "Categories"}</span><span aria-hidden="true">›</span>
       <span class="lc-current">${icon0} ${escapeHtml(title)}<button class="lc-clear" data-crumb-all aria-label="Clear ${escapeHtml(title)}" title="Show all prompts">${icon("x")}</button></span>
     </div>`;
 
   container.innerHTML = `
   <div class="lib-shell${railWidth() ? "" : " rail-closed"}" style="--rail-w:${railWidth()}px">
     <aside class="lib-rail" aria-label="Browse the library">
-      <div class="rail-find">${icon("search", "rf-ico")}<input type="text" id="rail-filter" placeholder="Filter tasks & categories" aria-label="Filter tasks and categories" autocomplete="off"/></div>
+      <div class="rail-find">${icon("search", "rf-ico")}<input type="text" id="rail-filter" placeholder="Filter tasks, roles & categories" aria-label="Filter tasks, roles and categories" autocomplete="off"/></div>
       ${railItem("all", null, "📚", "All prompts", si.total)}
       ${hubs.length ? `<div class="rail-label"><span>Tasks</span><small>What you need to do</small></div>${hubs.map((h) => railItem("hub", h.id, h.icon, h.label, h.count)).join("")}` : ""}
+      ${roles.length ? `<div class="rail-label"><span>Roles</span><small>Browse by what you do</small></div>${roles.map((r) => railItem("role", r.id, r.icon, r.label, r.count)).join("")}` : ""}
       ${cats.length ? `<div class="rail-label"><span>Categories</span><small>Browse by field</small></div>` : ""}
       ${cats.map((c) => railItem("category", c.name, CATEGORY_ICONS[c.name] || "📝", c.name, c.count)).join("")}
       <div class="rail-empty" hidden>No match. Try another word.</div>

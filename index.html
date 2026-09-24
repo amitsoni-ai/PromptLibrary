@@ -743,6 +743,100 @@ body.is-resizing, body.is-resizing *{cursor:col-resize !important; user-select:n
   .search-examples .search-example-chip:nth-child(n+4){display:none;}
 }
 
+/* ---------- Home (premium, low-load) ---------- */
+.content-home{max-width:1120px;}
+.h2-hero{position:relative; text-align:center; padding:52px 8px 8px; isolation:isolate;}
+.h2-hero::before{content:""; position:absolute; z-index:-1; left:50%; top:0; width:min(760px,100%); height:300px; transform:translateX(-50%);
+  background:radial-gradient(closest-side, var(--accent-soft), transparent); opacity:.9; pointer-events:none;}
+.h2-hero-compact{padding-top:22px; text-align:left;}
+.h2-hero-compact::before{display:none;}
+.h2-greet{font-size:13.5px; font-weight:600; color:var(--accent-strong); letter-spacing:.01em; margin-bottom:12px;}
+.h2-greet span{color:var(--text-faint); font-weight:500;}
+.h2-hero h1{font-family:var(--font-display); font-size:40px; line-height:1.12; letter-spacing:-0.03em; font-weight:700; margin:0 0 12px;}
+.h2-hero-compact h1{font-size:26px;}
+.h2-lead{font-size:15.5px; color:var(--text-muted); max-width:540px; margin:0 auto 26px; line-height:1.55;}
+.h2-search{max-width:720px; margin:0 auto;}
+.h2-hero-compact .h2-search{margin:0; max-width:none;}
+.h2-search input{height:60px; padding:0 96px 0 54px !important; font-size:16.5px !important; border-radius:18px !important; border:1px solid var(--border-strong) !important;
+  background:var(--surface) !important; box-shadow:0 10px 30px rgba(20,24,26,.08), 0 1px 3px rgba(20,24,26,.06);}
+.h2-search input:focus{border-color:var(--accent) !important; box-shadow:0 0 0 4px var(--accent-soft), 0 10px 30px rgba(20,24,26,.08);}
+.h2-search .icon-search{left:20px !important; width:21px !important; height:21px !important;}
+.h2-kbd{position:absolute; right:14px; top:50%; transform:translateY(-50%); font-family:var(--font-mono); font-size:11px; color:var(--text-faint); border:1px solid var(--border); border-bottom-width:2px; border-radius:6px; padding:3px 7px; background:var(--surface-2); pointer-events:none;}
+.h2-try{display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:6px 8px; margin-top:16px; font-size:13px; color:var(--text-faint);}
+.h2-try button{border:none; background:none; padding:4px 2px; color:var(--text-muted); font-size:13px; text-decoration:underline; text-decoration-color:var(--border-strong); text-underline-offset:3px;}
+.h2-try button:hover{color:var(--accent-strong); text-decoration-color:var(--accent);}
+.h2-try button + button::before{content:"·"; margin-right:8px; color:var(--border-strong); display:inline-block; text-decoration:none;}
+.h2-section{margin-top:52px;}
+.h2-head{display:flex; align-items:flex-end; justify-content:space-between; gap:16px; margin-bottom:16px; flex-wrap:wrap;}
+.h2-head h2{font-family:var(--font-display); font-size:19px; letter-spacing:-0.015em; font-weight:650; margin:0;}
+.h2-head p{font-size:13.5px; color:var(--text-muted); margin:4px 0 0;}
+.h2-seg{display:inline-flex; padding:4px; gap:2px; border-radius:12px; background:var(--surface-2); border:1px solid var(--border);}
+.h2-seg button{border:none; background:none; padding:8px 16px; border-radius:9px; font-size:13.5px; font-weight:600; color:var(--text-muted);}
+.h2-seg button[aria-selected="true"]{background:var(--surface); color:var(--text); box-shadow:var(--shadow);}
+.h2-grid{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px;}
+.h2-tile, .h2-cont, .h2-recent{display:flex; align-items:center; gap:14px; width:100%; padding:18px; border:1px solid var(--border); border-radius:16px; background:var(--surface);
+  text-align:left; color:var(--text); transition:border-color .15s, box-shadow .15s, transform .15s;}
+.h2-tile:hover, .h2-cont:hover, .h2-recent:hover{border-color:var(--accent); box-shadow:0 8px 24px rgba(14,124,107,.10); transform:translateY(-2px);}
+.h2-tile:focus-visible, .h2-cont:focus-visible, .h2-recent:focus-visible{outline:none; box-shadow:0 0 0 3px var(--accent-soft); border-color:var(--accent);}
+.h2-ico{flex:none; width:46px; height:46px; border-radius:14px; background:var(--accent-soft); display:flex; align-items:center; justify-content:center; font-size:22px; line-height:1;}
+.h2-ico-sm{width:38px; height:38px; border-radius:11px; font-size:18px;}
+.h2-tbody{flex:1; min-width:0; display:flex; flex-direction:column; gap:3px;}
+.h2-tlabel{font-weight:650; font-size:14.5px; line-height:1.3; overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;}
+.h2-tsub{font-size:12.5px; color:var(--text-faint); line-height:1.4; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.h2-kicker{font-size:11px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:var(--accent-strong);}
+.h2-arrow{flex:none; color:var(--text-faint); opacity:0; transform:translateX(-4px); transition:opacity .15s, transform .15s; display:flex;}
+.h2-arrow svg{width:16px; height:16px;}
+.h2-tile:hover .h2-arrow, .h2-cont:hover .h2-arrow{opacity:1; transform:none; color:var(--accent-strong);}
+.h2-tile{flex-direction:column; align-items:stretch; gap:14px; padding:18px 18px 16px;}
+.h2-tile-top{display:flex; align-items:center; gap:8px;}
+.h2-tile{position:relative;}
+.h2-tile .h2-arrow{position:absolute; right:16px; bottom:16px;}
+.h2-badge{font-size:11.5px; font-weight:600; color:var(--text-faint); background:var(--surface-2); padding:3px 9px; border-radius:99px; margin-left:auto;}
+.h2-tile .h2-tsub{white-space:normal; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;}
+.h2-head .linklike{border:none; background:none; padding:0; font-size:13.5px; font-weight:600; color:var(--accent-strong);}
+.h2-head .linklike:hover{text-decoration:underline;}
+.h2-more{border-style:dashed; background:transparent;}
+.h2-more .h2-ico{background:var(--surface-2); color:var(--text-muted); font-size:18px;}
+.h2-split{display:flex; flex-direction:column; gap:52px;}
+.h2-split > .h2-col:first-child{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px;}
+.h2-split > .h2-col:first-child > .h2-head{grid-column:1 / -1; margin-bottom:4px;}
+.h2-cont{grid-column:span 2; background:linear-gradient(135deg, var(--accent-soft), var(--surface) 70%);}
+.h2-cont-ico{flex:none; width:46px; height:46px; border-radius:14px; background:var(--surface); color:var(--accent-strong); display:flex; align-items:center; justify-content:center; box-shadow:var(--shadow);}
+.h2-cont-ico svg{width:21px; height:21px;}
+.h2-recent{padding:14px 16px;}
+.h2-note{grid-column:span 2; align-self:center; font-size:13px; color:var(--text-faint); margin:0; padding:0 6px;}
+.h2-recs{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px;}
+.h2-recs .prompt-card.prompt-tile{min-height:0;}
+@media (max-width:1100px){
+  .h2-grid, .h2-split > .h2-col:first-child{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .h2-cont{grid-column:1 / -1;}
+  .h2-note{grid-column:1 / -1;}
+}
+@media (max-width:880px){
+  .h2-hero{padding:18px 0 0; text-align:left;}
+  .h2-hero::before{left:0; transform:none; height:220px;}
+  .h2-hero h1{font-size:27px;}
+  .h2-lead{margin:0 0 18px; font-size:14.5px;}
+  .h2-search input{height:54px; font-size:16px !important; padding-right:16px !important;}
+  .h2-kbd{display:none;}
+  .h2-try{justify-content:flex-start; flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; margin-right:-16px;}
+  .h2-try::-webkit-scrollbar{display:none;}
+  .h2-try button{flex:none; white-space:nowrap; text-decoration:none; border:1px solid var(--border); border-radius:99px; padding:6px 12px; background:var(--surface);}
+  .h2-try button + button::before{content:none;}
+  .h2-section, .h2-split{margin-top:34px; gap:34px;}
+  .h2-head{align-items:flex-start;}
+  .h2-seg{width:100%;} .h2-seg button{flex:1;}
+  .h2-grid{grid-template-columns:1fr 1fr; gap:10px;}
+  .h2-tile{gap:10px; padding:14px;}
+  .h2-tile .h2-arrow{display:none;}
+  .h2-badge{font-size:11px; padding:2px 7px;}
+  .h2-ico{width:40px; height:40px; font-size:19px; border-radius:12px;}
+  .h2-tlabel{font-size:14px;}
+  .h2-tsub{white-space:normal; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;}
+  .h2-split > .h2-col:first-child{grid-template-columns:1fr;}
+  .h2-recs{grid-template-columns:1fr; gap:10px;}
+}
+
 /* ---------- v2: simplified surfaces ---------- */
 .home-cols{display:grid; grid-template-columns:1.4fr 1fr; gap:26px; align-items:start;}
 .home-block{margin-bottom:26px;}
@@ -14106,6 +14200,42 @@ function hubsInScope() {
   scopedLibrary().forEach((r) => { if (r.hub) counts[r.hub] = (counts[r.hub] || 0) + 1; });
   return TASK_HUBS.filter((h) => counts[h.id]).map((h) => Object.assign({ count: counts[h.id] }, h));
 }
+/* Roles: browse by who you are. Each role groups the categories that person
+   reaches for, so a marketer sees marketing, social, SEO, email and copy
+   prompts together. A category can sit in more than one role. */
+const ROLES = [
+  { id: "marketing", label: "Marketing", icon: "📣", sub: "Campaigns, social, SEO, email, copy",
+    cats: ["Marketing & Branding", "Social Media", "SEO & Analytics", "Email Marketing", "Content Writing & Copywriting"] },
+  { id: "sales", label: "Sales & customers", icon: "🤝", sub: "Leads, pitches, support, e-commerce",
+    cats: ["Sales & Lead Generation", "Customer Support", "E-Commerce"] },
+  { id: "leaders", label: "Managers & leaders", icon: "🧭", sub: "Strategy, teams, decisions, decks",
+    cats: ["Business Strategy", "Communication & Leadership", "Presentation & Slides"] },
+  { id: "people", label: "HR & people", icon: "🧑‍💼", sub: "Hiring, reviews, policies, culture",
+    cats: ["HR & Recruiting"] },
+  { id: "tech", label: "Tech & product", icon: "💻", sub: "Code, AI, product, UX design",
+    cats: ["Coding & Tech", "AI & Prompt Engineering", "Product Management", "UX/UI Design"] },
+  { id: "ops", label: "Finance & operations", icon: "📊", sub: "Numbers, legal, automation, data",
+    cats: ["Finance & Accounting", "Legal & Compliance", "Productivity & Automation", "Research & Data Analysis"] },
+  { id: "creators", label: "Writers & creators", icon: "✍️", sub: "Books, content, design, images",
+    cats: ["Book & Ebook Writing", "Image & Design", "Content Writing & Copywriting"] },
+  { id: "growth", label: "Learning & growth", icon: "🌱", sub: "Career, coaching, study, wellbeing",
+    cats: ["Education & Learning", "Career Growth", "Coaching & Self-Development", "Health & Fitness", "Spirituality & Wellness"] },
+];
+const ROLES_BY_ID = {};
+ROLES.forEach((r) => { ROLES_BY_ID[r.id] = r; });
+function rolesInScope() {
+  if (typeof isViewAllowed === "function" && !isViewAllowed("categoryDetail")) return [];
+  const counts = {};
+  scopedLibrary().forEach((r) => { counts[r.category] = (counts[r.category] || 0) + 1; });
+  return ROLES.map((r) => Object.assign({}, r, { count: r.cats.reduce((n, c) => n + (counts[c] || 0), 0) })).filter((r) => r.count);
+}
+function openRole(roleId) {
+  if (!ROLES_BY_ID[roleId]) return;
+  STATE.activeRole = roleId;
+  STATE.query = "";
+  STATE.filters = emptyFilters();
+  navigate("role");
+}
 /* A grid of task tiles. `limit` shows the first N with a "Show all" toggle. */
 function taskGridHtml(opts) {
   opts = opts || {};
@@ -14214,7 +14344,7 @@ function openFromSearch(q, id) {
   STATE.searchLiteral = null;
   STATE.searchPin = id;
   STATE.libTab = "all";
-  if (!{ search: 1, categories: 1, categoryDetail: 1, task: 1 }[STATE.view]) navigate("search");
+  if (!{ search: 1, categories: 1, categoryDetail: 1, task: 1, role: 1 }[STATE.view]) navigate("search");
   else renderApp();
   openDetail(id);
 }
@@ -14784,22 +14914,48 @@ function continueLearning() {
   if (progs.length) return { kind: "module", title: progs[0].name, sub: "Open your program", nav: "program", programId: progs[0].id };
   return { kind: "lesson", title: "How good prompts are built", sub: "5 short principles", nav: "learn" };
 }
+/* Home: one clear question, one search box, then one way to browse at a
+   time (by task or by role), what you were last doing, and three picks.
+   Everything else lives in the Library and Me. */
+function homeBrowseMode() {
+  if (STATE.homeBrowse) return STATE.homeBrowse;
+  try { STATE.homeBrowse = localStorage.getItem("prompt-lib:homeBrowse") || "tasks"; } catch (e) { STATE.homeBrowse = "tasks"; }
+  return STATE.homeBrowse;
+}
+function homeBrowseGridHtml(mode, expanded) {
+  const tile = (attr, ico, label, sub, badge) => `
+    <button class="h2-tile" ${attr}>
+      <span class="h2-tile-top"><span class="h2-ico" aria-hidden="true">${ico}</span>${badge ? `<span class="h2-badge">${escapeHtml(badge)}</span>` : ""}<span class="h2-arrow" aria-hidden="true">${icon("chevronRight")}</span></span>
+      <span class="h2-tbody"><span class="h2-tlabel">${escapeHtml(label)}</span><span class="h2-tsub">${escapeHtml(sub)}</span></span>
+    </button>`;
+  if (mode === "roles") {
+    return rolesInScope().map((r) => tile(`data-role="${r.id}"`, r.icon, r.label, `${r.sub}`, `${r.count.toLocaleString()} prompts`)).join("");
+  }
+  const hubs = hubsInScope();
+  const shown = expanded || hubs.length <= 8 ? hubs : hubs.slice(0, 7);
+  return shown.map((h) => tile(`data-hub="${h.id}"`, h.icon, h.label, `${h.count} ready-to-use prompt${h.count === 1 ? "" : "s"}`)).join("") +
+    (shown.length < hubs.length ? `<button class="h2-tile h2-more" data-more-tasks><span class="h2-ico" aria-hidden="true">＋</span><span class="h2-tbody"><span class="h2-tlabel">All ${hubs.length} tasks</span><span class="h2-tsub">Meetings, career, learning, AI…</span></span></button>` : "");
+}
 function renderHome(container) {
   const q = STATE.query.trim();
   const s = Store.getSession();
   const sc = currentScope();
+  const first = s && s.name ? escapeHtml(s.name.split(" ")[0]) : "";
+  const where = sc && sc.program ? escapeHtml(sc.program.name) : sc && sc.programs && sc.programs.length ? escapeHtml(sc.org.name) : "";
+  const total = scopedLibrary().length;
   let html = `
-  <div class="hero">
-    <div class="greeting">${greeting()}${s && s.name ? ", " + escapeHtml(s.name.split(" ")[0]) : ""}${sc && sc.program ? " · " + escapeHtml(sc.program.name) : sc && sc.programs && sc.programs.length ? " · " + escapeHtml(sc.org.name) : ""}</div>
-    <h1>What do you want to accomplish?</h1>
-    <div class="search-hero" role="combobox" aria-expanded="false" aria-haspopup="listbox">
+  <section class="h2-hero${q ? " h2-hero-compact" : ""}">
+    <div class="h2-greet">${greeting()}${first ? ", " + first : ""}${where ? ` <span>· ${where}</span>` : ""}</div>
+    <h1>What do you want to get done?</h1>
+    ${q ? "" : `<p class="h2-lead">Describe it in your own words. We'll find the right prompt from ${total.toLocaleString()} ready-to-use ones.</p>`}
+    <div class="search-hero h2-search" role="combobox" aria-expanded="false" aria-haspopup="listbox">
       <div class="suggest-panel" id="hero-suggest" role="listbox" hidden></div>
       ${icon("search", "icon-search")}
-      <input type="text" id="hero-search" aria-label="Describe what you need to do" placeholder="Describe what you need to do, e.g. make a presentation for my team" value="${escapeHtml(STATE.query)}" autocomplete="off"/>
-      ${q ? `<button class="icon-clear" id="hero-clear" aria-label="Clear search">${icon("x")}</button>` : ""}
+      <input type="text" id="hero-search" aria-label="Describe what you need to do" placeholder="e.g. make a presentation for my team" value="${escapeHtml(STATE.query)}" autocomplete="off"/>
+      ${q ? `<button class="icon-clear" id="hero-clear" aria-label="Clear search">${icon("x")}</button>` : `<kbd class="h2-kbd" aria-hidden="true">Enter</kbd>`}
     </div>
-    ${!q ? `<div class="search-examples">${SEARCH_EXAMPLES.map((x) => `<button class="search-example-chip" data-example="${escapeHtml(x)}">${escapeHtml(x)}</button>`).join("")}</div>` : ""}
-  </div>`;
+    ${q ? "" : `<div class="h2-try"><span>Try</span>${SEARCH_EXAMPLES.slice(0, 3).map((x) => `<button data-example="${escapeHtml(x)}">${escapeHtml(x.replace(/\?$/, ""))}</button>`).join("")}</div>`}
+  </section>`;
 
   if (q) {
     html += `<div id="home-results"></div>`;
@@ -14807,79 +14963,79 @@ function renderHome(container) {
     renderResultsInto(container.querySelector("#home-results"), { compactFilters: true });
     wireHomeStatic(container);
   } else {
-    const recPicks = recommendedForYou(6);
-    const si = (typeof scopeInfo === "function") ? scopeInfo() : { restricted: false, mode: "full" };
-    const isNew = Store.getFavorites().size === 0 && Object.keys(Store.getUsage().counts).length === 0;
-    const companion = programCompanionPrompt();
-    const recent = Store.getUsage().recent.map((r) => findPromptById(r.id)).filter(Boolean).slice(0, 5);
-    const saved = Array.from(Store.getFavorites()).map(findPromptById).filter(Boolean).slice(0, 5);
+    const roles = rolesInScope();
+    const hubs = hubsInScope();
+    let mode = homeBrowseMode();
+    if (mode === "roles" && !roles.length) mode = "tasks";
+    if (mode === "tasks" && !hubs.length && roles.length) mode = "roles";
+    const canSwitch = roles.length && hubs.length;
+    const recent = Store.getUsage().recent.map((r) => findPromptById(r.id)).filter(Boolean)
+      .filter((r, i, a) => a.findIndex((x) => x.id === r.id) === i).slice(0, 3);
     const cont = continueLearning();
+    const companion = programCompanionPrompt();
+    const picks = recommendedForYou(6).map((x) => x.rec).filter((r) => !recent.some((x) => x.id === r.id));
+    const recs = (companion ? [companion] : []).concat(picks.filter((r) => !companion || r.id !== companion.id)).slice(0, 3);
+    const reason = (recommendedForYou(1)[0] || {}).reason || "";
 
-    // group consecutive picks that share a reason so each row gets one caption
-    const groups = [];
-    recPicks.forEach(({ rec, reason }) => {
-      const last = groups[groups.length - 1];
-      if (last && last.reason === reason) last.recs.push(rec);
-      else groups.push({ reason, recs: [rec] });
-    });
-
-    const taskGrid = taskGridHtml({ limit: 8 });
-    html += (taskGrid ? `
-    <div class="task-block" id="home-tasks">
-      <div class="section-title"><div><h2>Popular tasks</h2><p>Pick what you're doing. Each one opens a ready-made toolkit of prompts.</p></div></div>
-      ${taskGrid}
-    </div>` : "") + `
-    <div class="continue-card" data-cont="1" role="button" tabindex="0">
-      <div class="cc-ico">${icon(cont.kind === "module" ? "path" : "book")}</div>
-      <div>
-        <h3>Continue: ${escapeHtml(cont.title)}</h3>
-        <p>${escapeHtml(cont.sub)}</p>
-      </div>
-      <span class="cc-go">${icon("chevronRight")}</span>
-    </div>
-
-    <div class="home-block">
-      <div class="section-title"><h2>Recommended for you</h2><button class="linklike" data-nav="search">Browse the library</button></div>
-      ${isNew ? `<div class="empty-mini" style="margin-bottom:10px;">Tell us what you're working on and we'll tailor this. For now, here's a strong place to start.</div>` : ""}
-      ${groups.length ? groups.map((g) => `
-        <div class="rec-reason">${escapeHtml(g.reason)}</div>
-        <div class="rec-grid">${g.recs.map((r) => promptCardHtml(r)).join("")}</div>`).join("")
-        : `<div class="empty-mini">Save and use a few prompts and this list will sharpen.</div>`}
-    </div>
-
-    ${companion ? `
-    <div class="home-block">
-      <div class="section-title"><h2>Your program's companion prompt</h2></div>
-      <div class="potd" data-id="${companion.id}" role="button" tabindex="0">
+    html += (hubs.length || roles.length ? `
+    <section class="h2-section" id="home-browse">
+      <div class="h2-head">
         <div>
-          <div class="potd-badge">Course companion</div>
-          <h3>${escapeHtml(companion.title.replace(" — Course Companion Prompt", ""))}</h3>
-          <p>${escapeHtml(companion.description)}</p>
+          <h2>Start from what you're doing</h2>
+          <p>${mode === "roles" ? "Pick your role to see the prompts people in it use most." : "Pick a task. Each one opens a ready-made toolkit."}</p>
         </div>
+        ${canSwitch ? `<div class="h2-seg" role="tablist" aria-label="Browse by">
+          <button role="tab" data-browse="tasks" aria-selected="${mode === "tasks"}">By task</button>
+          <button role="tab" data-browse="roles" aria-selected="${mode === "roles"}">By role</button>
+        </div>` : ""}
       </div>
-    </div>` : ""}
+      <div class="h2-grid" id="h2-grid">${homeBrowseGridHtml(mode)}</div>
+    </section>` : "") + `
 
-    <div class="home-cols">
-      <div class="home-block">
-        <div class="section-title"><h2>Recently used</h2>${recent.length ? `<button class="linklike" data-nav="me">See all</button>` : ""}</div>
-        <div class="mini-list">
-          ${recent.length ? recent.map((r) => `<div class="mini-item" data-id="${r.id}" role="button" tabindex="0"><span class="mini-item-title">${escapeHtml(r.title)}</span><span class="chip">${escapeHtml(r.category)}</span></div>`).join("")
-            : `<div class="empty-mini">Prompts you open, copy, or use show up here.</div>`}
-        </div>
+    <section class="h2-section h2-split">
+      <div class="h2-col">
+        <div class="h2-head"><h2>Pick up where you left off</h2></div>
+        <button class="h2-cont" data-cont="1">
+          <span class="h2-cont-ico">${icon(cont.kind === "module" ? "path" : "book")}</span>
+          <span class="h2-tbody"><span class="h2-kicker">Continue learning</span><span class="h2-tlabel">${escapeHtml(cont.title)}</span><span class="h2-tsub">${escapeHtml(cont.sub)}</span></span>
+          <span class="h2-arrow" aria-hidden="true">${icon("chevronRight")}</span>
+        </button>
+        ${recent.map((r) => `
+        <button class="h2-recent" data-id="${r.id}">
+          <span class="h2-ico h2-ico-sm" aria-hidden="true">${promptIcon(r)}</span>
+          <span class="h2-tbody"><span class="h2-tlabel">${escapeHtml(r.title)}</span><span class="h2-tsub">${escapeHtml(r.category)}</span></span>
+        </button>`).join("")}
+        ${recent.length ? "" : `<p class="h2-note">Prompts you open show up here, so you can get back to them in one click.</p>`}
       </div>
-      <div class="home-block">
-        <div class="section-title"><h2>Saved</h2>${saved.length ? `<button class="linklike" data-nav="me">See all</button>` : ""}</div>
-        <div class="mini-list">
-          ${saved.length ? saved.map((r) => `<div class="mini-item" data-id="${r.id}" role="button" tabindex="0"><span class="mini-item-title">${escapeHtml(r.title)}</span><span class="chip">${escapeHtml(r.category)}</span></div>`).join("")
-            : `<div class="empty-mini">Tap the star on any prompt to keep it here.</div>`}
-        </div>
+      <div class="h2-col h2-col-wide">
+        <div class="h2-head"><div><h2>Recommended for you</h2>${reason ? `<p>${escapeHtml(reason)}</p>` : ""}</div><button class="linklike" data-nav="search">See all</button></div>
+        <div class="h2-recs">${recs.map((r) => promptTileHtml(r, { hideCategory: false })).join("")}</div>
       </div>
-    </div>`;
+    </section>`;
     container.innerHTML = html;
     wireHomeStatic(container);
     wireCardActions(container);
-    const tasksEl = container.querySelector("#home-tasks");
-    if (tasksEl) wireTaskGrid(tasksEl);
+    const browse = container.querySelector("#home-browse");
+    if (browse) {
+      const grid = browse.querySelector("#h2-grid");
+      const wireGrid = () => {
+        grid.querySelectorAll("[data-hub]").forEach((b) => b.addEventListener("click", () => openHub(b.dataset.hub)));
+        grid.querySelectorAll("[data-role]").forEach((b) => b.addEventListener("click", () => openRole(b.dataset.role)));
+        const more = grid.querySelector("[data-more-tasks]");
+        if (more) more.addEventListener("click", () => { grid.innerHTML = homeBrowseGridHtml("tasks", true); wireGrid(); });
+      };
+      wireGrid();
+      browse.querySelectorAll("[data-browse]").forEach((b) => b.addEventListener("click", () => {
+        STATE.homeBrowse = b.dataset.browse;
+        try { localStorage.setItem("prompt-lib:homeBrowse", b.dataset.browse); } catch (e) {}
+        browse.querySelectorAll("[data-browse]").forEach((x) => x.setAttribute("aria-selected", String(x === b)));
+        browse.querySelector(".h2-head p").textContent = b.dataset.browse === "roles"
+          ? "Pick your role to see the prompts people in it use most." : "Pick a task. Each one opens a ready-made toolkit.";
+        grid.innerHTML = homeBrowseGridHtml(b.dataset.browse);
+        wireGrid();
+      }));
+    }
+    container.querySelectorAll(".h2-recent").forEach((b) => b.addEventListener("click", () => openDetail(b.dataset.id)));
   }
 
   const input = container.querySelector("#hero-search");
@@ -15014,6 +15170,7 @@ function renderModuleListInto(el, prog) {
 function libSelection() {
   if (STATE.view === "categoryDetail" && STATE.activeCategory) return { kind: "category", id: STATE.activeCategory };
   if (STATE.view === "task" && STATE.activeHub && TASK_HUBS_BY_ID[STATE.activeHub]) return { kind: "hub", id: STATE.activeHub };
+  if (STATE.view === "role" && STATE.activeRole && ROLES_BY_ID[STATE.activeRole]) return { kind: "role", id: STATE.activeRole };
   return { kind: "all", id: null };
 }
 function selectLibrary(sel) {
@@ -15028,6 +15185,7 @@ function selectLibrary(sel) {
   STATE.filters = f;
   if (sel.kind === "category") { STATE.activeCategory = sel.id; STATE.view = "categoryDetail"; }
   else if (sel.kind === "hub") { STATE.activeHub = sel.id; STATE.view = "task"; }
+  else if (sel.kind === "role") { STATE.activeRole = sel.id; STATE.view = "role"; }
   else STATE.view = "search";
   renderApp();
   window.scrollTo({ top: 0, behavior: "auto" });
@@ -15055,6 +15213,7 @@ function libCategoryList() {
 function libBaseRecords(sel) {
   if (sel.kind === "category") return getSearchCorpus().filter((r) => r.category === sel.id);
   if (sel.kind === "hub") { const h = TASK_HUBS_BY_ID[sel.id]; return hubEssentials(h.id).concat(hubLibraryMatches(h, 24)); }
+  if (sel.kind === "role") { const cats = new Set(ROLES_BY_ID[sel.id].cats); return getSearchCorpus().filter((r) => cats.has(r.category)); }
   return getSearchCorpus();
 }
 function libFilterRowHtml() {
@@ -15138,13 +15297,16 @@ function renderLibraryShell(container) {
   // single-program scopes have no category browse (see isViewAllowed)
   const cats = isViewAllowed("categoryDetail") ? libCategoryList() : [];
   const hub = sel.kind === "hub" ? TASK_HUBS_BY_ID[sel.id] : null;
+  const role = sel.kind === "role" ? ROLES_BY_ID[sel.id] : null;
+  const roles = rolesInScope();
   const catMeta = sel.kind === "category" ? CATEGORIES.find((c) => c.name === sel.id) : null;
   if (sel.kind === "category" && !cats.some((c) => c.name === sel.id)) { selectLibrary({ kind: "all" }); return; }
   const tab = STATE.libTab || "all";
   const layout = libLayout();
-  const title = hub ? hub.label : sel.kind === "category" ? sel.id : "All prompts";
-  const icon0 = hub ? hub.icon : sel.kind === "category" ? (CATEGORY_ICONS[sel.id] || "📝") : "📚";
+  const title = hub ? hub.label : role ? role.label : sel.kind === "category" ? sel.id : "All prompts";
+  const icon0 = hub ? hub.icon : role ? role.icon : sel.kind === "category" ? (CATEGORY_ICONS[sel.id] || "📝") : "📚";
   const blurb = hub ? hub.blurb
+    : role ? `${role.sub}`
     : catMeta ? `Prompts for ${catMeta.role || CATEGORY_SKILL[sel.id] || "any professional"}.`
     : si.restricted ? `${si.label}${si.functionName && si.functionName !== si.label ? " · " + si.functionName : ""}`
     : "Every prompt, built to be copied, filled in and used.";
@@ -15157,21 +15319,23 @@ function renderLibraryShell(container) {
   const chip = (k, id, ico, label) => `<button class="lc-chip ${isActive(k, id) ? "on" : ""}" data-sel-kind="${k}" ${id ? `data-sel-id="${escapeHtml(id)}"` : ""} ${isActive(k, id) ? 'aria-current="true"' : ""}><span aria-hidden="true">${ico}</span>${escapeHtml(label)}</button>`;
   const chipRow = chip("all", null, "📚", "All") +
     hubs.map((h) => chip("hub", h.id, h.icon, h.label)).join("") +
+    (roles.length ? `<span class="lc-sep" aria-hidden="true"></span>` + roles.map((r) => chip("role", r.id, r.icon, r.label)).join("") : "") +
     (cats.length ? `<span class="lc-sep" aria-hidden="true"></span>` : "") +
     cats.map((c) => chip("category", c.name, CATEGORY_ICONS[c.name] || "📝", c.name)).join("");
   const crumb = sel.kind === "all" ? "" : `
     <div class="lib-crumb">
       <button class="lc-link" data-crumb-all>Library</button><span aria-hidden="true">›</span>
-      <span>${sel.kind === "hub" ? "Tasks" : "Categories"}</span><span aria-hidden="true">›</span>
+      <span>${sel.kind === "hub" ? "Tasks" : sel.kind === "role" ? "Roles" : "Categories"}</span><span aria-hidden="true">›</span>
       <span class="lc-current">${icon0} ${escapeHtml(title)}<button class="lc-clear" data-crumb-all aria-label="Clear ${escapeHtml(title)}" title="Show all prompts">${icon("x")}</button></span>
     </div>`;
 
   container.innerHTML = `
   <div class="lib-shell${railWidth() ? "" : " rail-closed"}" style="--rail-w:${railWidth()}px">
     <aside class="lib-rail" aria-label="Browse the library">
-      <div class="rail-find">${icon("search", "rf-ico")}<input type="text" id="rail-filter" placeholder="Filter tasks & categories" aria-label="Filter tasks and categories" autocomplete="off"/></div>
+      <div class="rail-find">${icon("search", "rf-ico")}<input type="text" id="rail-filter" placeholder="Filter tasks, roles & categories" aria-label="Filter tasks, roles and categories" autocomplete="off"/></div>
       ${railItem("all", null, "📚", "All prompts", si.total)}
       ${hubs.length ? `<div class="rail-label"><span>Tasks</span><small>What you need to do</small></div>${hubs.map((h) => railItem("hub", h.id, h.icon, h.label, h.count)).join("")}` : ""}
+      ${roles.length ? `<div class="rail-label"><span>Roles</span><small>Browse by what you do</small></div>${roles.map((r) => railItem("role", r.id, r.icon, r.label, r.count)).join("")}` : ""}
       ${cats.length ? `<div class="rail-label"><span>Categories</span><small>Browse by field</small></div>` : ""}
       ${cats.map((c) => railItem("category", c.name, CATEGORY_ICONS[c.name] || "📝", c.name, c.count)).join("")}
       <div class="rail-empty" hidden>No match. Try another word.</div>
@@ -19368,11 +19532,11 @@ const VIEW_TITLES = {
   program: "My Program", learn: "Learn", practice: "Practice", builder: "Create Prompt",
   framework: "Prompt Framework",
   myLibrary: "Saved", favorites: "Saved", me: "Me", insights: "Library Governance",
-  accessCodes: "Access codes", task: "Library",
+  accessCodes: "Access codes", task: "Library", role: "Library",
 };
 /* Which primary nav item lights up for a given (possibly nested) view. */
 const VIEW_PARENT = {
-  categories: "search", categoryDetail: "search", builder: "search", task: "search",
+  categories: "search", categoryDetail: "search", builder: "search", task: "search", role: "search",
   program: "learn", framework: "learn",
   myLibrary: "me", favorites: "me", insights: "me",
 };
@@ -19380,7 +19544,7 @@ let STATE = {
   view: "home", query: "", filters: emptyFilters(), sort: "relevance",
   activeCategory: null, favoritesTab: "favorites", myLibTab: "mine", insightsTab: "overview",
   meTab: "overview", savedFilter: "all", frameworkLevel: 1,
-  libBrowseAll: false, libOpenModules: null, activeHub: null, searchLiteral: null, searchPin: null, libTab: "all", libLayout: null,
+  libBrowseAll: false, libOpenModules: null, activeHub: null, activeRole: null, searchLiteral: null, searchPin: null, libTab: "all", libLayout: null,
   detailId: null, detailLayer: "original", builder: null, practice: null, openModules: null, lcStage: "Recommended",
 };
 function emptyFilters() { return { category: null, skill: null, promptType: null, role: null, difficulty: null, aiTool: null, source: null, fwLevel: null, hasVariables: false, favoritesOnly: false }; }
@@ -19396,7 +19560,7 @@ function findPromptById(id) {
 const SHARED_QUERY_VIEWS = new Set(["home", "search"]);
 // Views a scoped learner never sees — they discover through their program,
 // search, Learn and Practice, not by browsing the whole library.
-const SCOPED_HIDDEN_VIEWS = new Set(["categories", "categoryDetail", "insights"]);
+const SCOPED_HIDDEN_VIEWS = new Set(["categories", "categoryDetail", "role", "insights"]);
 function isViewAllowed(view) {
   if (view === "accessCodes") {
     // Any signed-in account learner can manage their codes, scoped or not.
@@ -19490,14 +19654,14 @@ function renderTopbar() {
 function renderContent() {
   const content = document.getElementById("content");
   if (!isViewAllowed(STATE.view)) STATE.view = "search";
-  const LIB_VIEWS = { search: 1, categories: 1, categoryDetail: 1, task: 1 };
-  content.className = "content" + (LIB_VIEWS[STATE.view] ? " content-lib" : STATE.view === "insights" || STATE.view === "myLibrary" || STATE.view === "me" || STATE.view === "accessCodes" ? " wide" : "");
+  const LIB_VIEWS = { search: 1, categories: 1, categoryDetail: 1, task: 1, role: 1 };
+  content.className = "content" + (STATE.view === "home" ? " content-home" : "") + (LIB_VIEWS[STATE.view] ? " content-lib" : STATE.view === "insights" || STATE.view === "myLibrary" || STATE.view === "me" || STATE.view === "accessCodes" ? " wide" : "");
   const map = {
     home: renderHome, search: renderSearchView, categories: renderCategoriesView, categoryDetail: renderCategoryDetail,
     program: renderProgramView, learn: renderLearnView, practice: renderPracticeView, builder: renderBuilderView,
     framework: renderFrameworkView,
     myLibrary: renderMeView, favorites: renderMeView, me: renderMeView, insights: renderInsightsView,
-    accessCodes: renderAccessCodesView, task: renderTaskView,
+    accessCodes: renderAccessCodesView, task: renderTaskView, role: renderLibraryShell,
   };
   (map[STATE.view] || renderHome)(content);
 }
