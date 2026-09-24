@@ -44,6 +44,12 @@ if (!process.env.DATABASE_URL) {
   console.log("• DATABASE_URL not set — skipping DB verification.");
   process.exit(0);
 }
+// CI runs with DATABASE_URL=pglite://memory (an empty in-memory DB for the app
+// build); the table check only makes sense against a real Postgres/Neon DB.
+if (!/^postgres(ql)?:\/\//.test(process.env.DATABASE_URL)) {
+  console.log("• DATABASE_URL is not a Postgres URL — skipping DB verification.");
+  process.exit(0);
+}
 
 // Verify against the prompts table (non-archived).
 const { neon } = await import("@neondatabase/serverless");
