@@ -464,7 +464,7 @@ function renderNav() {
   const s = Store.getSession();
   const active = activeNavKey();
   let html = `<div class="nav-primary">` + NAV_PRIMARY.map((item) => `
-      <button class="nav-item ${active === item.key ? "active" : ""}" data-nav="${item.key}">
+      <button class="nav-item ${active === item.key ? "active" : ""}" data-nav="${item.key}" title="${item.label}">
         ${icon(item.icon)}<span>${item.label}</span>${item.kbd ? `<span class="nav-kbd">${item.kbd}</span>` : ""}
       </button>`).join("") + `</div>`;
   // Account learners manage their (stackable) access codes here. Kept out of the
@@ -660,6 +660,19 @@ function renderVerifyBannerMount() {
   slot.innerHTML = verificationBannerHtml();
   if (typeof wireVerificationBanner === "function") wireVerificationBanner();
 }
+function goHome() { closeSidebar(); STATE.query = ""; navigate("home"); }
+/* Desktop: collapse the main menu to an icon rail for more library room. */
+function applySidebarCollapsed(on) {
+  document.body.classList.toggle("sb-collapsed", !!on);
+  const t = document.getElementById("sb-toggle");
+  if (t) { t.title = on ? "Expand menu" : "Collapse menu"; t.setAttribute("aria-label", t.title); t.setAttribute("aria-expanded", String(!on)); }
+}
+function toggleSidebarCollapsed() {
+  const on = !document.body.classList.contains("sb-collapsed");
+  applySidebarCollapsed(on);
+  try { localStorage.setItem("prompt-lib:sbCollapsed", on ? "1" : "0"); } catch (e) {}
+}
+try { if (localStorage.getItem("prompt-lib:sbCollapsed") === "1") applySidebarCollapsed(true); } catch (e) {}
 function openSidebar() { document.getElementById("sidebar").classList.add("open"); document.getElementById("sidebar-overlay").classList.add("show"); }
 function closeSidebar() { document.getElementById("sidebar").classList.remove("open"); document.getElementById("sidebar-overlay").classList.remove("show"); }
 

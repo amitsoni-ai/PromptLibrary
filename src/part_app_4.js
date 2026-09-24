@@ -293,6 +293,7 @@ function renderBuilderView(container) {
   container.innerHTML = `
     <div class="builder-card">
       <button class="btn btn-ghost btn-sm" id="builder-mode-back" style="margin-bottom:10px;">← Change approach</button>
+      ${b.seed ? `<div class="builder-seed">🛠️ Building from your search <b>“${escapeHtml(b.seed)}”</b>. Your task is already filled in. Answer each step in your own words; skip any you're unsure of.</div>` : ""}
       <div class="builder-steps">${QS.map((_, i) => `<div class="builder-step-dot ${i < step ? "done" : i === step ? "active" : ""}"></div>`).join("")}</div>
       <div style="font-size:11.5px; color:var(--text-faint); margin-bottom:6px;">Step ${step + 1} of ${total} · ${escapeHtml(builderPathLabel(b))}</div>
       <div class="builder-question">${escapeHtml(qn.q)}</div>
@@ -416,10 +417,14 @@ function renderBuilderResult(container) {
 /* ---------- Detail drawer ---------- */
 function relatedPrompts(rec, n) {
   n = n || 5;
-  const corpus = getSearchCorpus().filter((r) => r.id !== rec.id);
+  const corpus = getSearchCorpus().filter((r) => r.id !== rec.id && r.lifecycle !== "Archived");
   const recTags = new Set((rec.tags || []).map((t) => t.toLowerCase()));
+  // what the prompt is *about*: rank the library against its own title
+  const byTitle = {};
+  searchPrompts(corpus, rec.title, null, { quiet: true }).slice(0, 40).forEach((r, i) => { byTitle[r.id] = 40 - i; });
   const scored = corpus.map((r) => {
-    let s = 0;
+    let s = (byTitle[r.id] || 0) * 0.35;
+    if (rec.hub && r.hub === rec.hub) s += 6;
     if (r.category === rec.category) s += 3;
     if (r.skill === rec.skill) s += 2;
     if (r.promptType === rec.promptType) s += 2;
@@ -493,7 +498,7 @@ function detailBodyHtml(rec) {
   const flags = rec.flags || {};
   const imp = Store.getImprovement(rec.id);
   const mine = Store.getMyPrompt(rec.id);
-  const related = relatedPrompts(rec);
+  const related = relatedPrompts(rec, 6);
   const modelNotes = [];
   if (flags.modelSpecific) modelNotes.push("Model-specific");
   if (flags.containsWebSearch) modelNotes.push("Contains web-search instruction");
@@ -539,6 +544,9 @@ function detailBodyHtml(rec) {
       ${rec.isTemplate ? `<button class="btn btn-sm" id="customize-toggle" style="margin-top:8px;">${icon("slider")} Fill in the ${(rec.variables || []).length} field${(rec.variables || []).length === 1 ? "" : "s"}</button><div id="customize-panel" style="display:none; margin-top:12px;"></div>` : ""}
     </div>
 
+    ${related.length ? `<div class="detail-section similar-block"><h3>Similar prompts you can use</h3>
+      <div class="similar-list">${related.map((r) => `<button class="similar-item" data-id="${r.id}"><span class="si-ico" aria-hidden="true">${typeof promptIcon === "function" ? promptIcon(r) : "📝"}</span><span class="si-main"><b>${escapeHtml(r.title)}</b><small>${escapeHtml(r.category)}${r.source === "Everyday Essentials" ? " · Essential" : ""}</small></span>${icon("chevronRight")}</button>`).join("")}</div></div>` : ""}
+
     <details class="detail-expand">
       <summary>Details, quality &amp; why it works <span class="chev">${icon("chevronRight")}</span></summary>
       <div class="expand-body">
@@ -567,7 +575,6 @@ function detailBodyHtml(rec) {
           <button class="btn btn-sm" id="btn-save-learner">${icon("plus")} Save my version</button>
           <button class="btn btn-sm" id="btn-versions">${icon("history")} Version history</button>
         </div>
-        ${related.length ? `<div class="detail-section"><h3>Related prompts</h3><div class="related-grid">${related.map((r) => `<div class="mini-item" data-id="${r.id}" role="button" tabindex="0" style="border:1px solid var(--border); border-radius:var(--radius-sm); padding:8px 10px;"><span class="mini-item-title">${escapeHtml(r.title)}</span><span class="chip">${escapeHtml(r.category)}</span></div>`).join("")}</div></div>` : ""}
         ${modelNotes.length ? `<div class="detail-section"><h3>Notes</h3><div style="display:flex;gap:6px;flex-wrap:wrap;">${modelNotes.map((m) => `<span class="chip">${escapeHtml(m)}</span>`).join("")}</div></div>` : ""}
         <div class="provenance">${icon("link2")} ${escapeHtml(rec.source || "Original Library")}${rec.sourceNumber ? " · source #" + rec.sourceNumber : ""}${rec.version ? " · v" + rec.version : ""}</div>
       </div>

@@ -321,7 +321,8 @@ function renderHome(container) {
   <div class="hero">
     <div class="greeting">${greeting()}${s && s.name ? ", " + escapeHtml(s.name.split(" ")[0]) : ""}${sc && sc.program ? " · " + escapeHtml(sc.program.name) : sc && sc.programs && sc.programs.length ? " · " + escapeHtml(sc.org.name) : ""}</div>
     <h1>What do you want to accomplish?</h1>
-    <div class="search-hero">
+    <div class="search-hero" role="combobox" aria-expanded="false" aria-haspopup="listbox">
+      <div class="suggest-panel" id="hero-suggest" role="listbox" hidden></div>
       ${icon("search", "icon-search")}
       <input type="text" id="hero-search" aria-label="Describe what you need to do" placeholder="Describe what you need to do, e.g. make a presentation for my team" value="${escapeHtml(STATE.query)}" autocomplete="off"/>
       ${q ? `<button class="icon-clear" id="hero-clear" aria-label="Clear search">${icon("x")}</button>` : ""}
@@ -416,6 +417,8 @@ function renderHome(container) {
     input.setSelectionRange(input.value.length, input.value.length);
     input.addEventListener("input", debounce((e) => { setQuery(e.target.value); }, 180));
   }
+  // type-ahead is only useful before results take over the page
+  if (input && !q) attachSearchSuggest(input, container.querySelector("#hero-suggest"), {});
   const clearBtn = container.querySelector("#hero-clear");
   if (clearBtn) clearBtn.addEventListener("click", () => setQuery(""));
 }
@@ -530,6 +533,8 @@ function libSelection() {
   return { kind: "all", id: null };
 }
 function selectLibrary(sel) {
+  const rail = document.querySelector(".lib-rail");
+  if (rail) STATE.railScroll = rail.scrollTop;
   STATE.query = "";
   STATE.searchLiteral = null;
   STATE.libBrowseAll = false;
@@ -540,7 +545,7 @@ function selectLibrary(sel) {
   else if (sel.kind === "hub") { STATE.activeHub = sel.id; STATE.view = "task"; }
   else STATE.view = "search";
   renderApp();
-  window.scrollTo({ top: 0 });
+  window.scrollTo({ top: 0, behavior: "auto" });
 }
 function libLayout() {
   if (STATE.libLayout) return STATE.libLayout;
@@ -590,7 +595,7 @@ function renderLibraryShell(container) {
   if (sel.kind === "category" && !cats.some((c) => c.name === sel.id)) { selectLibrary({ kind: "all" }); return; }
   const tab = STATE.libTab || "all";
   const layout = libLayout();
-  const title = hub ? hub.label : sel.kind === "category" ? sel.id : "Prompt library";
+  const title = hub ? hub.label : sel.kind === "category" ? sel.id : "All prompts";
   const icon0 = hub ? hub.icon : sel.kind === "category" ? (CATEGORY_ICONS[sel.id] || "📝") : "📚";
   const blurb = hub ? hub.blurb
     : catMeta ? `Prompts for ${catMeta.role || CATEGORY_SKILL[sel.id] || "any professional"}.`
@@ -598,50 +603,58 @@ function renderLibraryShell(container) {
     : "Every prompt, built to be copied, filled in and used.";
   const isActive = (k, id) => sel.kind === k && (k === "all" || sel.id === id);
   const railItem = (k, id, ico, label, count) => `
-    <button class="rail-item ${isActive(k, id) ? "active" : ""}" data-sel-kind="${k}" ${id ? `data-sel-id="${escapeHtml(id)}"` : ""} data-rail-text="${escapeHtml(label.toLowerCase())}">
+    <button class="rail-item ${isActive(k, id) ? "active" : ""}" data-sel-kind="${k}" ${id ? `data-sel-id="${escapeHtml(id)}"` : ""} data-rail-text="${escapeHtml(label.toLowerCase())}" ${isActive(k, id) ? 'aria-current="true"' : ""}>
       <span class="ri-ico" aria-hidden="true">${ico}</span><span class="ri-label">${escapeHtml(label)}</span><span class="ri-count">${count.toLocaleString()}</span>
     </button>`;
   const pickOpts = `<option value="all|" ${sel.kind === "all" ? "selected" : ""}>📚 All prompts</option>` +
     (hubs.length ? `<optgroup label="Tasks">${hubs.map((h) => `<option value="hub|${h.id}" ${isActive("hub", h.id) ? "selected" : ""}>${h.icon} ${escapeHtml(h.label)}</option>`).join("")}</optgroup>` : "") +
-    `<optgroup label="Categories">${cats.map((c) => `<option value="category|${escapeHtml(c.name)}" ${isActive("category", c.name) ? "selected" : ""}>${CATEGORY_ICONS[c.name] || "📝"} ${escapeHtml(c.name)}</option>`).join("")}</optgroup>`;
+    (cats.length ? `<optgroup label="Categories">${cats.map((c) => `<option value="category|${escapeHtml(c.name)}" ${isActive("category", c.name) ? "selected" : ""}>${CATEGORY_ICONS[c.name] || "📝"} ${escapeHtml(c.name)}</option>`).join("")}</optgroup>` : "");
+  const crumb = sel.kind === "all" ? "" : `
+    <div class="lib-crumb">
+      <button class="lc-link" data-crumb-all>Library</button><span aria-hidden="true">›</span>
+      <span>${sel.kind === "hub" ? "Tasks" : "Categories"}</span><span aria-hidden="true">›</span>
+      <span class="lc-current">${icon0} ${escapeHtml(title)}<button class="lc-clear" data-crumb-all aria-label="Clear ${escapeHtml(title)}" title="Show all prompts">${icon("x")}</button></span>
+    </div>`;
 
   container.innerHTML = `
   <div class="lib-shell">
     <aside class="lib-rail" aria-label="Browse the library">
-      <div class="rail-find">${icon("search", "rf-ico")}<input type="text" id="rail-filter" placeholder="Find a task or category" aria-label="Find a task or category" autocomplete="off"/></div>
+      <div class="rail-find">${icon("search", "rf-ico")}<input type="text" id="rail-filter" placeholder="Filter tasks & categories" aria-label="Filter tasks and categories" autocomplete="off"/></div>
       ${railItem("all", null, "📚", "All prompts", si.total)}
-      ${hubs.length ? `<div class="rail-label">Tasks</div>${hubs.map((h) => railItem("hub", h.id, h.icon, h.label, h.count)).join("")}` : ""}
-      ${cats.length ? `<div class="rail-label">Categories</div>` : ""}
+      ${hubs.length ? `<div class="rail-label"><span>Tasks</span><small>What you need to do</small></div>${hubs.map((h) => railItem("hub", h.id, h.icon, h.label, h.count)).join("")}` : ""}
+      ${cats.length ? `<div class="rail-label"><span>Categories</span><small>Browse by field</small></div>` : ""}
       ${cats.map((c) => railItem("category", c.name, CATEGORY_ICONS[c.name] || "📝", c.name, c.count)).join("")}
       <div class="rail-empty" hidden>No match. Try another word.</div>
     </aside>
     <section class="lib-main">
+      <div class="lib-searchbar">
+        <div class="lib-search" role="combobox" aria-expanded="false" aria-owns="lib-suggest" aria-haspopup="listbox">
+          ${icon("search", "ls-ico")}
+          <input type="text" id="lib-search" aria-label="Search all prompts" aria-autocomplete="list" aria-controls="lib-suggest" autocomplete="off" value="${escapeHtml(STATE.query)}"
+            placeholder="Search ${si.total.toLocaleString()} prompts: describe your task, e.g. “ICF coach” or “meeting minutes”"/>
+          <button class="ls-clear" id="lib-clear" aria-label="Clear search" ${STATE.query ? "" : "hidden"}>${icon("x")}</button>
+          <div class="suggest-panel" id="lib-suggest" role="listbox" hidden></div>
+        </div>
+        <div class="layout-toggle" role="group" aria-label="Layout">
+          <button data-layout="grid" class="${layout === "grid" ? "on" : ""}" aria-label="Grid view" title="Grid view">${icon("grid")}</button>
+          <button data-layout="list" class="${layout === "list" ? "on" : ""}" aria-label="List view" title="List view">${icon("listView")}</button>
+        </div>
+      </div>
       <label class="lib-pick"><span>Browse</span><select id="lib-pick" aria-label="Browse by task or category">${pickOpts}</select></label>
+      ${crumb}
       <div class="lib-head">
         <div class="lh-title">
           <span class="lh-ico" aria-hidden="true">${icon0}</span>
-          <div><h1>${escapeHtml(title)}</h1><div class="lh-sub" id="lib-count"></div></div>
-        </div>
-        <div class="lh-tools">
-          <div class="lib-search">${icon("search", "ls-ico")}
-            <input type="text" id="lib-search" aria-label="Search prompts" autocomplete="off" value="${escapeHtml(STATE.query)}"
-              placeholder="${sel.kind === "all" ? "Search by task or problem, e.g. write meeting minutes" : "Search in " + escapeHtml(title)}"/>
-            <button class="ls-clear" id="lib-clear" aria-label="Clear search" ${STATE.query ? "" : "hidden"}>${icon("x")}</button>
-          </div>
-          <div class="layout-toggle" role="group" aria-label="Layout">
-            <button data-layout="grid" class="${layout === "grid" ? "on" : ""}" aria-label="Grid view" title="Grid view">${icon("grid")}</button>
-            <button data-layout="list" class="${layout === "list" ? "on" : ""}" aria-label="List view" title="List view">${icon("listView")}</button>
-          </div>
+          <div><h1>${escapeHtml(title)}</h1><div class="lh-sub"><span id="lib-count"></span> · ${escapeHtml(blurb)}</div></div>
         </div>
       </div>
-      <p class="lh-blurb">${escapeHtml(blurb)}</p>
       <div class="lib-tabbar">
         <div class="lib-tabs" role="tablist">
           ${[["all", "All prompts"], ["saved", "Saved"], ["recent", "Recently used"]].map(([k, l]) => `<button role="tab" aria-selected="${tab === k}" class="${tab === k ? "on" : ""}" data-tab="${k}">${l}</button>`).join("")}
         </div>
         <div class="lib-tab-actions">
           <button class="btn btn-sm btn-ghost" id="lib-filter-btn" aria-expanded="false">${icon("slider")} Filters<span class="lf-dot" hidden></span></button>
-          <button class="btn btn-sm btn-ghost" data-nav="builder">${icon("build")} Create</button>
+          <button class="btn btn-sm btn-ghost" data-build-own>${icon("build")} Build your own</button>
         </div>
       </div>
       <div class="lib-filters" id="lib-filters" hidden>${libFilterRowHtml()}</div>
@@ -651,93 +664,121 @@ function renderLibraryShell(container) {
 
   const body = container.querySelector("#lib-body");
   const countEl = container.querySelector("#lib-count");
-  function currentRecords() {
-    const base = libBaseRecords(sel);
-    let recs = base;
+  const byTab = (recs) => {
     if (tab === "saved") recs = recs.filter((r) => Store.isFavorite(r.id));
     if (tab === "recent") {
       const order = (Store.getUsage().recent || []).map((x) => x.id);
       const pos = {}; order.forEach((id, i) => { if (!(id in pos)) pos[id] = i; });
       recs = recs.filter((r) => r.id in pos).sort((a, b) => pos[a.id] - pos[b.id]);
     }
+    return recs;
+  };
+  function currentRecords() {
     const q = STATE.query.trim();
     const f = Object.assign({}, STATE.filters, { category: null });
-    if (q) recs = computeResults(q, f, STATE.sort, recs);
-    else if (tab === "all" && sel.kind !== "hub") recs = computeResults("", f, STATE.sort, recs);
-    else recs = recs.filter((r) => passesFilters(r, f));
-    return recs;
+    const base = byTab(libBaseRecords(sel));
+    if (q) return computeResults(q, f, STATE.sort, base);
+    if (tab === "all" && sel.kind !== "hub") return computeResults("", f, STATE.sort, base);
+    return base.filter((r) => passesFilters(r, f));
   }
   function paint() {
     const q = STATE.query.trim();
     const recs = currentRecords();
-    countEl.textContent = `${recs.length.toLocaleString()} prompt${recs.length === 1 ? "" : "s"}` +
-      (q ? ` matching “${q}”` : "") + (tab === "saved" ? " saved" : tab === "recent" ? " used recently" : "");
-    const opts = { layout: libLayout(), hideCategory: sel.kind === "category" };
+    const f = Object.assign({}, STATE.filters, { category: null });
+    // Searching is library-wide: matches inside the selected task / category
+    // come first, the rest of the library follows so nothing is ever hidden.
+    let elsewhere = [], lead = [];
+    if (q && sel.kind !== "all") {
+      const own = new Set(recs.map((r) => r.id));
+      const global = computeResults(q, f, STATE.sort, byTab(getSearchCorpus()));
+      // the strongest hits outside the selection lead when they outrank
+      // everything inside it (e.g. "ICF coach" searched from Presentations)
+      for (const r of global.slice(0, 6)) { if (own.has(r.id)) break; lead.push(r); }
+      const leadIds = new Set(lead.map((r) => r.id));
+      elsewhere = global.filter((r) => !own.has(r.id) && !leadIds.has(r.id));
+    }
+    const total = recs.length + elsewhere.length + lead.length;
+    countEl.textContent = q ? `${total.toLocaleString()} match${total === 1 ? "" : "es"} for “${q}”`
+      : `${recs.length.toLocaleString()} prompt${recs.length === 1 ? "" : "s"}${tab === "saved" ? " saved" : tab === "recent" ? " used recently" : ""}`;
+    const opts = { layout: libLayout(), hideCategory: sel.kind === "category" && !q };
     let html = "";
-    if (q && sel.kind === "all") html += searchUnderstoodHtml(recs);
-    if (q && sel.kind !== "all") html += `<div class="search-fix">Searching in <b>${escapeHtml(title)}</b>. <button data-search-everywhere>Search all prompts instead</button></div>`;
+    if (q) html += searchUnderstoodHtml(recs.concat(lead, elsewhere));
     const showModules = !q && tab === "all" && sel.kind === "all" && !si.gridEligible && si.programId && ORG_INDEX.programs[si.programId];
     if (showModules) html += `<div class="section-title"><h2>${escapeHtml(ORG_INDEX.programs[si.programId].name)} — modules</h2></div><div id="lib-modules" style="margin-bottom:24px;"></div>`;
     const split = sel.kind === "hub" && !q && tab === "all";
     const ess = split ? recs.filter((r) => r.hub === sel.id) : [];
-    const rest = split ? recs.filter((r) => r.hub !== sel.id) : recs;
+    const main = split ? recs.filter((r) => r.hub !== sel.id) : recs;
     if (split && ess.length) html += `<div class="section-title"><h2>Step-by-step prompts</h2><span class="st-note">Hand-built with the prompt framework</span></div><div id="lib-ess" class="lib-section"></div>`;
-    if (split && rest.length) html += `<div class="section-title"><h2>More from the library</h2></div>`;
-    html += `<div id="lib-list"></div>`;
+    if (split && main.length) html += `<div class="section-title"><h2>More from the library</h2></div>`;
+    if (lead.length) html += `<div class="section-title"><h2>Best matches <small>${lead.length}</small></h2><span class="st-note">From the whole library</span></div><div id="lib-lead" class="lib-section"></div>`;
+    if (q && sel.kind !== "all") html += `<div class="section-title"><h2>In ${escapeHtml(title)} <small>${recs.length}</small></h2></div>`;
+    html += `<div id="lib-list" class="lib-section"></div>`;
+    if (elsewhere.length) html += `<div class="section-title"><h2>Across the library <small>${elsewhere.length}</small></h2><span class="st-note">Matches outside ${escapeHtml(title)}</span></div><div id="lib-else" class="lib-section"></div>`;
+    // few or no matches → close alternatives + build-your-own
+    const similar = q && total < 6 && tab === "all" ? similarForQuery(q, new Set(recs.concat(elsewhere, lead).map((r) => r.id)), 6) : [];
+    if (similar.length) html += `<div class="section-title"><h2>${total ? "You might also like" : "Closest prompts we have"}</h2><span class="st-note">Related to “${escapeHtml(q)}”</span></div><div id="lib-similar" class="lib-section"></div>`;
+    if (q && tab === "all") html += buildOwnCardHtml(q, total);
     body.innerHTML = html;
     if (showModules) renderModuleListInto(body.querySelector("#lib-modules"), ORG_INDEX.programs[si.programId]);
     if (split && ess.length) renderPaginatedList(body.querySelector("#lib-ess"), ess, opts);
     const emptyTitle = tab === "saved" ? "Nothing saved here yet" : tab === "recent" ? "Nothing used here yet"
-      : q ? `Nothing matched “${q}”` : "No prompts here yet";
+      : q ? (elsewhere.length ? `Nothing in ${title} for “${q}”` : `No exact match for “${q}”`) : "No prompts here yet";
     const emptySub = tab === "saved" ? "Tap the star on any prompt to keep it here."
       : tab === "recent" ? "Prompts you open, copy or use show up here."
-      : "Try a few plain words about the task, or pick a task from the list.";
-    const tasks = tab === "all" && q ? taskGridHtml({ limit: 6 }) : "";
-    const emptyHtml = emptyStateHtml(tab === "saved" ? "star" : "search", emptyTitle, emptySub,
-      q ? `<button class="btn btn-sm" data-nav-builder style="margin-top:4px;">${icon("build")} Create your own prompt</button>` : "") +
-      (tasks ? `<div class="task-block" id="empty-tasks">${tasks}</div>` : "");
-    if (!(split && !rest.length && ess.length)) renderPaginatedList(body.querySelector("#lib-list"), rest, Object.assign({ emptyHtml }, opts));
+      : elsewhere.length ? "See the matches from the rest of the library below."
+      : "Try a few plain words about the task, or look at the closest prompts below.";
+    const listEl = body.querySelector("#lib-list");
+    if (!(split && !main.length && ess.length)) renderPaginatedList(listEl, main, Object.assign({ emptyHtml: `<div class="empty-inline"><b>${escapeHtml(emptyTitle)}</b><span>${escapeHtml(emptySub)}</span></div>` }, opts));
+    if (lead.length) renderPaginatedList(body.querySelector("#lib-lead"), lead, { layout: libLayout() });
+    if (elsewhere.length) renderPaginatedList(body.querySelector("#lib-else"), elsewhere, { layout: libLayout() });
+    if (similar.length) renderPaginatedList(body.querySelector("#lib-similar"), similar, { layout: libLayout() });
     body.querySelectorAll(".intent-banner[data-hub]").forEach((b) => b.addEventListener("click", () => selectLibrary({ kind: "hub", id: b.dataset.hub })));
     const lit = body.querySelector("[data-search-literal]");
     if (lit) lit.addEventListener("click", () => { STATE.searchLiteral = STATE.query.trim(); paint(); });
-    const ev = body.querySelector("[data-search-everywhere]");
-    if (ev) ev.addEventListener("click", () => { const qq = STATE.query; selectLibrary({ kind: "all" }); STATE.query = qq; renderApp(); });
-    const et = body.querySelector("#empty-tasks");
-    if (et) wireTaskGrid(et);
-    const nb = body.querySelector("[data-nav-builder]");
-    if (nb) nb.addEventListener("click", () => navigate("builder"));
+    body.querySelectorAll("[data-build-own]").forEach((b) => b.addEventListener("click", () => startBuilderFrom(b.dataset.seed || STATE.query)));
   }
   paint();
 
-  // rail
-  container.querySelectorAll(".rail-item").forEach((b) => b.addEventListener("click", () =>
+  // rail — keep its own scroll position across selections; never scroll the page
+  const rail = container.querySelector(".lib-rail");
+  if (typeof STATE.railScroll === "number") rail.scrollTop = STATE.railScroll;
+  const active = rail.querySelector(".rail-item.active");
+  if (active) {
+    const top = active.offsetTop, bottom = top + active.offsetHeight;
+    if (top < rail.scrollTop || bottom > rail.scrollTop + rail.clientHeight) rail.scrollTop = Math.max(0, top - rail.clientHeight / 3);
+  }
+  rail.addEventListener("scroll", () => { STATE.railScroll = rail.scrollTop; }, { passive: true });
+  rail.querySelectorAll(".rail-item").forEach((b) => b.addEventListener("click", () =>
     selectLibrary({ kind: b.dataset.selKind, id: b.dataset.selId || null })));
   const rf = container.querySelector("#rail-filter");
   rf.addEventListener("input", () => {
     const t = rf.value.trim().toLowerCase();
     let shown = 0;
-    container.querySelectorAll(".lib-rail .rail-item").forEach((b) => {
+    rail.querySelectorAll(".rail-item").forEach((b) => {
       const hit = !t || b.dataset.railText.includes(t);
       b.hidden = !hit; if (hit) shown++;
     });
-    container.querySelectorAll(".lib-rail .rail-label").forEach((l) => { l.hidden = !!t; });
-    container.querySelector(".rail-empty").hidden = shown > 0;
+    rail.querySelectorAll(".rail-label").forEach((l) => { l.hidden = !!t; });
+    rail.querySelector(".rail-empty").hidden = shown > 0;
   });
-  const active = container.querySelector(".rail-item.active");
-  if (active && active.scrollIntoView && sel.kind !== "all") active.scrollIntoView({ block: "nearest" });
   container.querySelector("#lib-pick").addEventListener("change", (e) => {
     const [kind, id] = e.target.value.split("|");
     selectLibrary({ kind, id: id || null });
   });
-  // search (repaints the body only, so the input keeps focus)
+  container.querySelectorAll("[data-crumb-all]").forEach((b) => b.addEventListener("click", () => selectLibrary({ kind: "all" })));
+  // search (repaints the body only, so the input keeps focus) + suggestions
   const sInput = container.querySelector("#lib-search");
   const clr = container.querySelector("#lib-clear");
   sInput.addEventListener("input", debounce((e) => {
     STATE.query = e.target.value; STATE.searchLiteral = null;
     clr.hidden = !STATE.query; paint();
-  }, 160));
+  }, 180));
+  attachSearchSuggest(sInput, container.querySelector("#lib-suggest"), {
+    onPickHub: (id) => selectLibrary({ kind: "hub", id }),
+    onPickCategory: (name) => selectLibrary({ kind: "category", id: name }),
+  });
   clr.addEventListener("click", () => { STATE.query = ""; sInput.value = ""; clr.hidden = true; paint(); sInput.focus(); });
-  if (STATE.query || sel.kind === "all") { sInput.focus(); sInput.setSelectionRange(sInput.value.length, sInput.value.length); }
+  if (STATE.query || sel.kind === "all") { sInput.focus({ preventScroll: true }); sInput.setSelectionRange(sInput.value.length, sInput.value.length); }
   // layout, tabs, filters
   container.querySelectorAll("[data-layout]").forEach((b) => b.addEventListener("click", () => {
     setLibLayout(b.dataset.layout);
@@ -755,7 +796,7 @@ function renderLibraryShell(container) {
   fRow.querySelectorAll("[data-lf]").forEach((x) => x.addEventListener("change", () => { STATE.filters[x.dataset.lf] = x.value || null; syncDot(); paint(); }));
   fRow.querySelectorAll("[data-lf-check]").forEach((x) => x.addEventListener("change", () => { STATE.filters[x.dataset.lfCheck] = x.checked; syncDot(); paint(); }));
   fRow.querySelector("[data-lsort]").addEventListener("change", (e) => { STATE.sort = e.target.value; syncDot(); paint(); });
-  container.querySelectorAll(".lib-tab-actions [data-nav]").forEach((b) => b.addEventListener("click", () => navigate(b.dataset.nav)));
+  container.querySelector(".lib-tab-actions [data-build-own]").addEventListener("click", () => startBuilderFrom(STATE.query));
 }
 function renderSearchView(container) { renderLibraryShell(container); }
 function renderCategoriesView(container) { renderLibraryShell(container); }
