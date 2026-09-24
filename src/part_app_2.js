@@ -521,6 +521,112 @@ function openHub(hubId) {
   navigate("task");
   if (typeof Backend !== "undefined" && Backend.logActivity) { try { Backend.logActivity("task_hub", hubId, {}); } catch (e) {} }
 }
+/* Closest alternatives when a search comes up short: the matching task hub,
+   the categories the query routes to, and loose word-stem hits in titles/tags
+   ("icf coach" → coaching prompts), ranked by quality. */
+function similarForQuery(q, exclude, n) {
+  exclude = exclude || new Set();
+  const norm = normalizeQuery(q);
+  const hub = detectTaskHub(norm);
+  const routed = routedCategories(norm);
+  const stems = tokenize(norm).map((w) => w.slice(0, Math.max(4, Math.min(w.length, 5)))).filter((w) => w.length >= 3);
+  const scored = [];
+  for (const r of getSearchCorpus()) {
+    if (exclude.has(r.id) || r.lifecycle === "Archived") continue;
+    const hay = (r.title + " " + (r.tags || []).join(" ") + " " + r.category).toLowerCase();
+    let s = 0;
+    for (const st of stems) if (wordHit(hay, st)) s += 12;
+    if (hub && r.hub === hub.id) s += 20;
+    if (routed.has(r.category)) s += 8;
+    if (!s) continue;
+    scored.push([s + (r.qualityScore || 0) * 0.12, r]);
+  }
+  scored.sort((a, b) => b[0] - a[0]);
+  return scored.slice(0, n || 6).map((x) => x[1]);
+}
+function buildOwnCardHtml(q, total) {
+  return `
+  <div class="build-own">
+    <div class="bo-ico" aria-hidden="true">🛠️</div>
+    <div class="bo-text">
+      <b>${total ? "Not quite right?" : "Don't have it yet?"} Build your own prompt with the framework.</b>
+      <span>We'll start it from “${escapeHtml(q)}” and guide you through Role, Context, Task, Format, then how the AI should check its work. It takes about 2 minutes.</span>
+    </div>
+    <button class="btn btn-primary btn-sm" data-build-own data-seed="${escapeHtml(q)}">${icon("build")} Build it with me</button>
+  </div>`;
+}
+/* Open the guided Level 2 framework builder, pre-filled from a search. */
+function startBuilderFrom(seed) {
+  seed = (seed || "").trim();
+  const L2 = typeof fwLevel === "function" ? fwLevel(2) : null;
+  const answers = {};
+  if (seed && L2) {
+    const ti = L2.componentKeys.indexOf("task");
+    if (ti >= 0) answers["task_" + ti] = seed.charAt(0).toUpperCase() + seed.slice(1);
+    const cats = Array.from(routedCategories(normalizeQuery(seed)));
+    const meta = cats.length ? CATEGORIES.find((c) => c.name === cats[0]) : null;
+    const ri = L2.componentKeys.indexOf("role");
+    if (meta && meta.role && ri >= 0) answers["role_" + ri] = "an experienced " + meta.role.split(" / ")[0].toLowerCase();
+  }
+  STATE.builder = L2 ? { mode: "fw", level: 2, step: 0, answers, generated: null, seed } : null;
+  navigate("builder");
+}
+/* Type-ahead under a search box: matching tasks, categories and the top
+   prompts, with arrow-key navigation. Picking a prompt opens it. */
+function attachSearchSuggest(input, panel, handlers) {
+  if (!input || !panel) return;
+  handlers = handlers || {};
+  const box = input.closest("[role=combobox]");
+  let items = [], idx = -1;
+  const hide = () => { panel.hidden = true; idx = -1; if (box) box.setAttribute("aria-expanded", "false"); };
+  function render() {
+    const q = input.value.trim();
+    if (q.length < 2) { hide(); return; }
+    const nq = normalizeQuery(q);
+    const hubHit = detectTaskHub(nq);
+    const hubs = hubsInScope().filter((h) => (hubHit && h.id === hubHit.id) || h.label.toLowerCase().includes(nq)).slice(0, 2);
+    const cats = (isViewAllowed("categoryDetail") ? libCategoryList() : []).filter((c) => c.name.toLowerCase().includes(nq) ||
+      nq.split(" ").some((w) => w.length >= 4 && c.name.toLowerCase().includes(w))).slice(0, 2);
+    const prompts = searchPrompts(getSearchCorpus(), q, getUsageForSearch(), { quiet: true }).slice(0, 6);
+    items = [];
+    let html = "";
+    if (prompts.length) {
+      html += `<div class="sg-head">Prompts</div>`;
+      prompts.forEach((r) => { items.push({ kind: "prompt", id: r.id }); html += `<button class="sg-item" role="option" data-i="${items.length - 1}"><span class="sg-ico">${promptIcon(r)}</span><span class="sg-main"><b>${escapeHtml(r.title)}</b><small>${escapeHtml(r.category)}${r.source === "Everyday Essentials" ? " · Essential" : ""}</small></span></button>`; });
+    }
+    if (hubs.length || cats.length) {
+      html += `<div class="sg-head">Tasks & categories</div>`;
+      hubs.forEach((h) => { items.push({ kind: "hub", id: h.id }); html += `<button class="sg-item" role="option" data-i="${items.length - 1}"><span class="sg-ico">${h.icon}</span><span class="sg-main"><b>${escapeHtml(h.label)}</b><small>Task · ${h.count} prompts</small></span></button>`; });
+      cats.forEach((c) => { items.push({ kind: "category", id: c.name }); html += `<button class="sg-item" role="option" data-i="${items.length - 1}"><span class="sg-ico">${CATEGORY_ICONS[c.name] || "📝"}</span><span class="sg-main"><b>${escapeHtml(c.name)}</b><small>Category · ${c.count} prompts</small></span></button>`; });
+    }
+    items.push({ kind: "build" });
+    html += `<button class="sg-item sg-build" role="option" data-i="${items.length - 1}"><span class="sg-ico">🛠️</span><span class="sg-main"><b>Build “${escapeHtml(truncate(q, 40))}” with the framework</b><small>Can't find it? Create your own prompt, step by step</small></span></button>`;
+    panel.innerHTML = html;
+    panel.hidden = false; idx = -1;
+    if (box) box.setAttribute("aria-expanded", "true");
+  }
+  function pick(i) {
+    const it = items[i]; if (!it) return;
+    hide();
+    if (it.kind === "prompt") openDetail(it.id);
+    else if (it.kind === "hub") (handlers.onPickHub || openHub)(it.id);
+    else if (it.kind === "category") (handlers.onPickCategory || ((n) => { STATE.activeCategory = n; navigate("categoryDetail"); }))(it.id);
+    else startBuilderFrom(input.value);
+  }
+  function mark() { panel.querySelectorAll(".sg-item").forEach((b, j) => b.classList.toggle("on", j === idx)); const on = panel.querySelector(".sg-item.on"); if (on) on.scrollIntoView({ block: "nearest" }); }
+  input.addEventListener("input", debounce(render, 140));
+  input.addEventListener("focus", () => { if (input.value.trim().length >= 2) render(); });
+  input.addEventListener("keydown", (e) => {
+    if (panel.hidden) return;
+    if (e.key === "ArrowDown") { e.preventDefault(); idx = Math.min(items.length - 1, idx + 1); mark(); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); idx = Math.max(-1, idx - 1); mark(); }
+    else if (e.key === "Enter") { if (idx >= 0) { e.preventDefault(); pick(idx); } else hide(); }
+    else if (e.key === "Escape") hide();
+  });
+  panel.addEventListener("mousedown", (e) => e.preventDefault()); // keep focus in the input
+  panel.addEventListener("click", (e) => { const b = e.target.closest(".sg-item"); if (b) pick(+b.dataset.i); });
+  input.addEventListener("blur", () => setTimeout(hide, 120));
+}
 /* "Looks like you want to…" shortcut + typo line above search results. */
 function searchUnderstoodHtml(results) {
   const m = SEARCH_META || {};

@@ -154,7 +154,23 @@ body.previewing .topbar{top:var(--pbh);}
   width:var(--sidebar-w); flex:none; background:var(--surface); border-right:1px solid var(--border);
   display:flex; flex-direction:column; position:sticky; top:0; height:100vh; overflow-y:auto;
 }
-.brand{display:flex; align-items:center; gap:10px; padding:18px 16px 12px;}
+.brand{display:flex; align-items:center; gap:6px; padding:14px 10px 10px 12px;}
+.brand-home{display:flex; align-items:center; gap:10px; flex:1; min-width:0; padding:6px; border:none; background:none; border-radius:var(--radius-sm); text-align:left; color:var(--text);}
+.brand-home:hover{background:var(--surface-2);}
+.brand-text{display:flex; flex-direction:column; min-width:0;}
+.sb-toggle{flex:none; width:32px; height:32px; display:flex; align-items:center; justify-content:center; border:1px solid transparent; border-radius:8px; background:none; color:var(--text-faint);}
+.sb-toggle:hover{background:var(--surface-2); color:var(--text); border-color:var(--border);}
+.sb-toggle svg{width:18px; height:18px; transition:transform .15s;}
+@media (min-width:881px){
+  body.sb-collapsed{--sidebar-w:68px;}
+  body.sb-collapsed .brand{flex-direction:column; padding:12px 6px 8px; gap:4px;}
+  body.sb-collapsed .brand-home{flex:none; justify-content:center;}
+  body.sb-collapsed .brand-text, body.sb-collapsed .learner-box, body.sb-collapsed .sidebar-footer,
+  body.sb-collapsed .nav-item > span, body.sb-collapsed .nav-kbd, body.sb-collapsed .nav-group-label{display:none;}
+  body.sb-collapsed .sb-toggle svg{transform:scaleX(-1);}
+  body.sb-collapsed .nav-item{justify-content:center; padding:10px 0;}
+  body.sb-collapsed .nav{padding:6px 8px;}
+}
 .brand-mark{width:30px; height:26px; background:var(--logo) center/contain no-repeat; flex:none;}
 .brand-mark svg{width:17px; height:17px;}
 .brand-name{font-family:var(--font-display); font-weight:700; font-size:13.5px; letter-spacing:-0.01em; line-height:1.25;}
@@ -420,6 +436,52 @@ textarea{resize:vertical; font-family:var(--font-mono); line-height:1.55; font-s
 .lib-filters .spacer{flex:1;}
 .lib-section{margin-bottom:28px;}
 .st-note{font-size:12px; color:var(--text-faint);}
+/* search-first header */
+.lib-searchbar{display:flex; gap:10px; align-items:center; margin-bottom:16px;}
+.lib-searchbar .lib-search{flex:1; max-width:none; position:relative;}
+.lib-searchbar .lib-search input{padding:16px 44px 16px 50px; font-size:16px; border-radius:14px; border:1.5px solid var(--border-strong); box-shadow:var(--shadow);}
+.lib-searchbar .lib-search input:focus{border-color:var(--accent); box-shadow:0 0 0 4px var(--accent-soft);}
+.lib-searchbar .ls-ico{left:18px; width:20px; height:20px;}
+.lib-searchbar .layout-toggle button{width:52px; height:52px; border-radius:12px;}
+.lib-crumb{display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:12.5px; color:var(--text-faint); margin:0 0 10px;}
+.lib-crumb .lc-link{background:none; border:none; padding:0; color:var(--accent-strong); font-weight:600; font-size:12.5px;}
+.lib-crumb .lc-current{display:inline-flex; align-items:center; gap:6px; padding:4px 6px 4px 11px; border-radius:99px; background:var(--accent-soft); color:var(--accent-strong); font-weight:700; font-size:13px;}
+.lib-crumb .lc-clear{display:flex; background:none; border:none; padding:3px; border-radius:50%; color:inherit;}
+.lib-crumb .lc-clear:hover{background:var(--surface);}
+.lib-crumb .lc-clear svg{width:13px; height:13px;}
+.lh-sub #lib-count{font-weight:600; color:var(--text);}
+.section-title h2 small{font-size:12px; font-weight:600; color:var(--text-faint); margin-left:6px;}
+.empty-inline{display:flex; flex-direction:column; gap:3px; padding:16px 18px; border:1px dashed var(--border-strong); border-radius:var(--radius); font-size:13px; color:var(--text-muted);}
+.empty-inline b{color:var(--text); font-size:14px;}
+.build-own{display:flex; align-items:center; gap:14px; padding:16px 18px; margin:6px 0 24px; border:1px solid var(--accent); border-radius:var(--radius-lg); background:linear-gradient(120deg, var(--accent-soft), var(--surface) 75%);}
+.build-own .bo-ico{font-size:26px; flex:none;}
+.build-own .bo-text{flex:1; min-width:0; display:flex; flex-direction:column; gap:3px; font-size:13px; color:var(--text-muted);}
+.build-own .bo-text b{color:var(--text); font-size:14.5px;}
+.build-own .btn svg{width:15px; height:15px;}
+/* type-ahead */
+.suggest-panel{position:absolute; left:0; right:0; top:calc(100% + 6px); z-index:40; background:var(--surface); border:1px solid var(--border-strong); border-radius:14px; box-shadow:var(--shadow-lg); padding:6px; max-height:min(460px, 70vh); overflow-y:auto; text-align:left;}
+.search-hero .suggest-panel{top:calc(100% + 6px);}
+.sg-head{font-size:10.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--text-faint); padding:8px 10px 4px;}
+.sg-item{display:flex; align-items:center; gap:10px; width:100%; padding:8px 10px; border:none; background:none; border-radius:9px; text-align:left; color:var(--text);}
+.sg-item:hover, .sg-item.on{background:var(--accent-soft);}
+.sg-ico{width:30px; height:30px; flex:none; border-radius:8px; background:var(--surface-2); display:flex; align-items:center; justify-content:center; font-size:15px;}
+.sg-main{display:flex; flex-direction:column; min-width:0;}
+.sg-main b{font-size:13.5px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.sg-main small{font-size:11.5px; color:var(--text-faint);}
+.sg-build{border-top:1px solid var(--border); border-radius:0 0 9px 9px; margin-top:4px;}
+.rail-label{display:flex; flex-direction:column; gap:1px; font-size:11.5px; color:var(--text); letter-spacing:.07em; margin:20px 10px 6px;}
+.rail-label small{font-size:11px; font-weight:500; letter-spacing:0; text-transform:none; color:var(--text-faint);}
+.rail-item.active{box-shadow:inset 3px 0 0 var(--accent);}
+/* detail: similar prompts */
+.similar-list{display:flex; flex-direction:column; gap:6px;}
+.similar-item{display:flex; align-items:center; gap:10px; width:100%; padding:9px 12px; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); text-align:left; color:var(--text);}
+.similar-item:hover{border-color:var(--accent); background:var(--accent-soft);}
+.similar-item .si-ico{width:30px; height:30px; flex:none; border-radius:8px; background:var(--accent-soft); display:flex; align-items:center; justify-content:center;}
+.similar-item .si-main{flex:1; min-width:0; display:flex; flex-direction:column;}
+.similar-item .si-main b{font-size:13px; font-weight:600;}
+.similar-item .si-main small{font-size:11.5px; color:var(--text-faint);}
+.similar-item > svg{width:15px; height:15px; color:var(--text-faint); flex:none;}
+.builder-seed{padding:10px 12px; margin:0 0 12px; border-radius:var(--radius); background:var(--accent-soft); color:var(--accent-strong); font-size:13px;}
 /* prompt tiles */
 .tile-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:16px;}
 .prompt-card.prompt-tile{padding:20px; gap:0; border-radius:var(--radius-lg); min-height:208px; transition:border-color .12s, box-shadow .12s, transform .12s;}
@@ -441,6 +503,9 @@ textarea{resize:vertical; font-family:var(--font-mono); line-height:1.55; font-s
   .lh-title h1{font-size:22px;}
   .lh-ico{width:40px; height:40px; font-size:20px;}
   .lib-head{flex-direction:column; align-items:stretch; gap:12px;}
+  .lib-searchbar .lib-search input{padding:13px 40px 13px 44px; font-size:15px;}
+  .lib-searchbar .layout-toggle{display:none;}
+  .build-own{flex-direction:column; align-items:flex-start;}
   .lh-tools{min-width:0; width:100%; flex:none;}
   .st-note{display:none;}
   .lib-search{max-width:none;}
@@ -942,11 +1007,16 @@ button.fw-tile:hover{border-color:var(--accent);}
   <div class="overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
   <aside class="sidebar" id="sidebar">
     <div class="brand">
-      <div class="brand-mark" role="img" aria-label="Synottic"></div>
-      <div>
-        <div class="brand-name">Synottic Prompt Intelligence</div>
-        <div class="brand-sub" id="brand-sub">Prompt Intelligence</div>
-      </div>
+      <button class="brand-home" onclick="goHome()" title="Go to Home" aria-label="Synottic Prompt Intelligence — go to Home">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span class="brand-text">
+          <span class="brand-name">Synottic Prompt Intelligence</span>
+          <span class="brand-sub" id="brand-sub">Prompt Intelligence</span>
+        </span>
+      </button>
+      <button class="sb-toggle" id="sb-toggle" onclick="toggleSidebarCollapsed()" title="Collapse menu" aria-label="Collapse menu" aria-expanded="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/><path d="M15 10l-2 2 2 2"/></svg>
+      </button>
     </div>
     <div class="learner-box" id="learner-box"></div>
     <nav class="nav" id="nav"></nav>
@@ -11703,8 +11773,9 @@ function editDistance(a, b, max) {
   return prev[b.length];
 }
 function correctWord(word, df) {
-  if (!df || word.length < 4 || df[word] || /\d/.test(word)) return word;
-  const max = word.length >= 8 ? 2 : 1;
+  // short words ("vows") are too easy to "fix" into a different real word
+  if (!df || word.length < 5 || df[word] || /\d/.test(word)) return word;
+  const max = word.length >= 9 ? 2 : 1;
   let best = null, bestD = max + 1, bestDf = 0;
   for (const v in df) {
     const n = df[v];
@@ -13871,6 +13942,112 @@ function openHub(hubId) {
   navigate("task");
   if (typeof Backend !== "undefined" && Backend.logActivity) { try { Backend.logActivity("task_hub", hubId, {}); } catch (e) {} }
 }
+/* Closest alternatives when a search comes up short: the matching task hub,
+   the categories the query routes to, and loose word-stem hits in titles/tags
+   ("icf coach" → coaching prompts), ranked by quality. */
+function similarForQuery(q, exclude, n) {
+  exclude = exclude || new Set();
+  const norm = normalizeQuery(q);
+  const hub = detectTaskHub(norm);
+  const routed = routedCategories(norm);
+  const stems = tokenize(norm).map((w) => w.slice(0, Math.max(4, Math.min(w.length, 5)))).filter((w) => w.length >= 3);
+  const scored = [];
+  for (const r of getSearchCorpus()) {
+    if (exclude.has(r.id) || r.lifecycle === "Archived") continue;
+    const hay = (r.title + " " + (r.tags || []).join(" ") + " " + r.category).toLowerCase();
+    let s = 0;
+    for (const st of stems) if (wordHit(hay, st)) s += 12;
+    if (hub && r.hub === hub.id) s += 20;
+    if (routed.has(r.category)) s += 8;
+    if (!s) continue;
+    scored.push([s + (r.qualityScore || 0) * 0.12, r]);
+  }
+  scored.sort((a, b) => b[0] - a[0]);
+  return scored.slice(0, n || 6).map((x) => x[1]);
+}
+function buildOwnCardHtml(q, total) {
+  return `
+  <div class="build-own">
+    <div class="bo-ico" aria-hidden="true">🛠️</div>
+    <div class="bo-text">
+      <b>${total ? "Not quite right?" : "Don't have it yet?"} Build your own prompt with the framework.</b>
+      <span>We'll start it from “${escapeHtml(q)}” and guide you through Role, Context, Task, Format, then how the AI should check its work. It takes about 2 minutes.</span>
+    </div>
+    <button class="btn btn-primary btn-sm" data-build-own data-seed="${escapeHtml(q)}">${icon("build")} Build it with me</button>
+  </div>`;
+}
+/* Open the guided Level 2 framework builder, pre-filled from a search. */
+function startBuilderFrom(seed) {
+  seed = (seed || "").trim();
+  const L2 = typeof fwLevel === "function" ? fwLevel(2) : null;
+  const answers = {};
+  if (seed && L2) {
+    const ti = L2.componentKeys.indexOf("task");
+    if (ti >= 0) answers["task_" + ti] = seed.charAt(0).toUpperCase() + seed.slice(1);
+    const cats = Array.from(routedCategories(normalizeQuery(seed)));
+    const meta = cats.length ? CATEGORIES.find((c) => c.name === cats[0]) : null;
+    const ri = L2.componentKeys.indexOf("role");
+    if (meta && meta.role && ri >= 0) answers["role_" + ri] = "an experienced " + meta.role.split(" / ")[0].toLowerCase();
+  }
+  STATE.builder = L2 ? { mode: "fw", level: 2, step: 0, answers, generated: null, seed } : null;
+  navigate("builder");
+}
+/* Type-ahead under a search box: matching tasks, categories and the top
+   prompts, with arrow-key navigation. Picking a prompt opens it. */
+function attachSearchSuggest(input, panel, handlers) {
+  if (!input || !panel) return;
+  handlers = handlers || {};
+  const box = input.closest("[role=combobox]");
+  let items = [], idx = -1;
+  const hide = () => { panel.hidden = true; idx = -1; if (box) box.setAttribute("aria-expanded", "false"); };
+  function render() {
+    const q = input.value.trim();
+    if (q.length < 2) { hide(); return; }
+    const nq = normalizeQuery(q);
+    const hubHit = detectTaskHub(nq);
+    const hubs = hubsInScope().filter((h) => (hubHit && h.id === hubHit.id) || h.label.toLowerCase().includes(nq)).slice(0, 2);
+    const cats = (isViewAllowed("categoryDetail") ? libCategoryList() : []).filter((c) => c.name.toLowerCase().includes(nq) ||
+      nq.split(" ").some((w) => w.length >= 4 && c.name.toLowerCase().includes(w))).slice(0, 2);
+    const prompts = searchPrompts(getSearchCorpus(), q, getUsageForSearch(), { quiet: true }).slice(0, 6);
+    items = [];
+    let html = "";
+    if (prompts.length) {
+      html += `<div class="sg-head">Prompts</div>`;
+      prompts.forEach((r) => { items.push({ kind: "prompt", id: r.id }); html += `<button class="sg-item" role="option" data-i="${items.length - 1}"><span class="sg-ico">${promptIcon(r)}</span><span class="sg-main"><b>${escapeHtml(r.title)}</b><small>${escapeHtml(r.category)}${r.source === "Everyday Essentials" ? " · Essential" : ""}</small></span></button>`; });
+    }
+    if (hubs.length || cats.length) {
+      html += `<div class="sg-head">Tasks & categories</div>`;
+      hubs.forEach((h) => { items.push({ kind: "hub", id: h.id }); html += `<button class="sg-item" role="option" data-i="${items.length - 1}"><span class="sg-ico">${h.icon}</span><span class="sg-main"><b>${escapeHtml(h.label)}</b><small>Task · ${h.count} prompts</small></span></button>`; });
+      cats.forEach((c) => { items.push({ kind: "category", id: c.name }); html += `<button class="sg-item" role="option" data-i="${items.length - 1}"><span class="sg-ico">${CATEGORY_ICONS[c.name] || "📝"}</span><span class="sg-main"><b>${escapeHtml(c.name)}</b><small>Category · ${c.count} prompts</small></span></button>`; });
+    }
+    items.push({ kind: "build" });
+    html += `<button class="sg-item sg-build" role="option" data-i="${items.length - 1}"><span class="sg-ico">🛠️</span><span class="sg-main"><b>Build “${escapeHtml(truncate(q, 40))}” with the framework</b><small>Can't find it? Create your own prompt, step by step</small></span></button>`;
+    panel.innerHTML = html;
+    panel.hidden = false; idx = -1;
+    if (box) box.setAttribute("aria-expanded", "true");
+  }
+  function pick(i) {
+    const it = items[i]; if (!it) return;
+    hide();
+    if (it.kind === "prompt") openDetail(it.id);
+    else if (it.kind === "hub") (handlers.onPickHub || openHub)(it.id);
+    else if (it.kind === "category") (handlers.onPickCategory || ((n) => { STATE.activeCategory = n; navigate("categoryDetail"); }))(it.id);
+    else startBuilderFrom(input.value);
+  }
+  function mark() { panel.querySelectorAll(".sg-item").forEach((b, j) => b.classList.toggle("on", j === idx)); const on = panel.querySelector(".sg-item.on"); if (on) on.scrollIntoView({ block: "nearest" }); }
+  input.addEventListener("input", debounce(render, 140));
+  input.addEventListener("focus", () => { if (input.value.trim().length >= 2) render(); });
+  input.addEventListener("keydown", (e) => {
+    if (panel.hidden) return;
+    if (e.key === "ArrowDown") { e.preventDefault(); idx = Math.min(items.length - 1, idx + 1); mark(); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); idx = Math.max(-1, idx - 1); mark(); }
+    else if (e.key === "Enter") { if (idx >= 0) { e.preventDefault(); pick(idx); } else hide(); }
+    else if (e.key === "Escape") hide();
+  });
+  panel.addEventListener("mousedown", (e) => e.preventDefault()); // keep focus in the input
+  panel.addEventListener("click", (e) => { const b = e.target.closest(".sg-item"); if (b) pick(+b.dataset.i); });
+  input.addEventListener("blur", () => setTimeout(hide, 120));
+}
 /* "Looks like you want to…" shortcut + typo line above search results. */
 function searchUnderstoodHtml(results) {
   const m = SEARCH_META || {};
@@ -14352,7 +14529,8 @@ function renderHome(container) {
   <div class="hero">
     <div class="greeting">${greeting()}${s && s.name ? ", " + escapeHtml(s.name.split(" ")[0]) : ""}${sc && sc.program ? " · " + escapeHtml(sc.program.name) : sc && sc.programs && sc.programs.length ? " · " + escapeHtml(sc.org.name) : ""}</div>
     <h1>What do you want to accomplish?</h1>
-    <div class="search-hero">
+    <div class="search-hero" role="combobox" aria-expanded="false" aria-haspopup="listbox">
+      <div class="suggest-panel" id="hero-suggest" role="listbox" hidden></div>
       ${icon("search", "icon-search")}
       <input type="text" id="hero-search" aria-label="Describe what you need to do" placeholder="Describe what you need to do, e.g. make a presentation for my team" value="${escapeHtml(STATE.query)}" autocomplete="off"/>
       ${q ? `<button class="icon-clear" id="hero-clear" aria-label="Clear search">${icon("x")}</button>` : ""}
@@ -14447,6 +14625,8 @@ function renderHome(container) {
     input.setSelectionRange(input.value.length, input.value.length);
     input.addEventListener("input", debounce((e) => { setQuery(e.target.value); }, 180));
   }
+  // type-ahead is only useful before results take over the page
+  if (input && !q) attachSearchSuggest(input, container.querySelector("#hero-suggest"), {});
   const clearBtn = container.querySelector("#hero-clear");
   if (clearBtn) clearBtn.addEventListener("click", () => setQuery(""));
 }
@@ -14561,6 +14741,8 @@ function libSelection() {
   return { kind: "all", id: null };
 }
 function selectLibrary(sel) {
+  const rail = document.querySelector(".lib-rail");
+  if (rail) STATE.railScroll = rail.scrollTop;
   STATE.query = "";
   STATE.searchLiteral = null;
   STATE.libBrowseAll = false;
@@ -14571,7 +14753,7 @@ function selectLibrary(sel) {
   else if (sel.kind === "hub") { STATE.activeHub = sel.id; STATE.view = "task"; }
   else STATE.view = "search";
   renderApp();
-  window.scrollTo({ top: 0 });
+  window.scrollTo({ top: 0, behavior: "auto" });
 }
 function libLayout() {
   if (STATE.libLayout) return STATE.libLayout;
@@ -14621,7 +14803,7 @@ function renderLibraryShell(container) {
   if (sel.kind === "category" && !cats.some((c) => c.name === sel.id)) { selectLibrary({ kind: "all" }); return; }
   const tab = STATE.libTab || "all";
   const layout = libLayout();
-  const title = hub ? hub.label : sel.kind === "category" ? sel.id : "Prompt library";
+  const title = hub ? hub.label : sel.kind === "category" ? sel.id : "All prompts";
   const icon0 = hub ? hub.icon : sel.kind === "category" ? (CATEGORY_ICONS[sel.id] || "📝") : "📚";
   const blurb = hub ? hub.blurb
     : catMeta ? `Prompts for ${catMeta.role || CATEGORY_SKILL[sel.id] || "any professional"}.`
@@ -14629,50 +14811,58 @@ function renderLibraryShell(container) {
     : "Every prompt, built to be copied, filled in and used.";
   const isActive = (k, id) => sel.kind === k && (k === "all" || sel.id === id);
   const railItem = (k, id, ico, label, count) => `
-    <button class="rail-item ${isActive(k, id) ? "active" : ""}" data-sel-kind="${k}" ${id ? `data-sel-id="${escapeHtml(id)}"` : ""} data-rail-text="${escapeHtml(label.toLowerCase())}">
+    <button class="rail-item ${isActive(k, id) ? "active" : ""}" data-sel-kind="${k}" ${id ? `data-sel-id="${escapeHtml(id)}"` : ""} data-rail-text="${escapeHtml(label.toLowerCase())}" ${isActive(k, id) ? 'aria-current="true"' : ""}>
       <span class="ri-ico" aria-hidden="true">${ico}</span><span class="ri-label">${escapeHtml(label)}</span><span class="ri-count">${count.toLocaleString()}</span>
     </button>`;
   const pickOpts = `<option value="all|" ${sel.kind === "all" ? "selected" : ""}>📚 All prompts</option>` +
     (hubs.length ? `<optgroup label="Tasks">${hubs.map((h) => `<option value="hub|${h.id}" ${isActive("hub", h.id) ? "selected" : ""}>${h.icon} ${escapeHtml(h.label)}</option>`).join("")}</optgroup>` : "") +
-    `<optgroup label="Categories">${cats.map((c) => `<option value="category|${escapeHtml(c.name)}" ${isActive("category", c.name) ? "selected" : ""}>${CATEGORY_ICONS[c.name] || "📝"} ${escapeHtml(c.name)}</option>`).join("")}</optgroup>`;
+    (cats.length ? `<optgroup label="Categories">${cats.map((c) => `<option value="category|${escapeHtml(c.name)}" ${isActive("category", c.name) ? "selected" : ""}>${CATEGORY_ICONS[c.name] || "📝"} ${escapeHtml(c.name)}</option>`).join("")}</optgroup>` : "");
+  const crumb = sel.kind === "all" ? "" : `
+    <div class="lib-crumb">
+      <button class="lc-link" data-crumb-all>Library</button><span aria-hidden="true">›</span>
+      <span>${sel.kind === "hub" ? "Tasks" : "Categories"}</span><span aria-hidden="true">›</span>
+      <span class="lc-current">${icon0} ${escapeHtml(title)}<button class="lc-clear" data-crumb-all aria-label="Clear ${escapeHtml(title)}" title="Show all prompts">${icon("x")}</button></span>
+    </div>`;
 
   container.innerHTML = `
   <div class="lib-shell">
     <aside class="lib-rail" aria-label="Browse the library">
-      <div class="rail-find">${icon("search", "rf-ico")}<input type="text" id="rail-filter" placeholder="Find a task or category" aria-label="Find a task or category" autocomplete="off"/></div>
+      <div class="rail-find">${icon("search", "rf-ico")}<input type="text" id="rail-filter" placeholder="Filter tasks & categories" aria-label="Filter tasks and categories" autocomplete="off"/></div>
       ${railItem("all", null, "📚", "All prompts", si.total)}
-      ${hubs.length ? `<div class="rail-label">Tasks</div>${hubs.map((h) => railItem("hub", h.id, h.icon, h.label, h.count)).join("")}` : ""}
-      ${cats.length ? `<div class="rail-label">Categories</div>` : ""}
+      ${hubs.length ? `<div class="rail-label"><span>Tasks</span><small>What you need to do</small></div>${hubs.map((h) => railItem("hub", h.id, h.icon, h.label, h.count)).join("")}` : ""}
+      ${cats.length ? `<div class="rail-label"><span>Categories</span><small>Browse by field</small></div>` : ""}
       ${cats.map((c) => railItem("category", c.name, CATEGORY_ICONS[c.name] || "📝", c.name, c.count)).join("")}
       <div class="rail-empty" hidden>No match. Try another word.</div>
     </aside>
     <section class="lib-main">
+      <div class="lib-searchbar">
+        <div class="lib-search" role="combobox" aria-expanded="false" aria-owns="lib-suggest" aria-haspopup="listbox">
+          ${icon("search", "ls-ico")}
+          <input type="text" id="lib-search" aria-label="Search all prompts" aria-autocomplete="list" aria-controls="lib-suggest" autocomplete="off" value="${escapeHtml(STATE.query)}"
+            placeholder="Search ${si.total.toLocaleString()} prompts: describe your task, e.g. “ICF coach” or “meeting minutes”"/>
+          <button class="ls-clear" id="lib-clear" aria-label="Clear search" ${STATE.query ? "" : "hidden"}>${icon("x")}</button>
+          <div class="suggest-panel" id="lib-suggest" role="listbox" hidden></div>
+        </div>
+        <div class="layout-toggle" role="group" aria-label="Layout">
+          <button data-layout="grid" class="${layout === "grid" ? "on" : ""}" aria-label="Grid view" title="Grid view">${icon("grid")}</button>
+          <button data-layout="list" class="${layout === "list" ? "on" : ""}" aria-label="List view" title="List view">${icon("listView")}</button>
+        </div>
+      </div>
       <label class="lib-pick"><span>Browse</span><select id="lib-pick" aria-label="Browse by task or category">${pickOpts}</select></label>
+      ${crumb}
       <div class="lib-head">
         <div class="lh-title">
           <span class="lh-ico" aria-hidden="true">${icon0}</span>
-          <div><h1>${escapeHtml(title)}</h1><div class="lh-sub" id="lib-count"></div></div>
-        </div>
-        <div class="lh-tools">
-          <div class="lib-search">${icon("search", "ls-ico")}
-            <input type="text" id="lib-search" aria-label="Search prompts" autocomplete="off" value="${escapeHtml(STATE.query)}"
-              placeholder="${sel.kind === "all" ? "Search by task or problem, e.g. write meeting minutes" : "Search in " + escapeHtml(title)}"/>
-            <button class="ls-clear" id="lib-clear" aria-label="Clear search" ${STATE.query ? "" : "hidden"}>${icon("x")}</button>
-          </div>
-          <div class="layout-toggle" role="group" aria-label="Layout">
-            <button data-layout="grid" class="${layout === "grid" ? "on" : ""}" aria-label="Grid view" title="Grid view">${icon("grid")}</button>
-            <button data-layout="list" class="${layout === "list" ? "on" : ""}" aria-label="List view" title="List view">${icon("listView")}</button>
-          </div>
+          <div><h1>${escapeHtml(title)}</h1><div class="lh-sub"><span id="lib-count"></span> · ${escapeHtml(blurb)}</div></div>
         </div>
       </div>
-      <p class="lh-blurb">${escapeHtml(blurb)}</p>
       <div class="lib-tabbar">
         <div class="lib-tabs" role="tablist">
           ${[["all", "All prompts"], ["saved", "Saved"], ["recent", "Recently used"]].map(([k, l]) => `<button role="tab" aria-selected="${tab === k}" class="${tab === k ? "on" : ""}" data-tab="${k}">${l}</button>`).join("")}
         </div>
         <div class="lib-tab-actions">
           <button class="btn btn-sm btn-ghost" id="lib-filter-btn" aria-expanded="false">${icon("slider")} Filters<span class="lf-dot" hidden></span></button>
-          <button class="btn btn-sm btn-ghost" data-nav="builder">${icon("build")} Create</button>
+          <button class="btn btn-sm btn-ghost" data-build-own>${icon("build")} Build your own</button>
         </div>
       </div>
       <div class="lib-filters" id="lib-filters" hidden>${libFilterRowHtml()}</div>
@@ -14682,93 +14872,121 @@ function renderLibraryShell(container) {
 
   const body = container.querySelector("#lib-body");
   const countEl = container.querySelector("#lib-count");
-  function currentRecords() {
-    const base = libBaseRecords(sel);
-    let recs = base;
+  const byTab = (recs) => {
     if (tab === "saved") recs = recs.filter((r) => Store.isFavorite(r.id));
     if (tab === "recent") {
       const order = (Store.getUsage().recent || []).map((x) => x.id);
       const pos = {}; order.forEach((id, i) => { if (!(id in pos)) pos[id] = i; });
       recs = recs.filter((r) => r.id in pos).sort((a, b) => pos[a.id] - pos[b.id]);
     }
+    return recs;
+  };
+  function currentRecords() {
     const q = STATE.query.trim();
     const f = Object.assign({}, STATE.filters, { category: null });
-    if (q) recs = computeResults(q, f, STATE.sort, recs);
-    else if (tab === "all" && sel.kind !== "hub") recs = computeResults("", f, STATE.sort, recs);
-    else recs = recs.filter((r) => passesFilters(r, f));
-    return recs;
+    const base = byTab(libBaseRecords(sel));
+    if (q) return computeResults(q, f, STATE.sort, base);
+    if (tab === "all" && sel.kind !== "hub") return computeResults("", f, STATE.sort, base);
+    return base.filter((r) => passesFilters(r, f));
   }
   function paint() {
     const q = STATE.query.trim();
     const recs = currentRecords();
-    countEl.textContent = `${recs.length.toLocaleString()} prompt${recs.length === 1 ? "" : "s"}` +
-      (q ? ` matching “${q}”` : "") + (tab === "saved" ? " saved" : tab === "recent" ? " used recently" : "");
-    const opts = { layout: libLayout(), hideCategory: sel.kind === "category" };
+    const f = Object.assign({}, STATE.filters, { category: null });
+    // Searching is library-wide: matches inside the selected task / category
+    // come first, the rest of the library follows so nothing is ever hidden.
+    let elsewhere = [], lead = [];
+    if (q && sel.kind !== "all") {
+      const own = new Set(recs.map((r) => r.id));
+      const global = computeResults(q, f, STATE.sort, byTab(getSearchCorpus()));
+      // the strongest hits outside the selection lead when they outrank
+      // everything inside it (e.g. "ICF coach" searched from Presentations)
+      for (const r of global.slice(0, 6)) { if (own.has(r.id)) break; lead.push(r); }
+      const leadIds = new Set(lead.map((r) => r.id));
+      elsewhere = global.filter((r) => !own.has(r.id) && !leadIds.has(r.id));
+    }
+    const total = recs.length + elsewhere.length + lead.length;
+    countEl.textContent = q ? `${total.toLocaleString()} match${total === 1 ? "" : "es"} for “${q}”`
+      : `${recs.length.toLocaleString()} prompt${recs.length === 1 ? "" : "s"}${tab === "saved" ? " saved" : tab === "recent" ? " used recently" : ""}`;
+    const opts = { layout: libLayout(), hideCategory: sel.kind === "category" && !q };
     let html = "";
-    if (q && sel.kind === "all") html += searchUnderstoodHtml(recs);
-    if (q && sel.kind !== "all") html += `<div class="search-fix">Searching in <b>${escapeHtml(title)}</b>. <button data-search-everywhere>Search all prompts instead</button></div>`;
+    if (q) html += searchUnderstoodHtml(recs.concat(lead, elsewhere));
     const showModules = !q && tab === "all" && sel.kind === "all" && !si.gridEligible && si.programId && ORG_INDEX.programs[si.programId];
     if (showModules) html += `<div class="section-title"><h2>${escapeHtml(ORG_INDEX.programs[si.programId].name)} — modules</h2></div><div id="lib-modules" style="margin-bottom:24px;"></div>`;
     const split = sel.kind === "hub" && !q && tab === "all";
     const ess = split ? recs.filter((r) => r.hub === sel.id) : [];
-    const rest = split ? recs.filter((r) => r.hub !== sel.id) : recs;
+    const main = split ? recs.filter((r) => r.hub !== sel.id) : recs;
     if (split && ess.length) html += `<div class="section-title"><h2>Step-by-step prompts</h2><span class="st-note">Hand-built with the prompt framework</span></div><div id="lib-ess" class="lib-section"></div>`;
-    if (split && rest.length) html += `<div class="section-title"><h2>More from the library</h2></div>`;
-    html += `<div id="lib-list"></div>`;
+    if (split && main.length) html += `<div class="section-title"><h2>More from the library</h2></div>`;
+    if (lead.length) html += `<div class="section-title"><h2>Best matches <small>${lead.length}</small></h2><span class="st-note">From the whole library</span></div><div id="lib-lead" class="lib-section"></div>`;
+    if (q && sel.kind !== "all") html += `<div class="section-title"><h2>In ${escapeHtml(title)} <small>${recs.length}</small></h2></div>`;
+    html += `<div id="lib-list" class="lib-section"></div>`;
+    if (elsewhere.length) html += `<div class="section-title"><h2>Across the library <small>${elsewhere.length}</small></h2><span class="st-note">Matches outside ${escapeHtml(title)}</span></div><div id="lib-else" class="lib-section"></div>`;
+    // few or no matches → close alternatives + build-your-own
+    const similar = q && total < 6 && tab === "all" ? similarForQuery(q, new Set(recs.concat(elsewhere, lead).map((r) => r.id)), 6) : [];
+    if (similar.length) html += `<div class="section-title"><h2>${total ? "You might also like" : "Closest prompts we have"}</h2><span class="st-note">Related to “${escapeHtml(q)}”</span></div><div id="lib-similar" class="lib-section"></div>`;
+    if (q && tab === "all") html += buildOwnCardHtml(q, total);
     body.innerHTML = html;
     if (showModules) renderModuleListInto(body.querySelector("#lib-modules"), ORG_INDEX.programs[si.programId]);
     if (split && ess.length) renderPaginatedList(body.querySelector("#lib-ess"), ess, opts);
     const emptyTitle = tab === "saved" ? "Nothing saved here yet" : tab === "recent" ? "Nothing used here yet"
-      : q ? `Nothing matched “${q}”` : "No prompts here yet";
+      : q ? (elsewhere.length ? `Nothing in ${title} for “${q}”` : `No exact match for “${q}”`) : "No prompts here yet";
     const emptySub = tab === "saved" ? "Tap the star on any prompt to keep it here."
       : tab === "recent" ? "Prompts you open, copy or use show up here."
-      : "Try a few plain words about the task, or pick a task from the list.";
-    const tasks = tab === "all" && q ? taskGridHtml({ limit: 6 }) : "";
-    const emptyHtml = emptyStateHtml(tab === "saved" ? "star" : "search", emptyTitle, emptySub,
-      q ? `<button class="btn btn-sm" data-nav-builder style="margin-top:4px;">${icon("build")} Create your own prompt</button>` : "") +
-      (tasks ? `<div class="task-block" id="empty-tasks">${tasks}</div>` : "");
-    if (!(split && !rest.length && ess.length)) renderPaginatedList(body.querySelector("#lib-list"), rest, Object.assign({ emptyHtml }, opts));
+      : elsewhere.length ? "See the matches from the rest of the library below."
+      : "Try a few plain words about the task, or look at the closest prompts below.";
+    const listEl = body.querySelector("#lib-list");
+    if (!(split && !main.length && ess.length)) renderPaginatedList(listEl, main, Object.assign({ emptyHtml: `<div class="empty-inline"><b>${escapeHtml(emptyTitle)}</b><span>${escapeHtml(emptySub)}</span></div>` }, opts));
+    if (lead.length) renderPaginatedList(body.querySelector("#lib-lead"), lead, { layout: libLayout() });
+    if (elsewhere.length) renderPaginatedList(body.querySelector("#lib-else"), elsewhere, { layout: libLayout() });
+    if (similar.length) renderPaginatedList(body.querySelector("#lib-similar"), similar, { layout: libLayout() });
     body.querySelectorAll(".intent-banner[data-hub]").forEach((b) => b.addEventListener("click", () => selectLibrary({ kind: "hub", id: b.dataset.hub })));
     const lit = body.querySelector("[data-search-literal]");
     if (lit) lit.addEventListener("click", () => { STATE.searchLiteral = STATE.query.trim(); paint(); });
-    const ev = body.querySelector("[data-search-everywhere]");
-    if (ev) ev.addEventListener("click", () => { const qq = STATE.query; selectLibrary({ kind: "all" }); STATE.query = qq; renderApp(); });
-    const et = body.querySelector("#empty-tasks");
-    if (et) wireTaskGrid(et);
-    const nb = body.querySelector("[data-nav-builder]");
-    if (nb) nb.addEventListener("click", () => navigate("builder"));
+    body.querySelectorAll("[data-build-own]").forEach((b) => b.addEventListener("click", () => startBuilderFrom(b.dataset.seed || STATE.query)));
   }
   paint();
 
-  // rail
-  container.querySelectorAll(".rail-item").forEach((b) => b.addEventListener("click", () =>
+  // rail — keep its own scroll position across selections; never scroll the page
+  const rail = container.querySelector(".lib-rail");
+  if (typeof STATE.railScroll === "number") rail.scrollTop = STATE.railScroll;
+  const active = rail.querySelector(".rail-item.active");
+  if (active) {
+    const top = active.offsetTop, bottom = top + active.offsetHeight;
+    if (top < rail.scrollTop || bottom > rail.scrollTop + rail.clientHeight) rail.scrollTop = Math.max(0, top - rail.clientHeight / 3);
+  }
+  rail.addEventListener("scroll", () => { STATE.railScroll = rail.scrollTop; }, { passive: true });
+  rail.querySelectorAll(".rail-item").forEach((b) => b.addEventListener("click", () =>
     selectLibrary({ kind: b.dataset.selKind, id: b.dataset.selId || null })));
   const rf = container.querySelector("#rail-filter");
   rf.addEventListener("input", () => {
     const t = rf.value.trim().toLowerCase();
     let shown = 0;
-    container.querySelectorAll(".lib-rail .rail-item").forEach((b) => {
+    rail.querySelectorAll(".rail-item").forEach((b) => {
       const hit = !t || b.dataset.railText.includes(t);
       b.hidden = !hit; if (hit) shown++;
     });
-    container.querySelectorAll(".lib-rail .rail-label").forEach((l) => { l.hidden = !!t; });
-    container.querySelector(".rail-empty").hidden = shown > 0;
+    rail.querySelectorAll(".rail-label").forEach((l) => { l.hidden = !!t; });
+    rail.querySelector(".rail-empty").hidden = shown > 0;
   });
-  const active = container.querySelector(".rail-item.active");
-  if (active && active.scrollIntoView && sel.kind !== "all") active.scrollIntoView({ block: "nearest" });
   container.querySelector("#lib-pick").addEventListener("change", (e) => {
     const [kind, id] = e.target.value.split("|");
     selectLibrary({ kind, id: id || null });
   });
-  // search (repaints the body only, so the input keeps focus)
+  container.querySelectorAll("[data-crumb-all]").forEach((b) => b.addEventListener("click", () => selectLibrary({ kind: "all" })));
+  // search (repaints the body only, so the input keeps focus) + suggestions
   const sInput = container.querySelector("#lib-search");
   const clr = container.querySelector("#lib-clear");
   sInput.addEventListener("input", debounce((e) => {
     STATE.query = e.target.value; STATE.searchLiteral = null;
     clr.hidden = !STATE.query; paint();
-  }, 160));
+  }, 180));
+  attachSearchSuggest(sInput, container.querySelector("#lib-suggest"), {
+    onPickHub: (id) => selectLibrary({ kind: "hub", id }),
+    onPickCategory: (name) => selectLibrary({ kind: "category", id: name }),
+  });
   clr.addEventListener("click", () => { STATE.query = ""; sInput.value = ""; clr.hidden = true; paint(); sInput.focus(); });
-  if (STATE.query || sel.kind === "all") { sInput.focus(); sInput.setSelectionRange(sInput.value.length, sInput.value.length); }
+  if (STATE.query || sel.kind === "all") { sInput.focus({ preventScroll: true }); sInput.setSelectionRange(sInput.value.length, sInput.value.length); }
   // layout, tabs, filters
   container.querySelectorAll("[data-layout]").forEach((b) => b.addEventListener("click", () => {
     setLibLayout(b.dataset.layout);
@@ -14786,7 +15004,7 @@ function renderLibraryShell(container) {
   fRow.querySelectorAll("[data-lf]").forEach((x) => x.addEventListener("change", () => { STATE.filters[x.dataset.lf] = x.value || null; syncDot(); paint(); }));
   fRow.querySelectorAll("[data-lf-check]").forEach((x) => x.addEventListener("change", () => { STATE.filters[x.dataset.lfCheck] = x.checked; syncDot(); paint(); }));
   fRow.querySelector("[data-lsort]").addEventListener("change", (e) => { STATE.sort = e.target.value; syncDot(); paint(); });
-  container.querySelectorAll(".lib-tab-actions [data-nav]").forEach((b) => b.addEventListener("click", () => navigate(b.dataset.nav)));
+  container.querySelector(".lib-tab-actions [data-build-own]").addEventListener("click", () => startBuilderFrom(STATE.query));
 }
 function renderSearchView(container) { renderLibraryShell(container); }
 function renderCategoriesView(container) { renderLibraryShell(container); }
@@ -15425,6 +15643,7 @@ function renderBuilderView(container) {
   container.innerHTML = `
     <div class="builder-card">
       <button class="btn btn-ghost btn-sm" id="builder-mode-back" style="margin-bottom:10px;">← Change approach</button>
+      ${b.seed ? `<div class="builder-seed">🛠️ Building from your search <b>“${escapeHtml(b.seed)}”</b>. Your task is already filled in. Answer each step in your own words; skip any you're unsure of.</div>` : ""}
       <div class="builder-steps">${QS.map((_, i) => `<div class="builder-step-dot ${i < step ? "done" : i === step ? "active" : ""}"></div>`).join("")}</div>
       <div style="font-size:11.5px; color:var(--text-faint); margin-bottom:6px;">Step ${step + 1} of ${total} · ${escapeHtml(builderPathLabel(b))}</div>
       <div class="builder-question">${escapeHtml(qn.q)}</div>
@@ -15548,10 +15767,14 @@ function renderBuilderResult(container) {
 /* ---------- Detail drawer ---------- */
 function relatedPrompts(rec, n) {
   n = n || 5;
-  const corpus = getSearchCorpus().filter((r) => r.id !== rec.id);
+  const corpus = getSearchCorpus().filter((r) => r.id !== rec.id && r.lifecycle !== "Archived");
   const recTags = new Set((rec.tags || []).map((t) => t.toLowerCase()));
+  // what the prompt is *about*: rank the library against its own title
+  const byTitle = {};
+  searchPrompts(corpus, rec.title, null, { quiet: true }).slice(0, 40).forEach((r, i) => { byTitle[r.id] = 40 - i; });
   const scored = corpus.map((r) => {
-    let s = 0;
+    let s = (byTitle[r.id] || 0) * 0.35;
+    if (rec.hub && r.hub === rec.hub) s += 6;
     if (r.category === rec.category) s += 3;
     if (r.skill === rec.skill) s += 2;
     if (r.promptType === rec.promptType) s += 2;
@@ -15625,7 +15848,7 @@ function detailBodyHtml(rec) {
   const flags = rec.flags || {};
   const imp = Store.getImprovement(rec.id);
   const mine = Store.getMyPrompt(rec.id);
-  const related = relatedPrompts(rec);
+  const related = relatedPrompts(rec, 6);
   const modelNotes = [];
   if (flags.modelSpecific) modelNotes.push("Model-specific");
   if (flags.containsWebSearch) modelNotes.push("Contains web-search instruction");
@@ -15671,6 +15894,9 @@ function detailBodyHtml(rec) {
       ${rec.isTemplate ? `<button class="btn btn-sm" id="customize-toggle" style="margin-top:8px;">${icon("slider")} Fill in the ${(rec.variables || []).length} field${(rec.variables || []).length === 1 ? "" : "s"}</button><div id="customize-panel" style="display:none; margin-top:12px;"></div>` : ""}
     </div>
 
+    ${related.length ? `<div class="detail-section similar-block"><h3>Similar prompts you can use</h3>
+      <div class="similar-list">${related.map((r) => `<button class="similar-item" data-id="${r.id}"><span class="si-ico" aria-hidden="true">${typeof promptIcon === "function" ? promptIcon(r) : "📝"}</span><span class="si-main"><b>${escapeHtml(r.title)}</b><small>${escapeHtml(r.category)}${r.source === "Everyday Essentials" ? " · Essential" : ""}</small></span>${icon("chevronRight")}</button>`).join("")}</div></div>` : ""}
+
     <details class="detail-expand">
       <summary>Details, quality &amp; why it works <span class="chev">${icon("chevronRight")}</span></summary>
       <div class="expand-body">
@@ -15699,7 +15925,6 @@ function detailBodyHtml(rec) {
           <button class="btn btn-sm" id="btn-save-learner">${icon("plus")} Save my version</button>
           <button class="btn btn-sm" id="btn-versions">${icon("history")} Version history</button>
         </div>
-        ${related.length ? `<div class="detail-section"><h3>Related prompts</h3><div class="related-grid">${related.map((r) => `<div class="mini-item" data-id="${r.id}" role="button" tabindex="0" style="border:1px solid var(--border); border-radius:var(--radius-sm); padding:8px 10px;"><span class="mini-item-title">${escapeHtml(r.title)}</span><span class="chip">${escapeHtml(r.category)}</span></div>`).join("")}</div></div>` : ""}
         ${modelNotes.length ? `<div class="detail-section"><h3>Notes</h3><div style="display:flex;gap:6px;flex-wrap:wrap;">${modelNotes.map((m) => `<span class="chip">${escapeHtml(m)}</span>`).join("")}</div></div>` : ""}
         <div class="provenance">${icon("link2")} ${escapeHtml(rec.source || "Original Library")}${rec.sourceNumber ? " · source #" + rec.sourceNumber : ""}${rec.version ? " · v" + rec.version : ""}</div>
       </div>
@@ -18819,7 +19044,7 @@ function renderNav() {
   const s = Store.getSession();
   const active = activeNavKey();
   let html = `<div class="nav-primary">` + NAV_PRIMARY.map((item) => `
-      <button class="nav-item ${active === item.key ? "active" : ""}" data-nav="${item.key}">
+      <button class="nav-item ${active === item.key ? "active" : ""}" data-nav="${item.key}" title="${item.label}">
         ${icon(item.icon)}<span>${item.label}</span>${item.kbd ? `<span class="nav-kbd">${item.kbd}</span>` : ""}
       </button>`).join("") + `</div>`;
   // Account learners manage their (stackable) access codes here. Kept out of the
@@ -19015,6 +19240,19 @@ function renderVerifyBannerMount() {
   slot.innerHTML = verificationBannerHtml();
   if (typeof wireVerificationBanner === "function") wireVerificationBanner();
 }
+function goHome() { closeSidebar(); STATE.query = ""; navigate("home"); }
+/* Desktop: collapse the main menu to an icon rail for more library room. */
+function applySidebarCollapsed(on) {
+  document.body.classList.toggle("sb-collapsed", !!on);
+  const t = document.getElementById("sb-toggle");
+  if (t) { t.title = on ? "Expand menu" : "Collapse menu"; t.setAttribute("aria-label", t.title); t.setAttribute("aria-expanded", String(!on)); }
+}
+function toggleSidebarCollapsed() {
+  const on = !document.body.classList.contains("sb-collapsed");
+  applySidebarCollapsed(on);
+  try { localStorage.setItem("prompt-lib:sbCollapsed", on ? "1" : "0"); } catch (e) {}
+}
+try { if (localStorage.getItem("prompt-lib:sbCollapsed") === "1") applySidebarCollapsed(true); } catch (e) {}
 function openSidebar() { document.getElementById("sidebar").classList.add("open"); document.getElementById("sidebar-overlay").classList.add("show"); }
 function closeSidebar() { document.getElementById("sidebar").classList.remove("open"); document.getElementById("sidebar-overlay").classList.remove("show"); }
 

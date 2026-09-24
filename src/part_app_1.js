@@ -638,8 +638,9 @@ function editDistance(a, b, max) {
   return prev[b.length];
 }
 function correctWord(word, df) {
-  if (!df || word.length < 4 || df[word] || /\d/.test(word)) return word;
-  const max = word.length >= 8 ? 2 : 1;
+  // short words ("vows") are too easy to "fix" into a different real word
+  if (!df || word.length < 5 || df[word] || /\d/.test(word)) return word;
+  const max = word.length >= 9 ? 2 : 1;
   let best = null, bestD = max + 1, bestDf = 0;
   for (const v in df) {
     const n = df[v];
