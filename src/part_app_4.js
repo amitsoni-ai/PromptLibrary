@@ -488,6 +488,22 @@ function renderDrawer(rec) {
     </div>`;
   const body = root.querySelector("#drawer-body");
   body.innerHTML = detailBodyHtml(rec);
+  // phones: drag the sheet's header down to dismiss it
+  const sheet = root.querySelector("#detail-drawer");
+  const head = sheet.querySelector(".drawer-header");
+  let y0 = null, dy = 0;
+  head.addEventListener("touchstart", (e) => { y0 = e.touches[0].clientY; dy = 0; sheet.style.transition = "none"; }, { passive: true });
+  head.addEventListener("touchmove", (e) => {
+    if (y0 == null) return;
+    dy = Math.max(0, e.touches[0].clientY - y0);
+    sheet.style.transform = `translateY(${dy}px)`;
+  }, { passive: true });
+  head.addEventListener("touchend", () => {
+    if (y0 == null) return;
+    sheet.style.transition = ""; sheet.style.transform = "";
+    y0 = null;
+    if (dy > 110) closeDetail();
+  });
   requestAnimationFrame(() => {
     const ov = root.querySelector("#detail-overlay");
     const dr = root.querySelector("#detail-drawer");

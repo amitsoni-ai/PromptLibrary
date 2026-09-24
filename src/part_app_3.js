@@ -335,6 +335,34 @@ function homeBrowseGridHtml(mode, expanded) {
   return shown.map((h) => tile(`data-hub="${h.id}"`, h.icon, h.label, `${h.count} ready-to-use prompt${h.count === 1 ? "" : "s"}`)).join("") +
     (shown.length < hubs.length ? `<button class="h2-tile h2-more" data-more-tasks><span class="h2-ico" aria-hidden="true">＋</span><span class="h2-tbody"><span class="h2-tlabel">All ${hubs.length} tasks</span><span class="h2-tsub">Meetings, career, learning, AI…</span></span></button>` : "");
 }
+/* Phones: invite people to add the app to their home screen, once. */
+let DEFERRED_INSTALL = null;
+window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); DEFERRED_INSTALL = e; });
+function installHintHtml() {
+  const phone = window.matchMedia && window.matchMedia("(max-width: 880px)").matches;
+  const installed = (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || navigator.standalone;
+  let dismissed = false; try { dismissed = localStorage.getItem("prompt-lib:installHint") === "no"; } catch (e) {}
+  if (!phone || installed || dismissed) return "";
+  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent || "");
+  return `<div class="h2-install" id="h2-install">
+    <span class="h2-install-ico" aria-hidden="true"></span>
+    <div class="h2-tbody"><span class="h2-tlabel">Get the app</span>
+      <span class="h2-tsub">${ios ? "Tap <b>Share</b> then <b>Add to Home Screen</b> to open your prompts in one tap." : "Add it to your home screen to open your prompts in one tap."}</span></div>
+    ${ios ? "" : `<button class="btn btn-primary btn-sm" data-install>Install</button>`}
+    <button class="h2-install-x" data-install-x aria-label="Dismiss">×</button>
+  </div>`;
+}
+function wireInstallHint(container) {
+  const box = container.querySelector("#h2-install");
+  if (!box) return;
+  const hide = () => { box.remove(); try { localStorage.setItem("prompt-lib:installHint", "no"); } catch (e) {} };
+  box.querySelector("[data-install-x]").addEventListener("click", hide);
+  const ins = box.querySelector("[data-install]");
+  if (ins) ins.addEventListener("click", async () => {
+    if (DEFERRED_INSTALL) { DEFERRED_INSTALL.prompt(); try { await DEFERRED_INSTALL.userChoice; } catch (e) {} DEFERRED_INSTALL = null; hide(); }
+    else showToast("Open your browser menu and choose “Add to Home screen”");
+  });
+}
 function renderHome(container) {
   const q = STATE.query.trim();
   const s = Store.getSession();
@@ -391,6 +419,7 @@ function renderHome(container) {
       <div class="h2-grid" id="h2-grid">${homeBrowseGridHtml(mode)}</div>
     </section>` : "") + `
 
+    ${installHintHtml()}
     <section class="h2-section h2-split">
       <div class="h2-col">
         <div class="h2-head"><h2>Pick up where you left off</h2></div>
@@ -435,6 +464,7 @@ function renderHome(container) {
       }));
     }
     container.querySelectorAll(".h2-recent").forEach((b) => b.addEventListener("click", () => openDetail(b.dataset.id)));
+    wireInstallHint(container);
   }
 
   const input = container.querySelector("#hero-search");

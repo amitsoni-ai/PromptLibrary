@@ -649,10 +649,36 @@ function renderApp() {
   if (typeof renderPreviewBanner === "function") renderPreviewBanner();
   if (typeof renderVerifyBannerMount === "function") renderVerifyBannerMount();
   renderNav();
+  renderTabbar();
   renderLearnerBox();
   renderTopbar();
   renderSidebarFooter();
   renderContent();
+}
+/* Phones: an app-style bottom tab bar (Home, Library, Create, Learn, Me).
+   The side menu still holds everything else and opens from the top bar. */
+const TAB_ITEMS = [
+  { key: "home", label: "Home", icon: "home" },
+  { key: "search", label: "Library", icon: "search" },
+  { key: "builder", label: "Create", icon: "plus", fab: true },
+  { key: "learn", label: "Learn", icon: "book" },
+  { key: "me", label: "Me", icon: "folder" },
+];
+function renderTabbar() {
+  const bar = document.getElementById("app-tabbar");
+  if (!bar) return;
+  const active = STATE.view === "builder" ? "builder" : activeNavKey();
+  bar.innerHTML = TAB_ITEMS.filter((t) => t.fab || isViewAllowed(t.key)).map((t) => `
+    <button class="tab-item${t.fab ? " tab-fab" : ""}${active === t.key ? " on" : ""}" data-tab-nav="${t.key}" aria-label="${t.label}"${active === t.key ? ' aria-current="page"' : ""}>
+      <span class="tab-ico">${icon(t.icon)}</span><span class="tab-label">${t.label}</span>
+    </button>`).join("");
+  bar.querySelectorAll("[data-tab-nav]").forEach((b) => b.addEventListener("click", () => {
+    const k = b.dataset.tabNav;
+    if (navigator.vibrate) { try { navigator.vibrate(8); } catch (e) {} }
+    if (k === "home") goHome();
+    else if (k === STATE.view && k !== "builder") window.scrollTo({ top: 0, behavior: "smooth" }); // tap again = back to top
+    else navigate(k);
+  }));
 }
 function renderVerifyBannerMount() {
   if (typeof verificationBannerHtml !== "function") return;
