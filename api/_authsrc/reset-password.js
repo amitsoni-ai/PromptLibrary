@@ -38,7 +38,9 @@ export default async function handler(req, res) {
   }
 
   const hash = await hashPassword(body.password);
-  await sql`update users set password_hash = ${hash}, failed_logins = 0, locked_until = null, updated_at = now() where id = ${t.user_id}`;
+  await sql`update users set password_hash = ${hash}, failed_logins = 0, locked_until = null,
+              data = coalesce(data, '{}'::jsonb) || '{"password_set": true}'::jsonb, updated_at = now()
+            where id = ${t.user_id}`;
   await sql`update password_reset_tokens set used_at = now() where user_id = ${t.user_id} and used_at is null`;
   await sql`update user_sessions set revoked_at = now() where user_id = ${t.user_id} and revoked_at is null`;
   authEvent(sql, { userId: t.user_id, email: t.email, event: "reset_ok", req });

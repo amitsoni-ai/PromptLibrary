@@ -19,6 +19,7 @@ const ROUTES = {
   "remove-code": () => import("../_authsrc/remove-code.js"),
   "oauth-start": () => import("../_authsrc/oauth-start.js"),
   "oauth-callback": () => import("../_authsrc/oauth-callback.js"),
+  "account": () => import("../_authsrc/account.js"),
 };
 
 export default async function handler(req, res) {

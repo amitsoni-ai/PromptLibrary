@@ -57,6 +57,9 @@ const AuthAPI = (function () {
     myCodes: () => call("/auth/my-codes"),
     removeCode: (code) => call("/auth/remove-code", { method: "POST", body: { code } }),
     updateProfile: (b) => call("/auth/me", { method: "PATCH", body: b }),
+    // Account settings: sign-in methods, password, devices, delete
+    account: () => call("/auth/account"),
+    accountAction: (b) => call("/auth/account", { method: "POST", body: b }),
     // Google / Microsoft sign-in: which providers this deployment has keys for
     providers: () => call("/auth/oauth-start").then((d) => d.providers || []).catch(() => []),
     adminLogin: (b) => call("/admin/session", { method: "POST", body: b }),
@@ -623,6 +626,267 @@ function renderOAuthProfile(me) {
     } catch (err) {
       btn.disabled = false; btn.textContent = "Open my library";
       fieldErr(root, err.soft ? "Couldn't reach the server. Try again." : "We couldn't save that. Please try again.");
+    }
+  });
+}
+
+/* ============================ Account settings ============================
+   Profile · sign-in methods (password / Google / Microsoft) · devices · delete.
+   Server: /api/auth/me (profile) and /api/auth/account (everything else). */
+function initialsOf(name) {
+  const parts = String(name || "").trim().split(/\s+/).filter(Boolean);
+  const s = (parts[0] || "?")[0] + (parts.length > 1 ? parts[parts.length - 1][0] : "");
+  return s.toUpperCase();
+}
+const ACCOUNT_NOTICES = {
+  "linked-google": "Google is now connected. You can use it to sign in.",
+  "linked-microsoft": "Microsoft is now connected. You can use it to sign in.",
+  "identity-in-use": "That account is already connected to a different Synottic account.",
+  "provider-already-linked": "You already have an account from that provider connected. Disconnect it first.",
+  cancelled: "Connecting was cancelled. Nothing changed.",
+  expired: "That took too long. Please try connecting again.",
+  failed: "We couldn't connect that account. Please try again.",
+  "no-email": "We couldn't get an email address from that account, so it wasn't connected.",
+  unavailable: "That sign-in option isn't available right now.",
+  "rate-limited": "Too many attempts. Wait a few minutes and try again.",
+};
+/* After "Connect Google" the provider sends people back to /?account=<code>. */
+function consumeAccountNotice() {
+  let code = null;
+  try { code = new URLSearchParams(location.search).get("account"); } catch (e) {}
+  if (!code) return;
+  try { history.replaceState(null, "", "/"); } catch (e) {}
+  if (typeof navigate === "function") navigate("account");
+  const msg = ACCOUNT_NOTICES[code] || ACCOUNT_NOTICES.failed;
+  if (typeof showToast === "function") showToast(msg);
+}
+
+function renderAccountView(container) {
+  const s = Store.getSession();
+  if (!AuthAPI.isConfigured() || !s || !s.user) {
+    container.innerHTML = `<div class="section-title"><h2>Account</h2></div>` +
+      emptyStateHtml("key", "Sign in to manage your account", "Account settings are available for signed-in learners.");
+    return;
+  }
+  container.innerHTML = `<div class="acc-page"><div class="acc-loading">Loading your account…</div></div>`;
+  Promise.all([AuthAPI.me(), AuthAPI.account()]).then(([me, acc]) => {
+    if (!me || !me.authenticated) { renderAuthGate("Please sign in again."); return; }
+    drawAccount(container, me.user, acc);
+  }).catch(() => {
+    container.innerHTML = `<div class="acc-page"><div class="acc-card"><p>We couldn't load your account. Check your connection and try again.</p>
+      <button class="btn" id="acc-retry">Try again</button></div></div>`;
+    container.querySelector("#acc-retry").addEventListener("click", () => renderAccountView(container));
+  });
+}
+
+function drawAccount(container, u, acc) {
+  const name = [u.firstName, u.lastName].filter(Boolean).join(" ") || "Learner";
+  const linked = {}; (acc.methods || []).forEach((m) => { linked[m.provider] = m; });
+  const providers = Array.from(new Set([...(acc.providers || []), ...Object.keys(linked)])).filter((k) => SOCIAL_ICONS[k]);
+  const methodCount = (acc.hasPassword ? 1 : 0) + Object.keys(linked).length;
+  const fnLabel = (SIGNUP_FUNCTIONS.find(([v]) => v === u.role) || [null, ""])[1];
+
+  const providerRow = (k) => {
+    const m = linked[k];
+    const last = m && methodCount <= 1;
+    return `<div class="acc-row">
+      <span class="acc-row-ico">${SOCIAL_ICONS[k]}</span>
+      <div class="acc-row-body"><b>${SOCIAL_LABELS[k]}</b>
+        <span>${m ? "Connected" + (m.email ? " as " + escapeHtml(m.email) : "") : "Not connected"}</span></div>
+      ${m
+        ? `<button class="btn btn-sm" data-unlink="${k}" ${last ? `disabled title="Add another way to sign in first"` : ""}>Disconnect</button>`
+        : `<a class="btn btn-sm" href="/api/auth/oauth-start?provider=${k}&link=1">Connect</a>`}
+    </div>`;
+  };
+
+  container.innerHTML = `<div class="acc-page">
+    <header class="acc-hero">
+      <span class="acc-av acc-av-lg" aria-hidden="true">${escapeHtml(initialsOf(name))}</span>
+      <div class="acc-hero-body">
+        <h2>${escapeHtml(name)}</h2>
+        <p>${escapeHtml(u.email)} ${u.emailVerified ? `<span class="acc-badge ok">Verified</span>` : `<span class="acc-badge warn">Not verified</span>`}</p>
+        <p class="acc-hero-meta">${[u.organization, fnLabel].filter(Boolean).map(escapeHtml).join(" · ")}</p>
+      </div>
+    </header>
+
+    <section class="acc-card" aria-labelledby="acc-h-profile">
+      <h3 id="acc-h-profile">Profile</h3>
+      <p class="acc-sub">Your function decides which library you see.</p>
+      <form id="acc-profile" novalidate>
+        <div class="acc-grid">
+          <div><label for="ap-first">First name</label><input id="ap-first" class="name-input" autocomplete="given-name" value="${escapeHtml(u.firstName || "")}"></div>
+          <div><label for="ap-last">Last name</label><input id="ap-last" class="name-input" autocomplete="family-name" value="${escapeHtml(u.lastName || "")}"></div>
+          <div><label for="ap-fn">Function / department</label>
+            <select id="ap-fn" class="auth-select">${SIGNUP_FUNCTIONS.map(([v, l]) => `<option value="${v}" ${u.role === v ? "selected" : ""}>${l}</option>`).join("")}</select></div>
+          <div><label for="ap-level">AI proficiency</label>
+            <select id="ap-level" class="auth-select">${SIGNUP_LEVELS.map(([v, l]) => `<option value="${v}" ${u.aiLevel === v ? "selected" : ""}>${l}</option>`).join("")}</select></div>
+          <div class="acc-span"><label for="ap-org">Organization / company</label><input id="ap-org" class="name-input" autocomplete="organization" value="${escapeHtml(u.organization || "")}"></div>
+        </div>
+        <div class="acc-actions"><span class="acc-msg" id="ap-msg" role="status" aria-live="polite"></span>
+          <button class="btn btn-primary" type="submit" id="ap-save">Save changes</button></div>
+      </form>
+    </section>
+
+    <section class="acc-card" aria-labelledby="acc-h-methods">
+      <h3 id="acc-h-methods">Sign-in methods</h3>
+      <p class="acc-sub">The ways you can sign in to this account. Keep at least one.</p>
+      <div class="acc-row">
+        <span class="acc-row-ico acc-row-ico-key">${icon("key")}</span>
+        <div class="acc-row-body"><b>Email and password</b>
+          <span>${acc.hasPassword ? escapeHtml(acc.email) : "No password yet. Add one to sign in without " + (Object.keys(linked).map((k) => SOCIAL_LABELS[k]).join(" or ") || "a provider") + "."}</span></div>
+        <button class="btn btn-sm" id="acc-pw">${acc.hasPassword ? "Change password" : "Set a password"}</button>
+      </div>
+      ${providers.map(providerRow).join("")}
+    </section>
+
+    <section class="acc-card" aria-labelledby="acc-h-devices">
+      <h3 id="acc-h-devices">Devices</h3>
+      <div class="acc-row">
+        <div class="acc-row-body"><b>This device</b><span>You're signed in here.</span></div>
+        <button class="btn btn-sm" id="acc-signout">Sign out</button>
+      </div>
+      <div class="acc-row">
+        <div class="acc-row-body"><b>Other devices</b>
+          <span>${acc.otherSessions ? `Signed in on ${acc.otherSessions} other device${acc.otherSessions === 1 ? "" : "s"}.` : "Not signed in anywhere else."}</span></div>
+        <button class="btn btn-sm" id="acc-others" ${acc.otherSessions ? "" : "disabled"}>Sign out everywhere else</button>
+      </div>
+    </section>
+
+    <section class="acc-card acc-danger" aria-labelledby="acc-h-delete">
+      <h3 id="acc-h-delete">Delete account</h3>
+      <p class="acc-sub">Permanently delete your account, saved prompts, progress and connected sign-in methods. This can't be undone.</p>
+      <button class="btn btn-danger" id="acc-delete">Delete my account…</button>
+    </section>
+
+    <p class="acc-legal"><a href="/privacy" target="_blank" rel="noopener">Privacy Policy</a> · <a href="/terms" target="_blank" rel="noopener">Terms of Service</a> · <a href="mailto:info@synottic.com">Contact</a></p>
+  </div>`;
+
+  const redraw = (nextAcc) => drawAccount(container, u, nextAcc || acc);
+
+  // profile
+  container.querySelector("#acc-profile").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const msg = container.querySelector("#ap-msg");
+    const body = {
+      firstName: container.querySelector("#ap-first").value.trim(),
+      lastName: container.querySelector("#ap-last").value.trim(),
+      function: container.querySelector("#ap-fn").value,
+      aiLevel: container.querySelector("#ap-level").value,
+      organization: container.querySelector("#ap-org").value.trim(),
+    };
+    if (!body.firstName || !body.lastName) { msg.textContent = "Enter your first and last name."; msg.className = "acc-msg err"; return; }
+    if (!body.organization) { msg.textContent = "Enter your organization."; msg.className = "acc-msg err"; return; }
+    const btn = container.querySelector("#ap-save"); btn.disabled = true; btn.textContent = "Saving…";
+    try {
+      await AuthAPI.updateProfile(body);
+      const fresh = await AuthAPI.me();
+      if (fresh && fresh.authenticated) {
+        const fnChanged = fresh.user.role !== u.role;
+        applyUserSession(fresh);
+        u = fresh.user;
+        if (typeof renderApp === "function") { STATE.view = "account"; renderApp(); }
+        showToast(fnChanged ? "Saved. Your library now matches your function." : "Profile saved");
+        return;
+      }
+      msg.textContent = "Saved"; msg.className = "acc-msg ok";
+    } catch (err) {
+      msg.textContent = err.soft ? "Couldn't reach the server. Try again." : "We couldn't save that. Check the fields and try again.";
+      msg.className = "acc-msg err";
+    }
+    btn.disabled = false; btn.textContent = "Save changes";
+  });
+
+  container.querySelector("#acc-pw").addEventListener("click", () => openPasswordModal(acc, redraw));
+  container.querySelector("#acc-signout").addEventListener("click", () => signOut());
+  container.querySelector("#acc-others").addEventListener("click", async (e) => {
+    e.target.disabled = true;
+    try { const r = await AuthAPI.accountAction({ op: "logout-others" }); showToast(r.ended ? "Signed out of " + r.ended + " other device" + (r.ended === 1 ? "" : "s") : "No other devices were signed in"); redraw(r); }
+    catch (err) { e.target.disabled = false; showToast("That didn't work. Try again."); }
+  });
+  container.querySelectorAll("[data-unlink]").forEach((b) => b.addEventListener("click", () => {
+    const k = b.dataset.unlink;
+    const { root, close } = openModal(`
+      <div class="modal-header"><h2>Disconnect ${SOCIAL_LABELS[k]}?</h2><button class="btn btn-icon btn-ghost" data-x>${icon("x")}</button></div>
+      <p class="prose">You won't be able to sign in with ${SOCIAL_LABELS[k]} until you connect it again. Your account and saved work stay as they are.</p>
+      <div class="acc-modal-actions"><button class="btn" data-x>Cancel</button><button class="btn btn-danger" id="un-go">Disconnect</button></div>`);
+    root.querySelectorAll("[data-x]").forEach((x) => x.addEventListener("click", close));
+    root.querySelector("#un-go").addEventListener("click", async () => {
+      try { const r = await AuthAPI.accountAction({ op: "unlink", provider: k }); close(); showToast(SOCIAL_LABELS[k] + " disconnected"); redraw(r); }
+      catch (err) { close(); showToast(err.data && err.data.error === "last-method" ? "Add another way to sign in before disconnecting this one." : "That didn't work. Try again."); }
+    });
+  }));
+  container.querySelector("#acc-delete").addEventListener("click", () => openDeleteModal(acc));
+}
+
+function openPasswordModal(acc, redraw) {
+  const has = acc.hasPassword;
+  const { root, close } = openModal(`
+    <div class="modal-header"><h2>${has ? "Change password" : "Set a password"}</h2><button class="btn btn-icon btn-ghost" data-x>${icon("x")}</button></div>
+    ${has ? "" : `<p class="prose" style="margin-bottom:12px;">Then you can also sign in with <b>${escapeHtml(acc.email)}</b> and this password.</p>`}
+    <form id="pw-form" novalidate class="acc-form">
+      ${has ? `<label for="pw-cur">Current password</label>${pwField("pw-cur", "current-password", "Your current password")}` : ""}
+      <label for="pw-new">New password</label>${pwField("pw-new", "new-password", "At least 5 characters")}
+      <label for="pw-new2">Confirm new password</label>${pwField("pw-new2", "new-password", "Re-enter the new password")}
+      <p class="acc-note">Other devices will be signed out.</p>
+      <div class="auth-error" role="alert" aria-live="polite"></div>
+      <div class="acc-modal-actions"><button class="btn" type="button" data-x>Cancel</button><button class="btn btn-primary" type="submit" id="pw-go">${has ? "Change password" : "Set password"}</button></div>
+    </form>`);
+  wirePwToggles(root);
+  root.querySelectorAll("[data-x]").forEach((x) => x.addEventListener("click", close));
+  const err = (m) => { root.querySelector(".auth-error").textContent = m; };
+  root.querySelector("#pw-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const cur = has ? root.querySelector("#pw-cur").value : undefined;
+    const nw = root.querySelector("#pw-new").value, nw2 = root.querySelector("#pw-new2").value;
+    if (has && !cur) return err("Enter your current password.");
+    if (nw.length < 5) return err("The new password must be at least 5 characters.");
+    if (nw !== nw2) return err("The new passwords don't match.");
+    const btn = root.querySelector("#pw-go"); btn.disabled = true; btn.textContent = "Saving…";
+    try {
+      const r = await AuthAPI.accountAction({ op: "password", currentPassword: cur, newPassword: nw });
+      close(); showToast(has ? "Password changed" : "Password set. You can now sign in with your email too."); redraw(r);
+    } catch (x) {
+      btn.disabled = false; btn.textContent = has ? "Change password" : "Set password";
+      if (x.data && x.data.error === "bad-current-password") err("Your current password isn't right.");
+      else if (x.status === 429) err("Too many attempts. Wait a few minutes and try again.");
+      else err(x.soft ? "Couldn't reach the server. Try again." : "That didn't work. Try again.");
+    }
+  });
+  const first = root.querySelector("#pw-cur") || root.querySelector("#pw-new"); if (first) first.focus();
+}
+
+function openDeleteModal(acc) {
+  const has = acc.hasPassword;
+  const { root, close } = openModal(`
+    <div class="modal-header"><h2>Delete your account?</h2><button class="btn btn-icon btn-ghost" data-x>${icon("x")}</button></div>
+    <p class="prose">This permanently deletes your account, saved and created prompts, practice history and connected sign-in methods. You can't undo it.</p>
+    <form id="del-form" novalidate class="acc-form">
+      ${has
+        ? `<label for="del-pw">Enter your password to confirm</label>${pwField("del-pw", "current-password", "Your password")}`
+        : `<label for="del-email">Type your email to confirm</label><input id="del-email" class="name-input" type="email" autocomplete="off" placeholder="${escapeHtml(acc.email)}">`}
+      <div class="auth-error" role="alert" aria-live="polite"></div>
+      <div class="acc-modal-actions"><button class="btn" type="button" data-x>Cancel</button><button class="btn btn-danger" type="submit" id="del-go">Delete my account</button></div>
+    </form>`);
+  wirePwToggles(root);
+  root.querySelectorAll("[data-x]").forEach((x) => x.addEventListener("click", close));
+  root.querySelector("#del-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const body = { op: "delete" };
+    if (has) body.password = root.querySelector("#del-pw").value; else body.confirmEmail = root.querySelector("#del-email").value.trim();
+    if (!(body.password || body.confirmEmail)) { root.querySelector(".auth-error").textContent = has ? "Enter your password." : "Type your email."; return; }
+    const btn = root.querySelector("#del-go"); btn.disabled = true; btn.textContent = "Deleting…";
+    try {
+      await AuthAPI.accountAction(body);
+      close();
+      Store.clearSession();
+      try { localStorage.removeItem("prompt-lib:session"); sessionStorage.clear(); } catch (x) {}
+      try { history.replaceState(null, "", "/login"); } catch (x) {}
+      renderSignIn("Your account has been deleted. Thanks for using Synottic Prompt Intelligence.");
+    } catch (x) {
+      btn.disabled = false; btn.textContent = "Delete my account";
+      const code = x.data && x.data.error;
+      root.querySelector(".auth-error").textContent = code === "bad-password" ? "That password isn't right."
+        : code === "email-mismatch" ? "That email doesn't match your account." : x.status === 429 ? "Too many attempts. Try again later." : "That didn't work. Try again.";
     }
   });
 }

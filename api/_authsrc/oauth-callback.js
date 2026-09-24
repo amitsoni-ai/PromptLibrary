@@ -9,7 +9,7 @@
 import { db } from "../_db.js";
 import { appendCookie, serializeCookie, parseCookies, issueCsrf } from "../_http.js";
 import { hashPassword, randomToken, sha256, newId } from "../_crypto.js";
-import { createUserSession, attachUserSessionCookie } from "../_session.js";
+import { createUserSession, attachUserSessionCookie, resolveUser } from "../_session.js";
 import { rateLimit, ipKey } from "../_ratelimit.js";
 import { authEvent, auditLog, entitlementEvent } from "../_audit.js";
 import { sendEmail, appBaseUrl } from "../_email.js";
@@ -18,18 +18,22 @@ import { grantAutoEntitlement } from "../_autogrant.js";
 import { PROVIDERS, providerEnabled, decodeIdToken, ensureIdentitySchema } from "../_oauth.js";
 import { OAUTH_COOKIE, redirect } from "./oauth-start.js";
 
-const fail = (res, code) => redirect(res, `/login?oauth_error=${encodeURIComponent(code)}`);
-
 export default async function handler(req, res) {
+  // Sign-in failures go back to the sign-in page; a failed "Connect Google"
+  // from Account settings goes back to the (still signed-in) Account page.
+  let linkMode = false;
+  const fail = (r, code) => redirect(r, linkMode
+    ? `/?account=${encodeURIComponent(code)}`
+    : `/login?oauth_error=${encodeURIComponent(code)}`);
   if (req.method !== "GET") return fail(res, "failed");
   // one-shot: the state cookie is cleared whatever happens next
   appendCookie(res, serializeCookie(OAUTH_COOKIE, "", { httpOnly: true, sameSite: "Lax", maxAge: 0, path: "/api/auth" }));
 
   const q = req.query || {};
-  if (q.error) return fail(res, q.error === "access_denied" ? "cancelled" : "failed");
-
   let st = null;
   try { st = JSON.parse(Buffer.from(parseCookies(req)[OAUTH_COOKIE] || "", "base64url").toString("utf8")); } catch {}
+  linkMode = !!(st && st.l);
+  if (q.error) return fail(res, q.error === "access_denied" ? "cancelled" : "failed");
   if (!st || !st.s || !q.state || sha256(st.s) !== sha256(String(q.state)) || !q.code) return fail(res, "expired");
   const key = st.p;
   if (!providerEnabled(key)) return fail(res, "unavailable");
@@ -79,6 +83,29 @@ export default async function handler(req, res) {
   try {
     await ensureIdentitySchema(sql);
 
+    // ── Account settings → "Connect Google/Microsoft": attach to the signed-in
+    //    learner. The learner is already authenticated, so the provider email
+    //    need not match or be verified; the provider account just must not
+    //    belong to someone else.
+    if (st.l) {
+      const done = (code) => redirect(res, `/?account=${encodeURIComponent(code)}`);
+      const ctx = await resolveUser(sql, req).catch(() => null);
+      if (!ctx) return fail(res, "expired");
+      const owner = (await sql`select user_id from user_identities
+                               where provider = ${key} and subject = ${String(claims.sub)} limit 1`)[0];
+      if (owner && owner.user_id !== ctx.user.id) return done("identity-in-use");
+      if (!owner) {
+        const already = (await sql`select 1 from user_identities where user_id = ${ctx.user.id} and provider = ${key} limit 1`)[0];
+        if (already) return done("provider-already-linked");
+        await sql`insert into user_identities (id, user_id, provider, subject, email)
+                  values (${newId("uid")}, ${ctx.user.id}, ${key}, ${String(claims.sub)}, ${email})`;
+        authEvent(sql, { userId: ctx.user.id, email: ctx.user.email, event: "provider_linked", req, meta: { provider: key } });
+        auditLog(sql, { actorType: "user", actorId: ctx.user.id, actorLabel: ctx.user.email, action: "user.provider_linked",
+          targetType: "user", targetId: ctx.user.id, detail: { provider: key }, req });
+      }
+      return done("linked-" + key);
+    }
+
     // ── 1. known provider account ─────────────────────────────────────────
     let user = (await sql`select u.* from user_identities i join users u on u.id = i.user_id
                           where i.provider = ${key} and i.subject = ${String(claims.sub)} limit 1`)[0];
@@ -101,10 +128,11 @@ export default async function handler(req, res) {
       // No password: an unguessable hash. "Forgot password" can set one later.
       const passwordHash = await hashPassword(randomToken(32));
       await sql`insert into users (id, email, email_norm, password_hash, first_name, last_name,
-                  role, ai_level, org_name, job_function, account_status, email_verified, agreed_terms_at)
+                  role, ai_level, org_name, job_function, account_status, email_verified, agreed_terms_at, data)
                 values (${id}, ${email}, ${email}, ${passwordHash}, ${firstName}, ${lastName},
                   'general', 'beginner', '', null,
-                  ${verified ? "active" : "pending_verification"}, ${verified}, now())`;
+                  ${verified ? "active" : "pending_verification"}, ${verified}, now(),
+                  ${JSON.stringify({ password_set: false })})`;
       await sql`insert into entitlements (id, user_id, source, scope_type, status, org_name, granted_by)
                 values (${newId("ent")}, ${id}, 'self_signup', 'none', 'active', '', 'system')
                 on conflict (user_id) do nothing`;

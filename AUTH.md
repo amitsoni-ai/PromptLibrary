@@ -354,3 +354,22 @@ the public domain, or the redirect URI will use the legacy project's own host be
 `xms_edov` claim. A work-tenant admin can put any address in `email`, so those are not trusted
 for linking. Social-only accounts get an unguessable password hash; "Forgot password" sets one.
 Errors land on `/login?oauth_error=<code>` with a plain message.
+
+## Account settings
+
+The sidebar's bottom account card opens a menu (Account settings · Access codes ·
+Privacy · Sign out). **Account settings** (`part_auth.js#renderAccountView`) edits the
+profile through `PATCH /api/auth/me` and everything else through `/api/auth/account`:
+
+| call | does |
+|---|---|
+| `GET` | email, `hasPassword`, linked Google/Microsoft accounts, enabled providers, other signed-in devices |
+| `POST {op:"password"}` | change the password (current one required), or **set** a first one for a Google/Microsoft-only account; signs out other devices and emails the owner |
+| `POST {op:"unlink", provider}` | disconnect a provider; refused (`last-method`) if it is the only way left to sign in |
+| `POST {op:"logout-others"}` | end every other session |
+| `POST {op:"delete"}` | delete the account (password, or the account email typed back if it has none): personal data and saved work deleted, sessions/tokens/entitlements/identities cascade, security logs kept anonymised |
+
+"Connect Google/Microsoft" is `/api/auth/oauth-start?provider=…&link=1`: the callback
+attaches that provider account to the **signed-in** learner (refused if it belongs to
+someone else) and returns to `/?account=<result>`. Accounts created through a provider
+carry `users.data.password_set = false`; setting or resetting a password flips it.
