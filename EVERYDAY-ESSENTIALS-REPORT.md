@@ -205,3 +205,28 @@ The app reads the baked-in data, so nothing shows them. A `--reset` run clears t
 - **"Pick up where you left off."** A continue-learning card sits next to your last 3 opened prompts. This replaces two separate "Recently used" and "Saved" lists.
 - **Recommended for you.** Now 3 tiles in one row with a single reason line, instead of several grouped rows.
 - **Visual system.** Generous spacing (52 px between sections), 16 px radius tiles with a soft hover lift, a subtle accent glow behind the hero, display font for headings, and dark mode support. On phones the grids are 2 columns (1 for lists) and the Try links become a swipeable row.
+
+## Landing page (logged out): try first, then sign up (follow-up)
+
+The landing (`renderLanding`, `src/part_auth.js`) went from 8 dense sections to 6 calm ones, built around how people decide:
+
+1. **Hero = the product.**
+   - It opens with a problem-first headline: "Get expert-level answers from AI. Every time."
+   - Below it sit a big live search box and 4 quick tasks.
+   - Results come from the real library.
+2. **Value before the ask.**
+   - Any 3 prompts open in full, with Copy, Open in ChatGPT and Open in Claude. The count is kept per browser and shown as "N free previews left".
+   - From the 4th prompt on, the preview fades out under a sign-up card. The visitor chose those prompts, so the gate lands at peak interest.
+3. **The gap made visible.** "What most people type" sits next to a framework prompt with coloured Role / Context / Goal / Task labels and highlighted fill-ins.
+4. **Playground.** Three simple prompts with fill-in fields that update the prompt live, then Copy or open it in ChatGPT or Claude. No account needed.
+5. **Browse by role.** The 8 roles with live counts. A click shows that role's best prompts in the results panel.
+6. **What the free account unlocks:** the full library, the builder, your own library, and learning. Then a closing call to action with the brand line.
+
+**Continuity.**
+- A search, opened prompt, role or "build it" is saved in `sessionStorage` (`prompt-lib:pending`).
+- After sign-up or log-in, `resumeFromLanding()` drops the person back into the Library search with that prompt pinned and open, or into the builder, or into the role.
+
+**Mobile.**
+- Left-aligned hero, a swipeable quick-task row, a 2-column role grid, and a bottom-sheet preview.
+- A sticky "Sign up free" bar appears once the hero scrolls away.
+- No horizontal overflow at 390 px.

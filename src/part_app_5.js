@@ -838,12 +838,30 @@ async function bootApp() {
   if (window.requestIdleCallback) requestIdleCallback(warm, { timeout: 2500 }); else setTimeout(warm, 600);
   STATE.view = "home";
   renderApp();
+  resumeFromLanding();
   const menuBtn = document.getElementById("mobile-menu-btn");
   const syncMenu = () => { menuBtn.style.display = window.innerWidth <= 880 ? "flex" : "none"; };
   syncMenu();
   window.addEventListener("resize", syncMenu);
   window.addEventListener("pagehide", () => { try { Store.flush(); } catch (e) {} });
   document.getElementById("sidebar-overlay").addEventListener("click", closeSidebar);
+}
+/* The landing keeps what a visitor was doing (a search, a prompt they
+   opened, a role, "build it") so signing up drops them right back into it. */
+function resumeFromLanding() {
+  let p = null;
+  try { p = JSON.parse(sessionStorage.getItem("prompt-lib:pending") || "null"); sessionStorage.removeItem("prompt-lib:pending"); } catch (e) { p = null; }
+  if (!p) return;
+  try {
+    if (p.build && p.q) { startBuilderFrom(p.q); return; }
+    if (p.id && findPromptById(p.id)) {
+      if (p.q) { STATE.query = p.q; STATE.searchPin = p.id; STATE.libTab = "all"; navigate("search"); }
+      openDetail(p.id);
+      return;
+    }
+    if (p.q) { goSearch(p.q); return; }
+    if (p.role && ROLES_BY_ID[p.role] && isViewAllowed("role")) openRole(p.role);
+  } catch (e) {}
 }
 async function initApp() {
   loadData();
