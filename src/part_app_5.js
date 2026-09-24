@@ -382,11 +382,11 @@ const NAV_PRIMARY = [
   { key: "me", label: "Me", icon: "folder" },
 ];
 const VIEW_TITLES = {
-  home: "Home", search: "Library", categories: "Categories", categoryDetail: "Category",
+  home: "Home", search: "Library", categories: "Library", categoryDetail: "Library",
   program: "My Program", learn: "Learn", practice: "Practice", builder: "Create Prompt",
   framework: "Prompt Framework",
   myLibrary: "Saved", favorites: "Saved", me: "Me", insights: "Library Governance",
-  accessCodes: "Access codes", task: "Task toolkit",
+  accessCodes: "Access codes", task: "Library",
 };
 /* Which primary nav item lights up for a given (possibly nested) view. */
 const VIEW_PARENT = {
@@ -398,7 +398,7 @@ let STATE = {
   view: "home", query: "", filters: emptyFilters(), sort: "relevance",
   activeCategory: null, favoritesTab: "favorites", myLibTab: "mine", insightsTab: "overview",
   meTab: "overview", savedFilter: "all", frameworkLevel: 1,
-  libBrowseAll: false, libOpenModules: null, activeHub: null, searchLiteral: null,
+  libBrowseAll: false, libOpenModules: null, activeHub: null, searchLiteral: null, libTab: "all", libLayout: null,
   detailId: null, detailLayer: "original", builder: null, practice: null, openModules: null, lcStage: "Recommended",
 };
 function emptyFilters() { return { category: null, skill: null, promptType: null, role: null, difficulty: null, aiTool: null, source: null, fwLevel: null, hasVariables: false, favoritesOnly: false }; }
@@ -485,7 +485,9 @@ function renderNav() {
     navigate(b.dataset.nav);
   }));
 }
-const TOPBAR_SEARCH_VIEWS = new Set(["search", "categories", "categoryDetail"]);
+// The Library shell (search / categories / categoryDetail / task) has its own
+// search box, so no view needs the topbar one any more.
+const TOPBAR_SEARCH_VIEWS = new Set([]);
 function renderTopbar() {
   document.getElementById("topbar-title").textContent = VIEW_TITLES[STATE.view] || "";
   const wrap = document.getElementById("topbar-search-wrap");
@@ -503,7 +505,8 @@ function renderTopbar() {
 function renderContent() {
   const content = document.getElementById("content");
   if (!isViewAllowed(STATE.view)) STATE.view = "search";
-  content.className = "content" + (STATE.view === "insights" || STATE.view === "myLibrary" || STATE.view === "me" || STATE.view === "accessCodes" ? " wide" : "");
+  const LIB_VIEWS = { search: 1, categories: 1, categoryDetail: 1, task: 1 };
+  content.className = "content" + (LIB_VIEWS[STATE.view] ? " content-lib" : STATE.view === "insights" || STATE.view === "myLibrary" || STATE.view === "me" || STATE.view === "accessCodes" ? " wide" : "");
   const map = {
     home: renderHome, search: renderSearchView, categories: renderCategoriesView, categoryDetail: renderCategoryDetail,
     program: renderProgramView, learn: renderLearnView, practice: renderPracticeView, builder: renderBuilderView,
