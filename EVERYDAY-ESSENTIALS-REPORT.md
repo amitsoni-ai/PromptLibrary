@@ -113,3 +113,34 @@ The Library now uses an "agent library" layout, so browsing takes one click inst
   (`renderLibraryShell` in `src/part_app_3.js`), so existing links and Home task tiles land in
   the right place. The topbar search is gone because the shell has its own. The separate
   category-grid page and the starter strip were removed.
+
+## Library rewrite: every imported prompt in the framework (follow-up)
+
+All 3,367 imported library prompts were read and rewritten by hand into the house framework.
+The source file `src/data_blocks.html` is untouched. `src/build.py` (and `migrate/run.mjs` for the
+DB seed) overlay `src/prompts_library_rewrites.json` per prompt id.
+
+- **Clear titles.** Every prompt has a short, plain title that says the job
+  ("CEO pitch deck content", "Win back cancelled subscribers"), not the first words of the original.
+- **Framework text.** Each prompt is now labelled Role / Context / Task / Format, plus
+  Verification / Validation (L2) or Goal / Constraints / Example (L3). Split: L1 698, L2 2,230, L3 303.
+  The app's own detector places **all 3,231 kept prompts at or above the level they were written for**.
+- **What it does / What you'll get.** Every prompt has a one-line description and a specific outcome,
+  shown on the prompt page.
+- **Long originals kept.** When the original had real detail (920 prompts), it follows the task as
+  "Follow these detailed instructions:", cleaned of front-matter, "Certainly! Here is…" lines and
+  markdown noise.
+- **Multi-prompt bundles.** Originals that packed several prompts into one (e.g. "1. Research
+  mega prompt… 2. …") now keep only the most useful task.
+- **Near-duplicates merged (111).** For example, the two copies of *ICF master coach and strategic
+  advisor (MCC)*, four copyright-notice prompts, three robots.txt prompts. The kept prompt lists the old
+  ids in `aliases`: old links and saved favourites open the kept prompt (`findPromptById`,
+  `Store.remapFavorites`).
+- **Archived (25).** Rows that were not prompts (pasted link lists, file notes, a piracy downloader,
+  a gambling "grow 10 to 1000" plan, fake "100% authentic" handwriting).
+- Rewritten titles are shown exactly as written (the old import title-caser no longer touches them).
+
+Library count: 3,367 → 3,231 imported prompts (plus 344 authored and 44 curriculum).
+
+Note: `migrate/run.mjs` upserts, so an existing database still has rows for the 136 removed ids.
+The app reads the baked-in data, so nothing shows them. A `--reset` run clears them.
