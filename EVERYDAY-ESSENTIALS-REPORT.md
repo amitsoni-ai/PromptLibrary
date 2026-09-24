@@ -184,3 +184,12 @@ The app reads the baked-in data, so nothing shows them. A `--reset` run clears t
 - The page no longer auto-focuses the search box, so the keyboard doesn't cover the page. Enter closes the keyboard.
 - Tiles are compact: icon beside the title, two-line description.
 - Tap targets are 40–48 px.
+
+**Fixes after testing:**
+- **"Selected" badge.** Opening another result during a search now moves the badge to that prompt, in place, so the list doesn't jump under the drawer. `markSelectedResult`, called from `openDetail`, handles this.
+- **Resizable main menu.**
+  - Drag the menu's right edge to set its width (200–360 px).
+  - Drag it narrower than 150 px to fold it to the icon rail, and drag it back out to open it.
+  - Double-click resets it.
+  - Arrow, Home and End keys work when the edge has focus.
+  - The width is remembered, and the collapse button still works.

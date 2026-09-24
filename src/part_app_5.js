@@ -667,6 +667,12 @@ function goHome() { closeSidebar(); STATE.query = ""; navigate("home"); }
 /* Desktop: collapse the main menu to an icon rail for more library room. */
 function applySidebarCollapsed(on) {
   document.body.classList.toggle("sb-collapsed", !!on);
+  // a dragged width sits inline on <body>; the icon rail must win over it
+  if (on) document.body.style.removeProperty("--sidebar-w");
+  else if (typeof applySidebarWidth === "function") {
+    let w = 0; try { w = +localStorage.getItem("prompt-lib:sbW"); } catch (e) {}
+    if (w >= SB_W.min && w <= SB_W.max) applySidebarWidth(w);
+  }
   const t = document.getElementById("sb-toggle");
   if (t) { t.title = on ? "Expand menu" : "Collapse menu"; t.setAttribute("aria-label", t.title); t.setAttribute("aria-expanded", String(!on)); }
 }
@@ -676,6 +682,61 @@ function toggleSidebarCollapsed() {
   try { localStorage.setItem("prompt-lib:sbCollapsed", on ? "1" : "0"); } catch (e) {}
 }
 try { if (localStorage.getItem("prompt-lib:sbCollapsed") === "1") applySidebarCollapsed(true); } catch (e) {}
+/* Main menu width: drag its right edge (desktop). 200–360 px; dragging it
+   narrower than 150 px folds it to the icon rail, dragging an icon rail out
+   opens it again. Double-click resets. Remembered per browser. */
+const SB_W = { def: 240, min: 200, max: 360, foldBelow: 150 };
+function applySidebarWidth(w) {
+  if (w && w !== SB_W.def) document.body.style.setProperty("--sidebar-w", w + "px");
+  else document.body.style.removeProperty("--sidebar-w");
+}
+try { const w = +localStorage.getItem("prompt-lib:sbW"); if (w >= SB_W.min && w <= SB_W.max) applySidebarWidth(w); } catch (e) {}
+function wireSidebarResizer() {
+  const grip = document.getElementById("sb-resizer");
+  if (!grip || grip.dataset.wired) return;
+  grip.dataset.wired = "1";
+  let dragging = false, w = null, folded = false;
+  const save = () => {
+    try {
+      localStorage.setItem("prompt-lib:sbCollapsed", folded ? "1" : "0");
+      if (!folded && w) localStorage.setItem("prompt-lib:sbW", String(w));
+    } catch (e) {}
+  };
+  const setW = (x) => {
+    folded = x < SB_W.foldBelow;
+    applySidebarCollapsed(folded);
+    if (folded) document.body.style.removeProperty("--sidebar-w");
+    else { w = Math.round(Math.min(SB_W.max, Math.max(SB_W.min, x))); applySidebarWidth(w); }
+  };
+  grip.addEventListener("pointerdown", (e) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    dragging = true;
+    grip.setPointerCapture(e.pointerId);
+    grip.classList.add("dragging");
+    document.body.classList.add("is-resizing");
+  });
+  grip.addEventListener("pointermove", (e) => { if (dragging) setW(e.clientX); });
+  const end = () => {
+    if (!dragging) return;
+    dragging = false;
+    grip.classList.remove("dragging");
+    document.body.classList.remove("is-resizing");
+    save();
+  };
+  grip.addEventListener("pointerup", end);
+  grip.addEventListener("pointercancel", end);
+  grip.addEventListener("dblclick", () => { setW(SB_W.def); save(); });
+  grip.addEventListener("keydown", (e) => {
+    const cur = document.getElementById("sidebar").getBoundingClientRect().width;
+    if (e.key === "ArrowLeft") setW(cur - 20 < SB_W.min ? 0 : cur - 20);
+    else if (e.key === "ArrowRight") setW(document.body.classList.contains("sb-collapsed") ? SB_W.min : cur + 20);
+    else if (e.key === "Home" || e.key === "Enter") setW(SB_W.def);
+    else return;
+    e.preventDefault(); save();
+  });
+}
+wireSidebarResizer();
 function openSidebar() { document.getElementById("sidebar").classList.add("open"); document.getElementById("sidebar-overlay").classList.add("show"); }
 function closeSidebar() { document.getElementById("sidebar").classList.remove("open"); document.getElementById("sidebar-overlay").classList.remove("show"); }
 
