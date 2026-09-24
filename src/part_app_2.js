@@ -499,6 +499,42 @@ function hubsInScope() {
   scopedLibrary().forEach((r) => { if (r.hub) counts[r.hub] = (counts[r.hub] || 0) + 1; });
   return TASK_HUBS.filter((h) => counts[h.id]).map((h) => Object.assign({ count: counts[h.id] }, h));
 }
+/* Roles: browse by who you are. Each role groups the categories that person
+   reaches for, so a marketer sees marketing, social, SEO, email and copy
+   prompts together. A category can sit in more than one role. */
+const ROLES = [
+  { id: "marketing", label: "Marketing", icon: "📣", sub: "Campaigns, social, SEO, email, copy",
+    cats: ["Marketing & Branding", "Social Media", "SEO & Analytics", "Email Marketing", "Content Writing & Copywriting"] },
+  { id: "sales", label: "Sales & customers", icon: "🤝", sub: "Leads, pitches, support, e-commerce",
+    cats: ["Sales & Lead Generation", "Customer Support", "E-Commerce"] },
+  { id: "leaders", label: "Managers & leaders", icon: "🧭", sub: "Strategy, teams, decisions, decks",
+    cats: ["Business Strategy", "Communication & Leadership", "Presentation & Slides"] },
+  { id: "people", label: "HR & people", icon: "🧑‍💼", sub: "Hiring, reviews, policies, culture",
+    cats: ["HR & Recruiting"] },
+  { id: "tech", label: "Tech & product", icon: "💻", sub: "Code, AI, product, UX design",
+    cats: ["Coding & Tech", "AI & Prompt Engineering", "Product Management", "UX/UI Design"] },
+  { id: "ops", label: "Finance & operations", icon: "📊", sub: "Numbers, legal, automation, data",
+    cats: ["Finance & Accounting", "Legal & Compliance", "Productivity & Automation", "Research & Data Analysis"] },
+  { id: "creators", label: "Writers & creators", icon: "✍️", sub: "Books, content, design, images",
+    cats: ["Book & Ebook Writing", "Image & Design", "Content Writing & Copywriting"] },
+  { id: "growth", label: "Learning & growth", icon: "🌱", sub: "Career, coaching, study, wellbeing",
+    cats: ["Education & Learning", "Career Growth", "Coaching & Self-Development", "Health & Fitness", "Spirituality & Wellness"] },
+];
+const ROLES_BY_ID = {};
+ROLES.forEach((r) => { ROLES_BY_ID[r.id] = r; });
+function rolesInScope() {
+  if (typeof isViewAllowed === "function" && !isViewAllowed("categoryDetail")) return [];
+  const counts = {};
+  scopedLibrary().forEach((r) => { counts[r.category] = (counts[r.category] || 0) + 1; });
+  return ROLES.map((r) => Object.assign({}, r, { count: r.cats.reduce((n, c) => n + (counts[c] || 0), 0) })).filter((r) => r.count);
+}
+function openRole(roleId) {
+  if (!ROLES_BY_ID[roleId]) return;
+  STATE.activeRole = roleId;
+  STATE.query = "";
+  STATE.filters = emptyFilters();
+  navigate("role");
+}
 /* A grid of task tiles. `limit` shows the first N with a "Show all" toggle. */
 function taskGridHtml(opts) {
   opts = opts || {};
@@ -607,7 +643,7 @@ function openFromSearch(q, id) {
   STATE.searchLiteral = null;
   STATE.searchPin = id;
   STATE.libTab = "all";
-  if (!{ search: 1, categories: 1, categoryDetail: 1, task: 1 }[STATE.view]) navigate("search");
+  if (!{ search: 1, categories: 1, categoryDetail: 1, task: 1, role: 1 }[STATE.view]) navigate("search");
   else renderApp();
   openDetail(id);
 }
