@@ -323,6 +323,7 @@ const ICONS = {
   clock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>',
   plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
   alert: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v5"/><circle cx="12" cy="17" r=".2" fill="currentColor" stroke-width="2.4"/><path d="M10.3 3.9L2.5 18a1.8 1.8 0 001.6 2.7h15.8a1.8 1.8 0 001.6-2.7L13.7 3.9a1.8 1.8 0 00-3.4 0z"/></svg>',
+  listView: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6h.01M4 12h.01M4 18h.01"/></svg>',
   slider: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h10M18 6h2M4 12h2M8 12h12M4 18h14M22 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="6" cy="12" r="2"/><circle cx="20" cy="18" r="2"/></svg>',
   layers: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/></svg>',
   wand: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20L18 6"/><path d="M15 3l1 2 2 1-2 1-1 2-1-2-2-1 2-1z"/><path d="M18 14l.8 1.6 1.6.8-1.6.8L18 19l-.8-1.8-1.6-.8 1.6-.8z"/></svg>',
@@ -372,9 +373,45 @@ function promptCardHtml(rec, opts) {
     <div class="prompt-card-meta">
       ${opts.starter ? `<span class="chip chip-blue">Starter</span>` : ""}
       ${rec.source === "Everyday Essentials" && !opts.starter ? `<span class="chip chip-essential" title="Hand-written, framework-built prompt for an everyday task">Essential</span>` : ""}
-      <span class="chip">${escapeHtml(rec.category)}</span>
+      ${opts.hideCategory ? "" : `<span class="chip">${escapeHtml(rec.category)}</span>`}
       ${renderDifficulty(rec.difficulty)}
       ${srcTag}
+    </div>
+  </article>`;
+}
+/* Icon per category for the library tiles (hub prompts use their task icon). */
+const CATEGORY_ICONS = {
+  "Customer Support": "🎧", "Marketing & Branding": "📣", "HR & Recruiting": "🧑‍💼", "Social Media": "📱",
+  "Legal & Compliance": "⚖️", "Content Writing & Copywriting": "✍️", "AI & Prompt Engineering": "🤖",
+  "Coding & Tech": "💻", "Sales & Lead Generation": "🤝", "SEO & Analytics": "🔎", "Finance & Accounting": "💰",
+  "Business Strategy": "♟️", "Education & Learning": "🎓", "Email Marketing": "📧", "Research & Data Analysis": "📊",
+  "General": "✨", "Presentation & Slides": "🎤", "Productivity & Automation": "⚡", "Image & Design": "🎨",
+  "E-Commerce": "🛒", "Communication & Leadership": "💬", "Book & Ebook Writing": "📚",
+  "Coaching & Self-Development": "🌱", "UX/UI Design": "🧩", "Health & Fitness": "💪", "Product Management": "🧭",
+  "Career Growth": "🚀", "Spirituality & Wellness": "🧘",
+};
+function promptIcon(rec) {
+  if (rec.hub && typeof TASK_HUBS_BY_ID !== "undefined" && TASK_HUBS_BY_ID[rec.hub]) return TASK_HUBS_BY_ID[rec.hub].icon;
+  return CATEGORY_ICONS[rec.category] || "📝";
+}
+/* Grid tile: icon, save star, bold title, 3-line description, calm footer. */
+function promptTileHtml(rec, opts) {
+  opts = opts || {};
+  const isFav = Store.isFavorite(rec.id);
+  const nVars = (rec.variables || []).length;
+  return `
+  <article class="prompt-card prompt-tile" data-id="${rec.id}" role="button" tabindex="0" aria-label="Open ${escapeHtml(rec.title)}">
+    <div class="pt-top">
+      <span class="pt-ico" aria-hidden="true">${promptIcon(rec)}</span>
+      <button class="fav-btn pt-fav ${isFav ? "is-fav" : ""}" data-action="fav" data-id="${rec.id}" aria-label="${isFav ? "Remove from Saved" : "Save"}" title="Save">${isFav ? icon("starFilled") : icon("star")}</button>
+    </div>
+    <h3 class="pt-title">${escapeHtml(rec.title)}</h3>
+    <p class="pt-desc">${escapeHtml(rec.description || "")}</p>
+    <div class="pt-meta">
+      ${rec.source === "Everyday Essentials" ? `<span class="chip chip-essential">Essential</span>` : ""}
+      ${opts.hideCategory ? "" : `<span class="chip">${escapeHtml(rec.category)}</span>`}
+      ${renderDifficulty(rec.difficulty)}
+      ${rec.isTemplate && nVars ? `<span class="pt-fill" title="Fill-in fields">{ } ${nVars}</span>` : ""}
     </div>
   </article>`;
 }
@@ -388,12 +425,13 @@ function renderPaginatedList(container, records, opts) {
     return;
   }
   const list = document.createElement("div");
-  list.className = "results-list";
+  const grid = opts.layout === "grid";
+  list.className = grid ? "tile-grid" : "results-list";
   container.appendChild(list);
   const sentinel = document.createElement("div");
   sentinel.setAttribute("aria-hidden", "true");
   function paint() {
-    list.innerHTML = records.slice(0, shown).map((r) => promptCardHtml(r, opts)).join("");
+    list.innerHTML = records.slice(0, shown).map((r) => grid ? promptTileHtml(r, opts) : promptCardHtml(r, opts)).join("");
     if (shown < records.length) container.appendChild(sentinel);
     else if (sentinel.parentNode) sentinel.parentNode.removeChild(sentinel);
     wireCardActions(list);

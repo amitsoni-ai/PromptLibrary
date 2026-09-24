@@ -90,3 +90,26 @@ at 1280px and 375px.
   is in their scope. Making Everyday Essentials available to everyone would be an entitlement decision.
 - The CI `guardrails` job blocks changes to `index.html` / `src/part_*` on PRs by design. This
   change has to touch them, the same way earlier library work did.
+
+## Library redesign: rail + grid (follow-up)
+
+The Library now uses an "agent library" layout, so browsing takes one click instead of several screens.
+
+- **Left rail:** "All prompts", then **Tasks** (the 18 hubs), then **Categories** (A–Z), each with
+  an icon and a count. A "Find a task or category" box at the top filters the rail. The rail is
+  sticky and scrolls on its own. Single-program scopes don't show the Categories group.
+- **Main area:** a big title with an icon and a live count, and a search box on the right that
+  searches only the current task or category (with a "Search all prompts instead" link).
+  There is a grid/list toggle, remembered per browser.
+- **Tabs:** All prompts · Saved · Recently used, each within the current selection.
+- **Filters** fold away behind a button: level, framework, templates only, and sort.
+  A dot shows when any filter is on.
+- **Tiles:** an icon (task icon, or category icon), a round save star, a bold title, a 3-line
+  description, and an Essential / category / difficulty / fill-in count footer.
+- Task pages split into "Step-by-step prompts" and "More from the library".
+- On phones the rail becomes a "Browse" dropdown grouped into Tasks and Categories, and the
+  tiles show one per row.
+- The old `search`, `categories`, `categoryDetail` and `task` views all render the new shell
+  (`renderLibraryShell` in `src/part_app_3.js`), so existing links and Home task tiles land in
+  the right place. The topbar search is gone because the shell has its own. The separate
+  category-grid page and the starter strip were removed.

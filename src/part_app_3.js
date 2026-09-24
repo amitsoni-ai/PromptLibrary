@@ -468,24 +468,6 @@ function renderResultsInto(el, opts) {
   const nb = target.querySelector("[data-nav-builder]");
   if (nb) nb.addEventListener("click", () => navigate("builder"));
 }
-/* Up to 3 gentle starters: the program companion prompt first, then the
-   highest-quality non-curriculum prompts in the learner's primary categories. */
-function starterPrompts(si) {
-  const out = [];
-  const comp = programCompanionPrompt();
-  if (comp) out.push(comp);
-  const lib = scopedLibrary().filter((r) => r.lifecycle !== "Archived" && !isCurriculumPrompt(r));
-  // Hand-built everyday prompts make the best first impression; the imported
-  // library fills in when a scope has none.
-  const byQ = (a, b) => (b.qualityScore || 0) - (a.qualityScore || 0);
-  const base = lib.filter((r) => r.source === "Everyday Essentials").sort(byQ)
-    .concat(lib.filter((r) => r.source === "Original Library").sort(byQ));
-  const fnSet = new Set((si.functionCats && si.functionCats.length ? si.functionCats : si.primaryCats) || []);
-  const take = (r) => { if (out.length < 3 && !out.some((x) => x.id === r.id)) out.push(r); };
-  base.filter((r) => !fnSet.size || fnSet.has(r.category)).forEach(take);
-  base.forEach(take); // fill any remaining slots from the wider scope
-  return out.slice(0, 3);
-}
 function scopeSummaryLine(si) {
   if (!si.restricted) {
     const nCats = new Set(scopedLibrary().map((r) => r.category)).size;
@@ -494,51 +476,6 @@ function scopeSummaryLine(si) {
   const cats = si.primaryCats.slice(0, 4).join(" · ");
   const more = si.primaryCats.length > 4 ? ` +${si.primaryCats.length - 4} more` : "";
   return `${si.total.toLocaleString()} prompts · ${cats}${more}`;
-}
-
-/* Shared category grid — used by the Library landing and the Categories tab. */
-function renderCategoryGridInto(el, opts) {
-  opts = opts || {};
-  const lib = scopedLibrary();
-  const counts = {};
-  lib.forEach((r) => { counts[r.category] = (counts[r.category] || 0) + 1; });
-  const um = typeof userLibraryMode === "function" ? userLibraryMode() : null;
-  const onlyCats = um && um.mode === "collection" && Array.isArray(um.categories) && um.categories.length
-    ? new Set(um.categories) : null;
-  let cats = CATEGORIES.filter((c) => counts[c.name] && (!onlyCats || onlyCats.has(c.name)))
-    .map((c) => Object.assign({}, c, { count: counts[c.name] }));
-  const q = (opts.filter || "").trim().toLowerCase();
-  if (q) cats = cats.filter((c) => c.name.toLowerCase().includes(q) || (c.role || "").toLowerCase().includes(q));
-  const maxCount = Math.max(1, ...cats.map((c) => c.count));
-  const card = (c) => `
-    <button class="category-card" data-category="${escapeHtml(c.name)}">
-      <div class="category-card-name">${escapeHtml(c.name)}</div>
-      <div class="category-card-count">${c.count.toLocaleString()} prompt${c.count === 1 ? "" : "s"} · ${escapeHtml(c.role || CATEGORY_SKILL[c.name] || "")}</div>
-      <div class="category-card-bar"><i style="width:${(c.count / maxCount) * 100}%"></i></div>
-    </button>`;
-  const si = (typeof scopeInfo === "function") ? scopeInfo() : { functionName: null, functionCats: [] };
-  let html = "";
-  if (opts.grouped && !q && si.functionName && (si.functionCats || []).length) {
-    const primary = new Set(si.functionCats);
-    const inFn = cats.filter((c) => primary.has(c.name)).sort((a, b) => b.count - a.count);
-    const other = cats.filter((c) => !primary.has(c.name)).sort((a, b) => b.count - a.count);
-    html = `
-      <div class="cat-group">In ${escapeHtml(si.functionName)}</div>
-      <div class="category-grid">${inFn.map(card).join("")}</div>
-      ${other.length ? `<details class="cat-more"><summary>More categories in your library (${other.length})</summary>
-        <div class="category-grid" style="margin-top:12px;">${other.map(card).join("")}</div></details>` : ""}`;
-  } else {
-    cats.sort((a, b) => b.count - a.count);
-    html = `<div class="category-grid">${cats.map(card).join("")}</div>`;
-  }
-  el.innerHTML = html + (!cats.length ? emptyStateHtml("grid", "No categories match", "Try a different word, or clear the search.") : "");
-  el.querySelectorAll("[data-category]").forEach((x) => x.addEventListener("click", () => {
-    STATE.activeCategory = x.dataset.category;
-    STATE.query = "";
-    STATE.filters = emptyFilters();
-    STATE.filters.category = x.dataset.category;
-    navigate("categoryDetail");
-  }));
 }
 
 /* Modules-first Library body for a single-program scope (no category grid). */
@@ -580,153 +517,251 @@ function renderModuleListInto(el, prog) {
   paint();
 }
 
-function renderSearchView(container) {
-  const q = STATE.query.trim();
-  const hasFilters = activeFilterEntries(STATE.filters).length > 0;
-  const active = q || hasFilters || STATE.libBrowseAll;
-  const si = (typeof scopeInfo === "function") ? scopeInfo() : { restricted: false, gridEligible: true, primaryCats: [], total: scopedLibrary().length, label: "Full library", functionName: null };
-  const catsHidden = !isViewAllowed("categories");
+/* ---------- Library: rail + main (Home · Library → one browsing surface) ----------
+   Left rail: All prompts, then TASKS (everyday jobs), then CATEGORIES, with a
+   filter box. Main: title + count, search scoped to the current selection,
+   grid/list toggle, All / Saved / Recently used tabs, and the prompt tiles.
+   The old `search`, `categories`, `categoryDetail` and `task` views all render
+   this shell; the selection is derived from the view:
+     search / categories → All · categoryDetail → STATE.activeCategory · task → STATE.activeHub */
+function libSelection() {
+  if (STATE.view === "categoryDetail" && STATE.activeCategory) return { kind: "category", id: STATE.activeCategory };
+  if (STATE.view === "task" && STATE.activeHub && TASK_HUBS_BY_ID[STATE.activeHub]) return { kind: "hub", id: STATE.activeHub };
+  return { kind: "all", id: null };
+}
+function selectLibrary(sel) {
+  STATE.query = "";
+  STATE.searchLiteral = null;
+  STATE.libBrowseAll = false;
+  const f = emptyFilters();
+  f.difficulty = STATE.filters.difficulty; f.fwLevel = STATE.filters.fwLevel; f.hasVariables = STATE.filters.hasVariables;
+  STATE.filters = f;
+  if (sel.kind === "category") { STATE.activeCategory = sel.id; STATE.view = "categoryDetail"; }
+  else if (sel.kind === "hub") { STATE.activeHub = sel.id; STATE.view = "task"; }
+  else STATE.view = "search";
+  renderApp();
+  window.scrollTo({ top: 0 });
+}
+function libLayout() {
+  if (STATE.libLayout) return STATE.libLayout;
+  try { STATE.libLayout = localStorage.getItem("prompt-lib:libLayout") || "grid"; } catch (e) { STATE.libLayout = "grid"; }
+  return STATE.libLayout;
+}
+function setLibLayout(v) {
+  STATE.libLayout = v;
+  try { localStorage.setItem("prompt-lib:libLayout", v); } catch (e) {}
+}
+function libCategoryList() {
+  const counts = {};
+  scopedLibrary().forEach((r) => { counts[r.category] = (counts[r.category] || 0) + 1; });
+  const um = typeof userLibraryMode === "function" ? userLibraryMode() : null;
+  const only = um && um.mode === "collection" && Array.isArray(um.categories) && um.categories.length ? new Set(um.categories) : null;
+  return CATEGORIES.filter((c) => counts[c.name] && (!only || only.has(c.name)))
+    .map((c) => ({ name: c.name, count: counts[c.name], role: c.role }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+/* Base records for a selection, before tab / search / filters. For a task the
+   hand-built prompts come first, then the best of the wider library. */
+function libBaseRecords(sel) {
+  if (sel.kind === "category") return getSearchCorpus().filter((r) => r.category === sel.id);
+  if (sel.kind === "hub") { const h = TASK_HUBS_BY_ID[sel.id]; return hubEssentials(h.id).concat(hubLibraryMatches(h, 24)); }
+  return getSearchCorpus();
+}
+function libFilterRowHtml() {
+  const f = STATE.filters;
+  const levels = typeof FRAMEWORK !== "undefined" ? FRAMEWORK.levels : [];
+  return `
+    <select data-lf="difficulty" aria-label="Difficulty"><option value="">Any level</option>${["Beginner", "Intermediate", "Advanced"].map((d) => `<option ${f.difficulty === d ? "selected" : ""}>${d}</option>`).join("")}</select>
+    <select data-lf="fwLevel" aria-label="Framework level"><option value="">Any framework</option>${levels.map((L) => `<option value="${L.level}" ${String(f.fwLevel) === String(L.level) ? "selected" : ""}>Level ${L.level} · ${escapeHtml(L.code)}</option>`).join("")}</select>
+    <label class="chip" style="cursor:pointer;"><input type="checkbox" data-lf-check="hasVariables" style="margin-right:5px" ${f.hasVariables ? "checked" : ""}/> Fill-in templates</label>
+    <span class="spacer"></span>
+    <select data-lsort aria-label="Sort by">
+      ${[["relevance", "Best match"], ["quality", "Highest quality"], ["used", "Most used"], ["az", "A–Z"]].map(([v, l]) => `<option value="${v}" ${STATE.sort === v ? "selected" : ""}>Sort: ${l}</option>`).join("")}
+    </select>`;
+}
+function renderLibraryShell(container) {
+  const sel = libSelection();
+  const si = (typeof scopeInfo === "function") ? scopeInfo() : { restricted: false, gridEligible: true, total: scopedLibrary().length, label: "Full library", primaryCats: [] };
+  const hubs = hubsInScope();
+  // single-program scopes have no category browse (see isViewAllowed)
+  const cats = isViewAllowed("categoryDetail") ? libCategoryList() : [];
+  const hub = sel.kind === "hub" ? TASK_HUBS_BY_ID[sel.id] : null;
+  const catMeta = sel.kind === "category" ? CATEGORIES.find((c) => c.name === sel.id) : null;
+  if (sel.kind === "category" && !cats.some((c) => c.name === sel.id)) { selectLibrary({ kind: "all" }); return; }
+  const tab = STATE.libTab || "all";
+  const layout = libLayout();
+  const title = hub ? hub.label : sel.kind === "category" ? sel.id : "Prompt library";
+  const icon0 = hub ? hub.icon : sel.kind === "category" ? (CATEGORY_ICONS[sel.id] || "📝") : "📚";
+  const blurb = hub ? hub.blurb
+    : catMeta ? `Prompts for ${catMeta.role || CATEGORY_SKILL[sel.id] || "any professional"}.`
+    : si.restricted ? `${si.label}${si.functionName && si.functionName !== si.label ? " · " + si.functionName : ""}`
+    : "Every prompt, built to be copied, filled in and used.";
+  const isActive = (k, id) => sel.kind === k && (k === "all" || sel.id === id);
+  const railItem = (k, id, ico, label, count) => `
+    <button class="rail-item ${isActive(k, id) ? "active" : ""}" data-sel-kind="${k}" ${id ? `data-sel-id="${escapeHtml(id)}"` : ""} data-rail-text="${escapeHtml(label.toLowerCase())}">
+      <span class="ri-ico" aria-hidden="true">${ico}</span><span class="ri-label">${escapeHtml(label)}</span><span class="ri-count">${count.toLocaleString()}</span>
+    </button>`;
+  const pickOpts = `<option value="all|" ${sel.kind === "all" ? "selected" : ""}>📚 All prompts</option>` +
+    (hubs.length ? `<optgroup label="Tasks">${hubs.map((h) => `<option value="hub|${h.id}" ${isActive("hub", h.id) ? "selected" : ""}>${h.icon} ${escapeHtml(h.label)}</option>`).join("")}</optgroup>` : "") +
+    `<optgroup label="Categories">${cats.map((c) => `<option value="category|${escapeHtml(c.name)}" ${isActive("category", c.name) ? "selected" : ""}>${CATEGORY_ICONS[c.name] || "📝"} ${escapeHtml(c.name)}</option>`).join("")}</optgroup>`;
 
-  const searchHero = `
-    <div class="lib-landing" ${active ? 'style="margin:0 0 12px;max-width:none;"' : ""}>
-      ${active ? "" : `<h1>What do you need to get done?</h1>`}
-      <div class="search-hero">
-        ${icon("search", "icon-search")}
-        <input type="text" id="lib-search" aria-label="Search prompts" placeholder="Search by task or problem, e.g. write meeting minutes" autocomplete="off" value="${escapeHtml(STATE.query)}"/>
-        ${q ? `<button class="icon-clear" id="lib-clear" aria-label="Clear search">${icon("x")}</button>` : ""}
+  container.innerHTML = `
+  <div class="lib-shell">
+    <aside class="lib-rail" aria-label="Browse the library">
+      <div class="rail-find">${icon("search", "rf-ico")}<input type="text" id="rail-filter" placeholder="Find a task or category" aria-label="Find a task or category" autocomplete="off"/></div>
+      ${railItem("all", null, "📚", "All prompts", si.total)}
+      ${hubs.length ? `<div class="rail-label">Tasks</div>${hubs.map((h) => railItem("hub", h.id, h.icon, h.label, h.count)).join("")}` : ""}
+      ${cats.length ? `<div class="rail-label">Categories</div>` : ""}
+      ${cats.map((c) => railItem("category", c.name, CATEGORY_ICONS[c.name] || "📝", c.name, c.count)).join("")}
+      <div class="rail-empty" hidden>No match. Try another word.</div>
+    </aside>
+    <section class="lib-main">
+      <label class="lib-pick"><span>Browse</span><select id="lib-pick" aria-label="Browse by task or category">${pickOpts}</select></label>
+      <div class="lib-head">
+        <div class="lh-title">
+          <span class="lh-ico" aria-hidden="true">${icon0}</span>
+          <div><h1>${escapeHtml(title)}</h1><div class="lh-sub" id="lib-count"></div></div>
+        </div>
+        <div class="lh-tools">
+          <div class="lib-search">${icon("search", "ls-ico")}
+            <input type="text" id="lib-search" aria-label="Search prompts" autocomplete="off" value="${escapeHtml(STATE.query)}"
+              placeholder="${sel.kind === "all" ? "Search by task or problem, e.g. write meeting minutes" : "Search in " + escapeHtml(title)}"/>
+            <button class="ls-clear" id="lib-clear" aria-label="Clear search" ${STATE.query ? "" : "hidden"}>${icon("x")}</button>
+          </div>
+          <div class="layout-toggle" role="group" aria-label="Layout">
+            <button data-layout="grid" class="${layout === "grid" ? "on" : ""}" aria-label="Grid view" title="Grid view">${icon("grid")}</button>
+            <button data-layout="list" class="${layout === "list" ? "on" : ""}" aria-label="List view" title="List view">${icon("listView")}</button>
+          </div>
+        </div>
       </div>
-      ${active ? "" : `<div class="lib-quicklinks">
-        ${catsHidden ? "" : `<button class="btn btn-sm" data-nav="categories">${icon("grid")} All categories</button>`}
-        <button class="btn btn-sm" data-nav="builder">${icon("build")} Create a prompt</button>
-        <button class="btn btn-sm" data-nav="me">${icon("star")} Saved</button>
-        <button class="btn btn-sm" id="lib-ask">${icon("message")} Describe your situation</button>
-      </div>`}
-    </div>`;
+      <p class="lh-blurb">${escapeHtml(blurb)}</p>
+      <div class="lib-tabbar">
+        <div class="lib-tabs" role="tablist">
+          ${[["all", "All prompts"], ["saved", "Saved"], ["recent", "Recently used"]].map(([k, l]) => `<button role="tab" aria-selected="${tab === k}" class="${tab === k ? "on" : ""}" data-tab="${k}">${l}</button>`).join("")}
+        </div>
+        <div class="lib-tab-actions">
+          <button class="btn btn-sm btn-ghost" id="lib-filter-btn" aria-expanded="false">${icon("slider")} Filters<span class="lf-dot" hidden></span></button>
+          <button class="btn btn-sm btn-ghost" data-nav="builder">${icon("build")} Create</button>
+        </div>
+      </div>
+      <div class="lib-filters" id="lib-filters" hidden>${libFilterRowHtml()}</div>
+      <div id="lib-body"></div>
+    </section>
+  </div>`;
 
-  let bodyHtml;
-  if (active) {
-    bodyHtml = `<div id="search-results"></div>`;
-  } else {
-    const starters = starterPrompts(si);
-    const banner = si.restricted
-      ? `<div class="scope-banner">
-           <div class="sb-label">${escapeHtml(si.label)}${si.functionName && si.functionName !== si.label ? " · " + escapeHtml(si.functionName) : ""}</div>
-           <div class="sb-line">${escapeHtml(scopeSummaryLine(si))}</div>
-           <button class="linklike" data-browse-all>Browse everything in scope →</button>
-         </div>`
-      : `<div class="lib-scopeline">${escapeHtml(scopeSummaryLine(si))}</div>`;
-    const starterBlock = starters.length ? `
-      <div class="home-block">
-        <div class="section-title"><h2>New to the library? Start with these</h2>
-          <button class="linklike" data-browse-all>See all ${si.total.toLocaleString()} prompts →</button></div>
-        <div class="starter-strip">${starters.map((r) => promptCardHtml(r, { starter: true })).join("")}</div>
-      </div>` : "";
-    let mainBody, browseAllBtn = "";
-    if (!si.gridEligible && si.programId && ORG_INDEX.programs[si.programId]) {
-      const prog = ORG_INDEX.programs[si.programId];
-      mainBody = `<div class="section-title"><h2>${escapeHtml(prog.name)} — modules</h2>
-        <span style="font-size:12px;color:var(--text-faint)">Prompts grouped by your program</span></div>
-        <div id="lib-modules"></div>`;
-      browseAllBtn = `<button class="btn" data-browse-all style="margin-top:14px;">${icon("layers")} Browse all ${si.total.toLocaleString()} prompts</button>`;
-    } else {
-      mainBody = `<div class="section-title"><h2>Browse by category</h2></div><div id="lib-grid"></div>`;
+  const body = container.querySelector("#lib-body");
+  const countEl = container.querySelector("#lib-count");
+  function currentRecords() {
+    const base = libBaseRecords(sel);
+    let recs = base;
+    if (tab === "saved") recs = recs.filter((r) => Store.isFavorite(r.id));
+    if (tab === "recent") {
+      const order = (Store.getUsage().recent || []).map((x) => x.id);
+      const pos = {}; order.forEach((id, i) => { if (!(id in pos)) pos[id] = i; });
+      recs = recs.filter((r) => r.id in pos).sort((a, b) => pos[a.id] - pos[b.id]);
     }
-    const taskGrid = taskGridHtml({ limit: 8 });
-    const taskBlock = taskGrid ? `
-      <div class="task-block" id="lib-tasks">
-        <div class="section-title"><div><h2>Start with what you need to do</h2><p>Everyday tasks, each with a toolkit of step-by-step prompts.</p></div></div>
-        ${taskGrid}
-      </div>` : "";
-    bodyHtml = banner + taskBlock + starterBlock + mainBody + browseAllBtn;
+    const q = STATE.query.trim();
+    const f = Object.assign({}, STATE.filters, { category: null });
+    if (q) recs = computeResults(q, f, STATE.sort, recs);
+    else if (tab === "all" && sel.kind !== "hub") recs = computeResults("", f, STATE.sort, recs);
+    else recs = recs.filter((r) => passesFilters(r, f));
+    return recs;
   }
-
-  container.innerHTML = searchHero + bodyHtml;
-
-  if (active) {
-    renderResultsInto(container.querySelector("#search-results"), {});
-  } else {
-    const gridEl = container.querySelector("#lib-grid");
-    if (gridEl) renderCategoryGridInto(gridEl, { grouped: si.restricted });
-    const modEl = container.querySelector("#lib-modules");
-    if (modEl && si.programId) renderModuleListInto(modEl, ORG_INDEX.programs[si.programId]);
-    const tEl = container.querySelector("#lib-tasks");
-    if (tEl) wireTaskGrid(tEl);
+  function paint() {
+    const q = STATE.query.trim();
+    const recs = currentRecords();
+    countEl.textContent = `${recs.length.toLocaleString()} prompt${recs.length === 1 ? "" : "s"}` +
+      (q ? ` matching “${q}”` : "") + (tab === "saved" ? " saved" : tab === "recent" ? " used recently" : "");
+    const opts = { layout: libLayout(), hideCategory: sel.kind === "category" };
+    let html = "";
+    if (q && sel.kind === "all") html += searchUnderstoodHtml(recs);
+    if (q && sel.kind !== "all") html += `<div class="search-fix">Searching in <b>${escapeHtml(title)}</b>. <button data-search-everywhere>Search all prompts instead</button></div>`;
+    const showModules = !q && tab === "all" && sel.kind === "all" && !si.gridEligible && si.programId && ORG_INDEX.programs[si.programId];
+    if (showModules) html += `<div class="section-title"><h2>${escapeHtml(ORG_INDEX.programs[si.programId].name)} — modules</h2></div><div id="lib-modules" style="margin-bottom:24px;"></div>`;
+    const split = sel.kind === "hub" && !q && tab === "all";
+    const ess = split ? recs.filter((r) => r.hub === sel.id) : [];
+    const rest = split ? recs.filter((r) => r.hub !== sel.id) : recs;
+    if (split && ess.length) html += `<div class="section-title"><h2>Step-by-step prompts</h2><span class="st-note">Hand-built with the prompt framework</span></div><div id="lib-ess" class="lib-section"></div>`;
+    if (split && rest.length) html += `<div class="section-title"><h2>More from the library</h2></div>`;
+    html += `<div id="lib-list"></div>`;
+    body.innerHTML = html;
+    if (showModules) renderModuleListInto(body.querySelector("#lib-modules"), ORG_INDEX.programs[si.programId]);
+    if (split && ess.length) renderPaginatedList(body.querySelector("#lib-ess"), ess, opts);
+    const emptyTitle = tab === "saved" ? "Nothing saved here yet" : tab === "recent" ? "Nothing used here yet"
+      : q ? `Nothing matched “${q}”` : "No prompts here yet";
+    const emptySub = tab === "saved" ? "Tap the star on any prompt to keep it here."
+      : tab === "recent" ? "Prompts you open, copy or use show up here."
+      : "Try a few plain words about the task, or pick a task from the list.";
+    const tasks = tab === "all" && q ? taskGridHtml({ limit: 6 }) : "";
+    const emptyHtml = emptyStateHtml(tab === "saved" ? "star" : "search", emptyTitle, emptySub,
+      q ? `<button class="btn btn-sm" data-nav-builder style="margin-top:4px;">${icon("build")} Create your own prompt</button>` : "") +
+      (tasks ? `<div class="task-block" id="empty-tasks">${tasks}</div>` : "");
+    if (!(split && !rest.length && ess.length)) renderPaginatedList(body.querySelector("#lib-list"), rest, Object.assign({ emptyHtml }, opts));
+    body.querySelectorAll(".intent-banner[data-hub]").forEach((b) => b.addEventListener("click", () => selectLibrary({ kind: "hub", id: b.dataset.hub })));
+    const lit = body.querySelector("[data-search-literal]");
+    if (lit) lit.addEventListener("click", () => { STATE.searchLiteral = STATE.query.trim(); paint(); });
+    const ev = body.querySelector("[data-search-everywhere]");
+    if (ev) ev.addEventListener("click", () => { const qq = STATE.query; selectLibrary({ kind: "all" }); STATE.query = qq; renderApp(); });
+    const et = body.querySelector("#empty-tasks");
+    if (et) wireTaskGrid(et);
+    const nb = body.querySelector("[data-nav-builder]");
+    if (nb) nb.addEventListener("click", () => navigate("builder"));
   }
+  paint();
 
-  container.querySelectorAll("[data-nav]").forEach((el) => el.addEventListener("click", () => navigate(el.dataset.nav)));
-  container.querySelectorAll("[data-browse-all]").forEach((el) => el.addEventListener("click", () => { STATE.libBrowseAll = true; renderContent(); }));
-  const askBtn = container.querySelector("#lib-ask");
-  if (askBtn) askBtn.addEventListener("click", () => openAskLibrary());
+  // rail
+  container.querySelectorAll(".rail-item").forEach((b) => b.addEventListener("click", () =>
+    selectLibrary({ kind: b.dataset.selKind, id: b.dataset.selId || null })));
+  const rf = container.querySelector("#rail-filter");
+  rf.addEventListener("input", () => {
+    const t = rf.value.trim().toLowerCase();
+    let shown = 0;
+    container.querySelectorAll(".lib-rail .rail-item").forEach((b) => {
+      const hit = !t || b.dataset.railText.includes(t);
+      b.hidden = !hit; if (hit) shown++;
+    });
+    container.querySelectorAll(".lib-rail .rail-label").forEach((l) => { l.hidden = !!t; });
+    container.querySelector(".rail-empty").hidden = shown > 0;
+  });
+  const active = container.querySelector(".rail-item.active");
+  if (active && active.scrollIntoView && sel.kind !== "all") active.scrollIntoView({ block: "nearest" });
+  container.querySelector("#lib-pick").addEventListener("change", (e) => {
+    const [kind, id] = e.target.value.split("|");
+    selectLibrary({ kind, id: id || null });
+  });
+  // search (repaints the body only, so the input keeps focus)
   const sInput = container.querySelector("#lib-search");
-  if (sInput) {
-    sInput.focus();
-    sInput.setSelectionRange(sInput.value.length, sInput.value.length);
-    sInput.addEventListener("input", debounce((e) => { STATE.query = e.target.value; renderContent(); }, 160));
-  }
   const clr = container.querySelector("#lib-clear");
-  if (clr) clr.addEventListener("click", () => { STATE.query = ""; STATE.libBrowseAll = false; renderContent(); });
+  sInput.addEventListener("input", debounce((e) => {
+    STATE.query = e.target.value; STATE.searchLiteral = null;
+    clr.hidden = !STATE.query; paint();
+  }, 160));
+  clr.addEventListener("click", () => { STATE.query = ""; sInput.value = ""; clr.hidden = true; paint(); sInput.focus(); });
+  if (STATE.query || sel.kind === "all") { sInput.focus(); sInput.setSelectionRange(sInput.value.length, sInput.value.length); }
+  // layout, tabs, filters
+  container.querySelectorAll("[data-layout]").forEach((b) => b.addEventListener("click", () => {
+    setLibLayout(b.dataset.layout);
+    container.querySelectorAll("[data-layout]").forEach((x) => x.classList.toggle("on", x === b));
+    paint();
+  }));
+  container.querySelectorAll("[data-tab]").forEach((b) => b.addEventListener("click", () => { STATE.libTab = b.dataset.tab; renderLibraryShell(container); }));
+  const fBtn = container.querySelector("#lib-filter-btn");
+  const fRow = container.querySelector("#lib-filters");
+  const dot = fBtn.querySelector(".lf-dot");
+  const syncDot = () => { dot.hidden = !(STATE.filters.difficulty || STATE.filters.fwLevel || STATE.filters.hasVariables || STATE.sort !== "relevance"); };
+  syncDot();
+  if (!dot.hidden) { fRow.hidden = false; fBtn.setAttribute("aria-expanded", "true"); }
+  fBtn.addEventListener("click", () => { fRow.hidden = !fRow.hidden; fBtn.setAttribute("aria-expanded", String(!fRow.hidden)); });
+  fRow.querySelectorAll("[data-lf]").forEach((x) => x.addEventListener("change", () => { STATE.filters[x.dataset.lf] = x.value || null; syncDot(); paint(); }));
+  fRow.querySelectorAll("[data-lf-check]").forEach((x) => x.addEventListener("change", () => { STATE.filters[x.dataset.lfCheck] = x.checked; syncDot(); paint(); }));
+  fRow.querySelector("[data-lsort]").addEventListener("change", (e) => { STATE.sort = e.target.value; syncDot(); paint(); });
+  container.querySelectorAll(".lib-tab-actions [data-nav]").forEach((b) => b.addEventListener("click", () => navigate(b.dataset.nav)));
 }
+function renderSearchView(container) { renderLibraryShell(container); }
+function renderCategoriesView(container) { renderLibraryShell(container); }
+function renderCategoryDetail(container) { renderLibraryShell(container); }
+function renderTaskView(container) { renderLibraryShell(container); }
 
-/* ---------- Task toolkit (one page per TASK_HUBS entry) ---------- */
-function renderTaskView(container) {
-  const hub = TASK_HUBS_BY_ID[STATE.activeHub];
-  if (!hub) { navigate("search"); return; }
-  const essentials = hubEssentials(hub.id);
-  const more = hubLibraryMatches(hub, 12);
-  const others = hubsInScope().filter((h) => h.id !== hub.id);
-  container.innerHTML = `
-    <button class="btn btn-ghost btn-sm" data-back style="margin-bottom:10px;">← All tasks</button>
-    <div class="hub-head">
-      <div class="hh-ico" aria-hidden="true">${hub.icon}</div>
-      <div><h1>${escapeHtml(hub.label)}</h1><p>${escapeHtml(hub.blurb)}</p></div>
-    </div>
-    <div class="hub-howto">
-      <span><b>1.</b> Pick the prompt that fits</span>
-      <span><b>2.</b> Click <b>Use</b> and fill in the blanks</span>
-      <span><b>3.</b> Paste into ChatGPT, Claude, Gemini or Copilot</span>
-    </div>
-    ${essentials.length ? `
-    <div class="section-title"><h2>Step-by-step prompts</h2><span style="font-size:12px;color:var(--text-faint)">${essentials.length} hand-built with the prompt framework</span></div>
-    <div id="hub-essentials" style="margin-bottom:26px;"></div>` : ""}
-    ${more.length ? `
-    <div class="section-title"><h2>More from the library</h2><button class="linklike" data-hub-search>See all results →</button></div>
-    <div id="hub-more" style="margin-bottom:26px;"></div>` : ""}
-    ${others.length ? `
-    <div class="section-title"><h2>Other popular tasks</h2></div>
-    <div class="hub-others">${others.map((h) => `<button class="search-example-chip" data-hub="${h.id}">${h.icon} ${escapeHtml(h.label)}</button>`).join("")}</div>` : ""}`;
-  const ess = container.querySelector("#hub-essentials");
-  if (ess) renderPaginatedList(ess, essentials, {});
-  const mo = container.querySelector("#hub-more");
-  if (mo) renderPaginatedList(mo, more, {});
-  container.querySelector("[data-back]").addEventListener("click", () => navigate("search"));
-  container.querySelectorAll(".hub-others [data-hub]").forEach((b) => b.addEventListener("click", () => openHub(b.dataset.hub)));
-  const hs = container.querySelector("[data-hub-search]");
-  if (hs) hs.addEventListener("click", () => { STATE.view = "search"; STATE.query = hub.query; STATE.filters = emptyFilters(); renderApp(); });
-}
-
-/* ---------- Categories ---------- */
-function renderCategoriesView(container) {
-  const lib = scopedLibrary();
-  const nCats = new Set(lib.map((r) => r.category)).size;
-  const q = STATE.query.trim();
-  container.innerHTML = `
-    <div class="section-title"><h2>Categories</h2><span style="font-size:12px;color:var(--text-faint)">${q ? `matching “${escapeHtml(q)}”` : `${nCats} categories · ${lib.length.toLocaleString()} prompts`}</span></div>
-    <div id="cats-grid"></div>`;
-  renderCategoryGridInto(container.querySelector("#cats-grid"), { filter: q, grouped: isScopeRestricted() });
-}
-function renderCategoryDetail(container) {
-  const cat = STATE.activeCategory;
-  const meta = CATEGORIES.find((c) => c.name === cat);
-  if (!meta) { navigate("categories"); return; }
-  const inCat = scopedLibrary().filter((r) => r.category === cat);
-  container.innerHTML = `
-    <button class="btn btn-ghost btn-sm" data-nav="categories" style="margin-bottom:12px;">← All categories</button>
-    <div class="section-title" style="margin-bottom:4px;"><h2 style="font-size:20px;">${escapeHtml(cat)}</h2>
-      <span style="font-size:12px;color:var(--text-faint)">${inCat.length.toLocaleString()} prompts · for ${escapeHtml(meta.role || CATEGORY_SKILL[cat] || "any professional")}</span></div>
-    <div id="cat-results"></div>`;
-  container.querySelector("[data-nav]").addEventListener("click", () => { STATE.query = ""; navigate("categories"); });
-  renderResultsInto(container.querySelector("#cat-results"), {});
-}
 
 /* ---------- Program Library ---------- */
 function renderProgramView(container) {
