@@ -281,6 +281,7 @@ const Store = (function () {
     getMyPrompt(id) { return myPrompts.find((p) => p.id === id); },
     saveMyPrompt(o) {
       myPrompts.unshift(o);
+      if (typeof SearchIndex !== "undefined") SearchIndex.add(o); // findable right away
       if (db) db.collection(nsKey("myPrompts")).doc(o.id).set(o).catch(() => {});
       pMy();
       if (typeof Backend !== "undefined") Backend.logActivity("created", o.id, { title: o.title });
@@ -290,14 +291,22 @@ const Store = (function () {
       const i = myPrompts.findIndex((p) => p.id === id);
       if (i === -1) return;
       myPrompts[i] = Object.assign({}, myPrompts[i], patch);
+      if (typeof SearchIndex !== "undefined") SearchIndex.add(myPrompts[i]);
       if (db) db.collection(nsKey("myPrompts")).doc(id).set(myPrompts[i]).catch(() => {});
       pMy();
     },
-    deleteMyPrompt(id) { myPrompts = myPrompts.filter((p) => p.id !== id); if (db) db.collection(nsKey("myPrompts")).doc(id).delete().catch(() => {}); pMy(); },
+    deleteMyPrompt(id) {
+      myPrompts = myPrompts.filter((p) => p.id !== id);
+      if (typeof SearchIndex !== "undefined") SearchIndex.remove(id);
+      if (db) db.collection(nsKey("myPrompts")).doc(id).delete().catch(() => {});
+      pMy();
+    },
 
     getImprovement: (id) => improvements[id],
     saveImprovement(id, data) {
       improvements[id] = data;
+      // the viewer's improved wording becomes searchable for them
+      if (typeof SearchIndex !== "undefined") SearchIndex.refresh(id);
       if (db) db.collection(nsKey("improvements")).doc(id).set(data).catch(() => {});
       pImp();
       if (typeof Backend !== "undefined") Backend.logActivity("improved", id, { method: data && data.method });
@@ -663,10 +672,8 @@ function correctWord(word, df) {
 }
 function dfIndexFor(all) {
   if (!all || !all.length) return null;
-  if (!__dfCacheMap) return buildDfIndex(all);
-  let df = __dfCacheMap.get(all);
-  if (!df) { df = buildDfIndex(all); __dfCacheMap.set(all, df); }
-  return df;
+  SearchIndex.sync(all);
+  return SearchIndex.df();
 }
 function expandQueryTerms(q, all, literal) {
   let norm = normalizeQuery(q);
@@ -689,26 +696,8 @@ function expandQueryTerms(q, all, literal) {
   const phrase = words.length ? words.join(" ") : norm;
   return { phrase, words, synonymTerms: Array.from(synonymTerms), corrected, full: norm };
 }
-const __dfCacheMap = (typeof WeakMap !== "undefined") ? new WeakMap() : null;
-function buildDfIndex(all) {
-  const df = Object.create(null);
-  for (const rec of all) {
-    const seen = new Set();
-    for (const field in FIELD_WEIGHTS) {
-      const raw = fieldText(rec, field).toLowerCase();
-      if (!raw) continue;
-      for (const w of raw.split(/[^a-z0-9]+/)) {
-        if (w.length >= 2 && !seen.has(w)) { seen.add(w); df[w] = (df[w] || 0) + 1; }
-      }
-    }
-  }
-  return df;
-}
-function idfWeight(word, all) {
-  let df;
-  if (__dfCacheMap) { df = __dfCacheMap.get(all); if (!df) { df = buildDfIndex(all); __dfCacheMap.set(all, df); } }
-  else df = buildDfIndex(all);
-  const n = all.length, dfw = df[word] || 1;
+function idfWeight(word) {
+  const n = Math.max(2, SearchIndex.size()), dfw = SearchIndex.docFreq(word) || 1;
   const idf = Math.log((n + 1) / dfw);
   return Math.max(0.25, Math.min(1.6, idf / Math.log(n)));
 }
@@ -728,21 +717,85 @@ function wordHit(text, word) {
   }
   return false;
 }
-function scoreRecord(rec, expanded, all) {
+/* ---------- Search index ----------
+   One inverted index over every prompt the viewer can reach: the library,
+   authored prompts, and the viewer's own prompts and improved versions.
+   It is built on the first search. After that, a record a search meets that
+   isn't indexed yet (or was replaced) is indexed on the spot, and Store
+   writes (save / edit / delete / improve) re-index just that prompt, so a
+   new prompt is findable the moment it exists. Each viewer's own prompts
+   and improvements live in their own Store, so the index is per viewer. */
+const SEARCH_EXTRA_WEIGHTS = { yourVersion: 3 };
+const SearchIndex = (function () {
+  const docs = new Map();      // id -> { rec, lc: {field: lowercased text}, words: Set }
+  const postings = new Map();  // word -> Set of ids
+  let terms = null;            // sorted words, for prefix lookups
+  let dfCache = null;          // word -> number of prompts using it
+  function fieldsOf(rec) {
+    const lc = {};
+    for (const f in FIELD_WEIGHTS) { const t = fieldText(rec, f); if (t) lc[f] = t.toLowerCase(); }
+    const imp = typeof Store !== "undefined" && Store.getImprovement ? Store.getImprovement(rec.id) : null;
+    if (imp && imp.improvedPrompt) lc.yourVersion = String(imp.improvedPrompt).toLowerCase();
+    return lc;
+  }
+  function remove(id) {
+    const d = docs.get(id);
+    if (!d) return;
+    d.words.forEach((w) => { const p = postings.get(w); if (p) { p.delete(id); if (!p.size) postings.delete(w); } });
+    docs.delete(id);
+    terms = null; dfCache = null;
+  }
+  function add(rec) {
+    if (!rec || !rec.id) return null;
+    remove(rec.id);
+    const lc = fieldsOf(rec), words = new Set();
+    for (const f in lc) for (const w of lc[f].split(/[^a-z0-9]+/)) if (w.length >= 2) words.add(w);
+    const d = { rec, lc, words };
+    docs.set(rec.id, d);
+    words.forEach((w) => { let p = postings.get(w); if (!p) postings.set(w, (p = new Set())); p.add(rec.id); });
+    terms = null; dfCache = null;
+    return d;
+  }
+  function doc(rec) { const d = docs.get(rec.id); return d && d.rec === rec ? d : add(rec); }
+  // index anything in this corpus that is new or was replaced
+  function sync(all) { for (let i = 0; i < all.length; i++) doc(all[i]); }
+  function sortedTerms() { if (!terms) terms = Array.from(postings.keys()).sort(); return terms; }
+  // ids of prompts with a word starting with `prefix` (matches wordHit)
+  function idsWithPrefix(prefix, into) {
+    const t = sortedTerms();
+    let lo = 0, hi = t.length;
+    while (lo < hi) { const m = (lo + hi) >> 1; if (t[m] < prefix) lo = m + 1; else hi = m; }
+    for (let i = lo; i < t.length && t[i].startsWith(prefix); i++) postings.get(t[i]).forEach((id) => into.add(id));
+    return into;
+  }
+  function df() {
+    if (!dfCache) { dfCache = Object.create(null); postings.forEach((p, w) => { dfCache[w] = p.size; }); }
+    return dfCache;
+  }
+  return {
+    add, remove, doc, sync, idsWithPrefix, df,
+    size: () => docs.size,
+    docFreq: (w) => { const p = postings.get(w); return p ? p.size : 0; },
+    // re-index one prompt after the viewer changes it (e.g. saves an improvement)
+    refresh(id) { const d = docs.get(id); if (d) add(d.rec); },
+    // a different viewer signed in: their prompts and improvements differ
+    reset() { docs.clear(); postings.clear(); terms = null; dfCache = null; },
+  };
+})();
+function scoreRecord(rec, expanded) {
   const { phrase, words, synonymTerms } = expanded;
   if (!phrase) return { score: 0, tier: 0 };
+  const lc = SearchIndex.doc(rec).lc;
   let wordBest = {}, bestPhraseWeight = 0, synonymScore = 0, bigramScore = 0, clusterScore = 0;
-  for (const field in FIELD_WEIGHTS) {
-    const raw = fieldText(rec, field);
-    if (!raw) continue;
-    const text = raw.toLowerCase();
-    const weight = FIELD_WEIGHTS[field];
+  for (const field in lc) {
+    const text = lc[field];
+    const weight = FIELD_WEIGHTS[field] || SEARCH_EXTRA_WEIGHTS[field] || 2;
     if (words.length > 1 && text.includes(phrase)) bestPhraseWeight = Math.max(bestPhraseWeight, weight);
     let hitsThisField = 0;
     for (const w of words) {
       if (wordHit(text, w)) {
         hitsThisField++;
-        const contribution = weight * idfWeight(w, all);
+        const contribution = weight * idfWeight(w);
         if (!wordBest[w] || contribution > wordBest[w]) wordBest[w] = contribution;
       }
     }
@@ -771,23 +824,83 @@ function usageBoost(rec, usage) {
   const uc = usage.counts && usage.counts[rec.id];
   if (uc) b += Math.min(uc, 10) * 0.6;
   if (usage.favorites && usage.favorites.has(rec.id)) b += 2;
+  // what this viewer used lately ranks a little higher, fading over ~2 weeks
+  const ts = usage.lastUsedTs && usage.lastUsedTs[rec.id];
+  if (ts) b += 3 * Math.max(0, 1 - (Date.now() - ts) / (14 * 864e5));
+  if (rec.source === "User Created" || rec.source === "Modified") b += 1.5;
   return b;
 }
+/* Search operators, Google style. Anything else is plain words.
+     "exact phrase"   must contain the phrase
+     -word            leave out prompts with this word
+     cat:hr  category:"hr & recruiting"   only these categories
+     level:2  (or L2)  framework level
+     is:saved  is:mine  is:template  is:essential */
+const SEARCH_IS = {
+  saved: (r) => typeof Store !== "undefined" && Store.isFavorite(r.id),
+  mine: (r) => r.source === "User Created" || r.source === "Modified",
+  template: (r) => !!r.isTemplate,
+  essential: (r) => r.source === "Everyday Essentials",
+};
+function parseSearchQuery(q) {
+  const ops = { exact: [], exclude: [], cats: [], level: null, is: [] };
+  let text = " " + String(q || "") + " ";
+  text = text.replace(/(^|\s)(?:cat|category):(?:"([^"]+)"|(\S+))/gi, (m, sp, a, b) => { ops.cats.push((a || b).toLowerCase().replace(/[-_]+/g, " ")); return " "; });
+  text = text.replace(/(^|\s)(?:level:|l)([1-3])(?=\s)/gi, (m, sp, n) => { ops.level = n; return " "; });
+  text = text.replace(/(^|\s)is:(\w+)/gi, (m, sp, k) => { if (SEARCH_IS[k.toLowerCase()]) ops.is.push(k.toLowerCase()); return " "; });
+  text = text.replace(/"([^"]+)"/g, (m, ph) => { const t = normalizeQuery(ph); if (t) ops.exact.push(t); return " " + ph + " "; });
+  text = text.replace(/(^|\s)-([a-z0-9][\w-]*)/gi, (m, sp, w) => { ops.exclude.push(w.toLowerCase()); return " "; });
+  const any = ops.exact.length || ops.exclude.length || ops.cats.length || ops.level || ops.is.length;
+  return { text: text.replace(/\s+/g, " ").trim(), ops, any: !!any };
+}
+function passesSearchOps(rec, ops) {
+  if (ops.cats.length && !ops.cats.some((c) => (rec.category || "").toLowerCase().includes(c))) return false;
+  if (ops.level && String(rec.frameworkLevel || rec.rewrittenLevel || "") !== ops.level) return false;
+  if (ops.is.length && !ops.is.every((k) => SEARCH_IS[k](rec))) return false;
+  if (ops.exact.length || ops.exclude.length) {
+    const lc = SearchIndex.doc(rec).lc;
+    const all = Object.keys(lc).map((k) => lc[k]).join(" \n ");
+    if (!ops.exact.every((ph) => all.includes(ph))) return false;
+    const head = [lc.title, lc.description, lc.tags, lc.category].join(" ");
+    if (ops.exclude.some((w) => wordHit(head, w))) return false;
+  }
+  return true;
+}
 /* What the last search understood — read by the results UI for the
-   "Showing results for…" correction line and the task-hub shortcut. */
-let SEARCH_META = { query: "", corrected: null, hub: null };
+   "Showing results for…" correction line, the task-hub shortcut, term
+   highlighting and the result stats line. */
+let SEARCH_META = { query: "", corrected: null, hub: null, words: [], ops: null, ms: 0 };
 function searchPrompts(all, query, usage, opts) {
   opts = opts || {};
-  const expanded = expandQueryTerms(query, all, opts.literal);
+  const t0 = (typeof performance !== "undefined" ? performance : Date).now();
+  const parsed = parseSearchQuery(query);
+  SearchIndex.sync(all);
+  // operators only ("is:saved", "cat:hr"): the matching prompts, best first
+  if (!parsed.text) {
+    if (!parsed.any) return [];
+    const out = all.filter((r) => passesSearchOps(r, parsed.ops))
+      .sort((a, b) => (b.qualityScore || 0) + usageBoost(b, usage) - (a.qualityScore || 0) - usageBoost(a, usage));
+    if (!opts.quiet) SEARCH_META = { query, corrected: null, hub: null, words: [], ops: parsed.ops, ms: (typeof performance !== "undefined" ? performance : Date).now() - t0 };
+    return out;
+  }
+  const expanded = expandQueryTerms(parsed.text, all, opts.literal);
   if (!expanded.phrase) return [];
   const hub = detectTaskHub(expanded.full);
-  if (!opts.quiet) SEARCH_META = { query: query, corrected: expanded.corrected, hub: hub };
   const routed = routedCategories(expanded.full);
+  // Candidates come from the index: only prompts that share a word (by
+  // prefix, like wordHit) or a synonym with the query, plus the task hub's
+  // curated prompts. Everything else can't score, so it is never visited.
+  const cand = new Set();
+  expanded.words.forEach((w) => SearchIndex.idsWithPrefix(w, cand));
+  expanded.synonymTerms.forEach((syn) => syn.split(" ").forEach((w) => { if (w.length >= 3) SearchIndex.idsWithPrefix(w, cand); }));
   const results = [];
   for (let i = 0; i < all.length; i++) {
     const rec = all[i];
+    const isHub = hub && rec.hub === hub.id;
+    if (!cand.has(rec.id) && !isHub) continue;
     if (opts.category && rec.category !== opts.category) continue;
-    let { score, tier } = scoreRecord(rec, expanded, all);
+    if (parsed.any && !passesSearchOps(rec, parsed.ops)) continue;
+    let { score, tier } = scoreRecord(rec, expanded);
     // semantic routing: on-topic shelf gets a lift; a record that only
     // matches one common word but IS on the routed shelf still surfaces.
     if (routed.size && routed.has(rec.category)) {
@@ -798,7 +911,7 @@ function searchPrompts(all, query, usage, opts) {
     // hub prompt that shares no word with the query still surfaces (the
     // query "how do I prepare slides" should reach "Build a complete
     // presentation"), just lower than one that also matches directly.
-    if (hub && rec.hub === hub.id) { score += tier === 2 ? 25 : 4; if (tier === 0) tier = 1; }
+    if (isHub) { score += tier === 2 ? 25 : 4; if (tier === 0) tier = 1; }
     if (tier === 0) continue;
     if (rec.source === "Everyday Essentials" && tier === 2) score += 6;
     results.push([score + usageBoost(rec, usage), rec]);
@@ -812,6 +925,10 @@ function searchPrompts(all, query, usage, opts) {
     let cut = results.length;
     for (let i = 40; i < results.length; i++) { if (results[i][0] < floor) { cut = i; break; } }
     results.length = cut;
+  }
+  if (!opts.quiet) {
+    SEARCH_META = { query, corrected: expanded.corrected, hub, words: expanded.words.concat(parsed.ops.exact),
+      ops: parsed.any ? parsed.ops : null, ms: (typeof performance !== "undefined" ? performance : Date).now() - t0 };
   }
   return results.map((x) => x[1]);
 }

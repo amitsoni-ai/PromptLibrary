@@ -144,3 +144,43 @@ Library count: 3,367 → 3,231 imported prompts (plus 344 authored and 44 curric
 
 Note: `migrate/run.mjs` upserts, so an existing database still has rows for the 136 removed ids.
 The app reads the baked-in data, so nothing shows them. A `--reset` run clears them.
+
+## Search engine, resizable rail, mobile (follow-up)
+
+**Search index (`SearchIndex`, `src/part_app_1.js`).**
+- One inverted index covers the library, authored prompts, and the viewer's own prompts and improved versions. It is built while the browser is idle after sign-in.
+- A search only scores prompts that share a word (by prefix) or a synonym with the query, plus the task hub's prompts. Typical queries take 1–20 ms, where the old full scan rebuilt word counts on every keystroke.
+- **Auto-indexing:**
+  - Saving, editing or deleting one of your prompts updates the index at once, and so does saving an improvement.
+  - Admin prompt edits pulled at runtime are indexed too.
+  - Any prompt a search meets that isn't indexed yet is indexed on the spot.
+  - Your improved wording of a library prompt is searchable for you (field `yourVersion`). The index resets when a different person signs in.
+- **Personal ranking:** your own prompts, saved prompts, and prompts you used in the last two weeks rank a little higher.
+
+**Search operators:** `"exact words"`, `-word`, `cat:hr` / `category:"hr & recruiting"`, `level:2` (or `L2`), `is:saved`, `is:mine`, `is:template`, `is:essential`. Operators can be used alone (`is:mine`). The active ones show as chips above the results.
+
+**Results page:**
+- "N results for "q" (0.01 s)".
+- Search words are bolded as whole words in titles, descriptions and suggestions.
+- On the whole library, the top 4 results sit under **Best matches**, then **More results**.
+- **A prompt picked from the suggestions is pinned first under Best matches** with a "Selected" badge, and it opens at the same time.
+
+**Suggestions:**
+- Clicking into an empty box shows recent searches (with Clear) and popular searches.
+- Recent searches that match what you're typing come first.
+- A one-line tip lists the operators.
+- Home search is now a launcher. Suggestions appear as you type, and Enter or an example chip opens the Library results.
+
+**Resizable category bar:**
+- Drag the rail's right edge to set its width (200–480 px).
+- Drag it narrower than 140 px to hide the rail. A "Browse" tab brings it back.
+- Double-click resets the width to 260 px.
+- Arrow keys, Home and End work when the edge has focus.
+- The width is remembered per browser.
+
+**Mobile (≤ 880 px):**
+- The rail becomes a swipeable row of task and category chips. The row keeps its scroll position and never scrolls the page.
+- The search bar sticks to the top while you scroll, with 16 px text so iOS doesn't zoom.
+- The page no longer auto-focuses the search box, so the keyboard doesn't cover the page. Enter closes the keyboard.
+- Tiles are compact: icon beside the title, two-line description.
+- Tap targets are 40–48 px.

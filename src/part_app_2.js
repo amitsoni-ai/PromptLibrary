@@ -361,15 +361,15 @@ function promptCardHtml(rec, opts) {
   const tmpl = rec.isTemplate
     ? `<span class="tmpl-glyph" title="Reusable template with ${(rec.variables || []).length} fill-in field${(rec.variables || []).length === 1 ? "" : "s"}" aria-label="Template">{ }</span>` : "";
   return `
-  <article class="prompt-card${opts.starter ? " is-starter" : ""}" data-id="${rec.id}" role="button" tabindex="0" aria-label="Open ${escapeHtml(rec.title)}">
+  <article class="prompt-card${opts.starter ? " is-starter" : ""}${opts.pinnedId === rec.id ? " is-pinned" : ""}" data-id="${rec.id}" role="button" tabindex="0" aria-label="Open ${escapeHtml(rec.title)}">
     <div class="prompt-card-top">
-      <div class="prompt-card-title">${escapeHtml(rec.title)}</div>
+      <div class="prompt-card-title">${opts.pinnedId === rec.id ? `<span class="pt-pin">Selected</span> ` : ""}${highlightHtml(rec.title, opts.hl)}</div>
       <div class="prompt-card-actions">
         ${tmpl}
         <button class="fav-btn ${isFav ? "is-fav" : ""}" data-action="fav" data-id="${rec.id}" aria-label="${isFav ? "Remove from Saved" : "Save"}" title="Save (F)">${isFav ? icon("starFilled") : icon("star")}</button>
       </div>
     </div>
-    <div class="prompt-card-desc">${escapeHtml(rec.description)}</div>
+    <div class="prompt-card-desc">${highlightHtml(rec.description, opts.hl)}</div>
     <div class="prompt-card-meta">
       ${opts.starter ? `<span class="chip chip-blue">Starter</span>` : ""}
       ${rec.source === "Everyday Essentials" && !opts.starter ? `<span class="chip chip-essential" title="Hand-written, framework-built prompt for an everyday task">Essential</span>` : ""}
@@ -394,21 +394,33 @@ function promptIcon(rec) {
   if (rec.hub && typeof TASK_HUBS_BY_ID !== "undefined" && TASK_HUBS_BY_ID[rec.hub]) return TASK_HUBS_BY_ID[rec.hub].icon;
   return CATEGORY_ICONS[rec.category] || "📝";
 }
+/* Bold the query words in a title or description (word-start matches, the
+   same rule search ranks by). Works on escaped text, so markup stays safe. */
+function highlightHtml(text, words) {
+  const safe = escapeHtml(text || "");
+  const ws = (words || []).filter((w) => w && w.length >= 2 && !/^(amp|quot|lt|gt|39)$/.test(w));
+  if (!ws.length) return safe;
+  const re = new RegExp("(^|[^a-z0-9&#])(" + ws.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).sort((x, y) => y.length - x.length).join("|") + ")([a-z0-9]*)", "gi");
+  // bold the whole word, as a search engine does ("meet" → "meeting")
+  return safe.replace(re, (m, pre, hit, rest) => pre + "<mark>" + hit + rest + "</mark>");
+}
 /* Grid tile: icon, save star, bold title, 3-line description, calm footer. */
 function promptTileHtml(rec, opts) {
   opts = opts || {};
   const isFav = Store.isFavorite(rec.id);
   const nVars = (rec.variables || []).length;
   return `
-  <article class="prompt-card prompt-tile" data-id="${rec.id}" role="button" tabindex="0" aria-label="Open ${escapeHtml(rec.title)}">
+  <article class="prompt-card prompt-tile${opts.pinnedId === rec.id ? " is-pinned" : ""}" data-id="${rec.id}" role="button" tabindex="0" aria-label="Open ${escapeHtml(rec.title)}">
     <div class="pt-top">
       <span class="pt-ico" aria-hidden="true">${promptIcon(rec)}</span>
       <button class="fav-btn pt-fav ${isFav ? "is-fav" : ""}" data-action="fav" data-id="${rec.id}" aria-label="${isFav ? "Remove from Saved" : "Save"}" title="Save">${isFav ? icon("starFilled") : icon("star")}</button>
     </div>
-    <h3 class="pt-title">${escapeHtml(rec.title)}</h3>
-    <p class="pt-desc">${escapeHtml(rec.description || "")}</p>
+    ${opts.pinnedId === rec.id ? `<span class="pt-pin">Selected</span>` : ""}
+    <h3 class="pt-title">${highlightHtml(rec.title, opts.hl)}</h3>
+    <p class="pt-desc">${highlightHtml(rec.description || "", opts.hl)}</p>
     <div class="pt-meta">
       ${rec.source === "Everyday Essentials" ? `<span class="chip chip-essential">Essential</span>` : ""}
+      ${rec.source === "User Created" || rec.source === "Modified" ? `<span class="chip chip-accent">Yours</span>` : ""}
       ${opts.hideCategory ? "" : `<span class="chip">${escapeHtml(rec.category)}</span>`}
       ${renderDifficulty(rec.difficulty)}
       ${rec.isTemplate && nVars ? `<span class="pt-fill" title="Fill-in fields">{ } ${nVars}</span>` : ""}
@@ -573,64 +585,129 @@ function startBuilderFrom(seed) {
 }
 /* Type-ahead under a search box: matching tasks, categories and the top
    prompts, with arrow-key navigation. Picking a prompt opens it. */
+/* Recent searches: a per-browser convenience (like a search engine's
+   history), so it lives in localStorage and fails soft. */
+const RECENT_SEARCH_KEY = "prompt-lib:recentSearches";
+function recentSearches() {
+  try { const v = JSON.parse(localStorage.getItem(RECENT_SEARCH_KEY) || "[]"); return Array.isArray(v) ? v.slice(0, 8) : []; } catch (e) { return []; }
+}
+function rememberSearch(q) {
+  q = String(q || "").trim();
+  if (q.length < 2) return;
+  const list = [q].concat(recentSearches().filter((x) => x.toLowerCase() !== q.toLowerCase())).slice(0, 8);
+  try { localStorage.setItem(RECENT_SEARCH_KEY, JSON.stringify(list)); } catch (e) {}
+}
+function forgetSearches() { try { localStorage.removeItem(RECENT_SEARCH_KEY); } catch (e) {} }
+/* Open a prompt picked from search and keep it on screen in the results:
+   the query is committed and the prompt is pinned first under Best matches. */
+function openFromSearch(q, id) {
+  q = String(q || "").trim();
+  rememberSearch(q);
+  STATE.query = q;
+  STATE.searchLiteral = null;
+  STATE.searchPin = id;
+  STATE.libTab = "all";
+  if (!{ search: 1, categories: 1, categoryDetail: 1, task: 1 }[STATE.view]) navigate("search");
+  else renderApp();
+  openDetail(id);
+}
+const SEARCH_TIP = `Tip: <code>"exact words"</code> · <code>-word</code> to leave out · <code>cat:hr</code> · <code>level:2</code> · <code>is:saved</code> · <code>is:mine</code>`;
 function attachSearchSuggest(input, panel, handlers) {
   if (!input || !panel) return;
   handlers = handlers || {};
   const box = input.closest("[role=combobox]");
   let items = [], idx = -1;
   const hide = () => { panel.hidden = true; idx = -1; if (box) box.setAttribute("aria-expanded", "false"); };
+  const show = (html) => { panel.innerHTML = html; panel.hidden = false; idx = -1; if (box) box.setAttribute("aria-expanded", "true"); };
+  const opt = (it, ico, main, sub, cls) => { items.push(it); return `<button class="sg-item${cls ? " " + cls : ""}" role="option" data-i="${items.length - 1}"><span class="sg-ico">${ico}</span><span class="sg-main"><b>${main}</b>${sub ? `<small>${sub}</small>` : ""}</span></button>`; };
+  // empty box: recent searches first, then popular ones
+  function renderStart() {
+    items = [];
+    const recent = recentSearches();
+    let html = "";
+    if (recent.length) {
+      html += `<div class="sg-head">Recent searches<button class="sg-clear" data-forget>Clear</button></div>`;
+      recent.forEach((q) => { html += opt({ kind: "query", q }, "🕘", escapeHtml(q), ""); });
+    }
+    html += `<div class="sg-head">Popular searches</div>`;
+    SEARCH_EXAMPLES.slice(0, recent.length ? 3 : 6).forEach((q) => { html += opt({ kind: "query", q }, "🔎", escapeHtml(q), ""); });
+    html += `<div class="sg-tip">${SEARCH_TIP}</div>`;
+    show(html);
+  }
   function render() {
     const q = input.value.trim();
-    if (q.length < 2) { hide(); return; }
-    const nq = normalizeQuery(q);
+    if (q.length < 2) { if (document.activeElement === input) renderStart(); else hide(); return; }
+    const nq = normalizeQuery(parseSearchQuery(q).text || q);
     const hubHit = detectTaskHub(nq);
     const hubs = hubsInScope().filter((h) => (hubHit && h.id === hubHit.id) || h.label.toLowerCase().includes(nq)).slice(0, 2);
     const cats = (isViewAllowed("categoryDetail") ? libCategoryList() : []).filter((c) => c.name.toLowerCase().includes(nq) ||
       nq.split(" ").some((w) => w.length >= 4 && c.name.toLowerCase().includes(w))).slice(0, 2);
     const prompts = searchPrompts(getSearchCorpus(), q, getUsageForSearch(), { quiet: true }).slice(0, 6);
+    const hl = expandQueryTerms(parseSearchQuery(q).text || q, null, true).words;
     items = [];
     let html = "";
+    const past = recentSearches().filter((x) => x.toLowerCase() !== q.toLowerCase() && x.toLowerCase().startsWith(q.toLowerCase())).slice(0, 2);
+    past.forEach((x) => { html += opt({ kind: "query", q: x }, "🕘", escapeHtml(x), ""); });
     if (prompts.length) {
       html += `<div class="sg-head">Prompts</div>`;
-      prompts.forEach((r) => { items.push({ kind: "prompt", id: r.id }); html += `<button class="sg-item" role="option" data-i="${items.length - 1}"><span class="sg-ico">${promptIcon(r)}</span><span class="sg-main"><b>${escapeHtml(r.title)}</b><small>${escapeHtml(r.category)}${r.source === "Everyday Essentials" ? " · Essential" : ""}</small></span></button>`; });
+      prompts.forEach((r) => {
+        const tag = r.source === "User Created" || r.source === "Modified" ? " · Yours" : r.source === "Everyday Essentials" ? " · Essential" : "";
+        html += opt({ kind: "prompt", id: r.id }, promptIcon(r), highlightHtml(r.title, hl), escapeHtml(r.category) + tag);
+      });
     }
     if (hubs.length || cats.length) {
       html += `<div class="sg-head">Tasks & categories</div>`;
-      hubs.forEach((h) => { items.push({ kind: "hub", id: h.id }); html += `<button class="sg-item" role="option" data-i="${items.length - 1}"><span class="sg-ico">${h.icon}</span><span class="sg-main"><b>${escapeHtml(h.label)}</b><small>Task · ${h.count} prompts</small></span></button>`; });
-      cats.forEach((c) => { items.push({ kind: "category", id: c.name }); html += `<button class="sg-item" role="option" data-i="${items.length - 1}"><span class="sg-ico">${CATEGORY_ICONS[c.name] || "📝"}</span><span class="sg-main"><b>${escapeHtml(c.name)}</b><small>Category · ${c.count} prompts</small></span></button>`; });
+      hubs.forEach((h) => { html += opt({ kind: "hub", id: h.id }, h.icon, escapeHtml(h.label), `Task · ${h.count} prompts`); });
+      cats.forEach((c) => { html += opt({ kind: "category", id: c.name }, CATEGORY_ICONS[c.name] || "📝", escapeHtml(c.name), `Category · ${c.count} prompts`); });
     }
-    items.push({ kind: "build" });
-    html += `<button class="sg-item sg-build" role="option" data-i="${items.length - 1}"><span class="sg-ico">🛠️</span><span class="sg-main"><b>Build “${escapeHtml(truncate(q, 40))}” with the framework</b><small>Can't find it? Create your own prompt, step by step</small></span></button>`;
-    panel.innerHTML = html;
-    panel.hidden = false; idx = -1;
-    if (box) box.setAttribute("aria-expanded", "true");
+    html += opt({ kind: "build" }, "🛠️", `Build “${escapeHtml(truncate(q, 40))}” with the framework`, "Can't find it? Create your own prompt, step by step", "sg-build");
+    html += `<div class="sg-tip">${SEARCH_TIP}</div>`;
+    show(html);
   }
   function pick(i) {
     const it = items[i]; if (!it) return;
     hide();
-    if (it.kind === "prompt") openDetail(it.id);
+    if (it.kind === "prompt") (handlers.onPickPrompt || openFromSearch)(input.value, it.id);
+    else if (it.kind === "query") { input.value = it.q; rememberSearch(it.q); (handlers.onQuery || ((q) => { input.dispatchEvent(new Event("input", { bubbles: true })); }))(it.q); }
     else if (it.kind === "hub") (handlers.onPickHub || openHub)(it.id);
     else if (it.kind === "category") (handlers.onPickCategory || ((n) => { STATE.activeCategory = n; navigate("categoryDetail"); }))(it.id);
     else startBuilderFrom(input.value);
   }
   function mark() { panel.querySelectorAll(".sg-item").forEach((b, j) => b.classList.toggle("on", j === idx)); const on = panel.querySelector(".sg-item.on"); if (on) on.scrollIntoView({ block: "nearest" }); }
-  input.addEventListener("input", debounce(render, 140));
+  input.addEventListener("input", debounce(render, 120));
+  // a page that focuses the box for you shouldn't pop the panel open; the
+  // recent / popular list shows when the viewer taps or clicks into it
   input.addEventListener("focus", () => { if (input.value.trim().length >= 2) render(); });
+  input.addEventListener("click", () => { if (panel.hidden) render(); });
   input.addEventListener("keydown", (e) => {
-    if (panel.hidden) return;
+    if (e.key === "Enter" && (panel.hidden || idx < 0)) { rememberSearch(input.value); if (handlers.onSubmit) handlers.onSubmit(input.value); hide(); return; }
+    if (panel.hidden) { if (e.key === "ArrowDown") render(); return; }
     if (e.key === "ArrowDown") { e.preventDefault(); idx = Math.min(items.length - 1, idx + 1); mark(); }
     else if (e.key === "ArrowUp") { e.preventDefault(); idx = Math.max(-1, idx - 1); mark(); }
-    else if (e.key === "Enter") { if (idx >= 0) { e.preventDefault(); pick(idx); } else hide(); }
+    else if (e.key === "Enter") { e.preventDefault(); pick(idx); }
     else if (e.key === "Escape") hide();
   });
   panel.addEventListener("mousedown", (e) => e.preventDefault()); // keep focus in the input
-  panel.addEventListener("click", (e) => { const b = e.target.closest(".sg-item"); if (b) pick(+b.dataset.i); });
+  panel.addEventListener("click", (e) => {
+    if (e.target.closest("[data-forget]")) { forgetSearches(); render(); return; }
+    const b = e.target.closest(".sg-item"); if (b) pick(+b.dataset.i);
+  });
   input.addEventListener("blur", () => setTimeout(hide, 120));
 }
 /* "Looks like you want to…" shortcut + typo line above search results. */
 function searchUnderstoodHtml(results) {
   const m = SEARCH_META || {};
   let html = "";
+  const o = m.ops;
+  if (o) {
+    const bits = [];
+    o.exact.forEach((x) => bits.push(`contains “${escapeHtml(x)}”`));
+    o.exclude.forEach((x) => bits.push(`without “${escapeHtml(x)}”`));
+    o.cats.forEach((x) => bits.push(`category: ${escapeHtml(x)}`));
+    if (o.level) bits.push(`framework level ${o.level}`);
+    o.is.forEach((x) => bits.push({ saved: "saved by you", mine: "your own prompts", template: "fill-in templates", essential: "Everyday Essentials" }[x]));
+    if (bits.length) html += `<div class="search-ops">Search filters: ${bits.map((b) => `<span class="chip">${b}</span>`).join(" ")}</div>`;
+  }
   if (m.corrected) {
     html += `<div class="search-fix">Showing results for <b>${escapeHtml(m.corrected)}</b>. <button data-search-literal>Search “${escapeHtml(m.query)}” exactly instead</button></div>`;
   }
@@ -644,7 +721,7 @@ function searchUnderstoodHtml(results) {
   return html;
 }
 function getSearchCorpus() { return scopedLibrary().concat(Store.getMyPrompts()); }
-function getUsageForSearch() { const u = Store.getUsage(); return { counts: u.counts, favorites: Store.getFavorites() }; }
+function getUsageForSearch() { const u = Store.getUsage(); return { counts: u.counts, lastUsedTs: u.lastUsedTs, favorites: Store.getFavorites() }; }
 
 function passesFilters(rec, f) {
   if (f.category && rec.category !== f.category) return false;

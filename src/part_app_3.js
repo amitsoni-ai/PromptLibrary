@@ -413,17 +413,30 @@ function renderHome(container) {
 
   const input = container.querySelector("#hero-search");
   if (input) {
-    input.focus();
+    if (!(window.matchMedia && window.matchMedia("(max-width: 880px)").matches)) input.focus();
     input.setSelectionRange(input.value.length, input.value.length);
-    input.addEventListener("input", debounce((e) => { setQuery(e.target.value); }, 180));
+    // Home search is a launcher: typing shows live suggestions here, and
+    // Enter (or a recent / popular search) opens the full results in Library.
+    // A query already on Home (older links) still renders results inline.
+    if (q) input.addEventListener("input", debounce((e) => { setQuery(e.target.value); }, 180));
   }
-  // type-ahead is only useful before results take over the page
-  if (input && !q) attachSearchSuggest(input, container.querySelector("#hero-suggest"), {});
+  if (input && !q) attachSearchSuggest(input, container.querySelector("#hero-suggest"), {
+    onSubmit: (v) => goSearch(v),
+    onQuery: (v) => goSearch(v),
+  });
   const clearBtn = container.querySelector("#hero-clear");
   if (clearBtn) clearBtn.addEventListener("click", () => setQuery(""));
 }
+/* Run a search on the Library page, the one place results live. */
+function goSearch(q) {
+  q = String(q || "").trim();
+  if (!q) return;
+  rememberSearch(q);
+  STATE.query = q; STATE.searchPin = null; STATE.searchLiteral = null; STATE.libTab = "all";
+  navigate("search");
+}
 function wireHomeStatic(container) {
-  container.querySelectorAll("[data-example]").forEach((el) => el.addEventListener("click", () => setQuery(el.dataset.example)));
+  container.querySelectorAll("[data-example]").forEach((el) => el.addEventListener("click", () => goSearch(el.dataset.example)));
   container.querySelectorAll("[data-goal]").forEach((el) => el.addEventListener("click", () => {
     const g = GOALS.find((x) => x.label === el.dataset.goal);
     STATE.filters = emptyFilters();
@@ -537,6 +550,7 @@ function selectLibrary(sel) {
   if (rail) STATE.railScroll = rail.scrollTop;
   STATE.query = "";
   STATE.searchLiteral = null;
+  STATE.searchPin = null;
   STATE.libBrowseAll = false;
   const f = emptyFilters();
   f.difficulty = STATE.filters.difficulty; f.fwLevel = STATE.filters.fwLevel; f.hasVariables = STATE.filters.hasVariables;
@@ -584,6 +598,68 @@ function libFilterRowHtml() {
       ${[["relevance", "Best match"], ["quality", "Highest quality"], ["used", "Most used"], ["az", "A–Z"]].map(([v, l]) => `<option value="${v}" ${STATE.sort === v ? "selected" : ""}>Sort: ${l}</option>`).join("")}
     </select>`;
 }
+/* Width of the category rail, set by dragging its edge. Remembered per
+   browser. Dragging it very narrow hides the rail; 0 means hidden. */
+const RAIL_W = { def: 260, min: 200, max: 480, hideBelow: 140 };
+function railWidth() {
+  if (typeof STATE.railW === "number") return STATE.railW;
+  let w = RAIL_W.def;
+  try { const v = localStorage.getItem("prompt-lib:railW"); if (v !== null && !isNaN(+v)) w = +v; } catch (e) {}
+  STATE.railW = w === 0 ? 0 : Math.min(RAIL_W.max, Math.max(RAIL_W.min, w));
+  return STATE.railW;
+}
+function setRailWidth(w, save) {
+  STATE.railW = w;
+  if (save) { try { localStorage.setItem("prompt-lib:railW", String(w)); } catch (e) {} }
+}
+function wireRailResizer(shell) {
+  const grip = shell.querySelector(".rail-resizer");
+  const openBtn = shell.querySelector(".rail-open");
+  if (!grip) return;
+  const apply = (w) => {
+    shell.style.setProperty("--rail-w", (w || 0) + "px");
+    shell.classList.toggle("rail-closed", !w);
+    grip.setAttribute("aria-valuenow", String(w));
+    grip.title = w ? "Drag to resize · double-click to reset" : "Drag to show categories";
+  };
+  apply(railWidth());
+  let dragging = false, lastW = railWidth();
+  grip.addEventListener("pointerdown", (e) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    dragging = true;
+    grip.setPointerCapture(e.pointerId);
+    grip.classList.add("dragging");
+    document.body.classList.add("is-resizing");
+  });
+  grip.addEventListener("pointermove", (e) => {
+    if (!dragging) return;
+    const x = e.clientX - shell.getBoundingClientRect().left;
+    lastW = x < RAIL_W.hideBelow ? 0 : Math.round(Math.min(RAIL_W.max, Math.max(RAIL_W.min, x)));
+    apply(lastW);
+  });
+  const end = () => {
+    if (!dragging) return;
+    dragging = false;
+    grip.classList.remove("dragging");
+    document.body.classList.remove("is-resizing");
+    setRailWidth(lastW, true);
+  };
+  grip.addEventListener("pointerup", end);
+  grip.addEventListener("pointercancel", end);
+  grip.addEventListener("dblclick", () => { lastW = RAIL_W.def; apply(lastW); setRailWidth(lastW, true); });
+  grip.addEventListener("keydown", (e) => {
+    let w = railWidth();
+    if (e.key === "ArrowLeft") w = w - 20 < RAIL_W.min ? 0 : w - 20;
+    else if (e.key === "ArrowRight") w = w ? Math.min(RAIL_W.max, w + 20) : RAIL_W.min;
+    else if (e.key === "Home" || e.key === "Enter") w = RAIL_W.def;
+    else if (e.key === "End") w = RAIL_W.max;
+    else return;
+    e.preventDefault();
+    lastW = w; apply(w); setRailWidth(w, true);
+  });
+  if (openBtn) openBtn.addEventListener("click", () => { lastW = RAIL_W.def; apply(lastW); setRailWidth(lastW, true); });
+}
 function renderLibraryShell(container) {
   const sel = libSelection();
   const si = (typeof scopeInfo === "function") ? scopeInfo() : { restricted: false, gridEligible: true, total: scopedLibrary().length, label: "Full library", primaryCats: [] };
@@ -606,9 +682,12 @@ function renderLibraryShell(container) {
     <button class="rail-item ${isActive(k, id) ? "active" : ""}" data-sel-kind="${k}" ${id ? `data-sel-id="${escapeHtml(id)}"` : ""} data-rail-text="${escapeHtml(label.toLowerCase())}" ${isActive(k, id) ? 'aria-current="true"' : ""}>
       <span class="ri-ico" aria-hidden="true">${ico}</span><span class="ri-label">${escapeHtml(label)}</span><span class="ri-count">${count.toLocaleString()}</span>
     </button>`;
-  const pickOpts = `<option value="all|" ${sel.kind === "all" ? "selected" : ""}>📚 All prompts</option>` +
-    (hubs.length ? `<optgroup label="Tasks">${hubs.map((h) => `<option value="hub|${h.id}" ${isActive("hub", h.id) ? "selected" : ""}>${h.icon} ${escapeHtml(h.label)}</option>`).join("")}</optgroup>` : "") +
-    (cats.length ? `<optgroup label="Categories">${cats.map((c) => `<option value="category|${escapeHtml(c.name)}" ${isActive("category", c.name) ? "selected" : ""}>${CATEGORY_ICONS[c.name] || "📝"} ${escapeHtml(c.name)}</option>`).join("")}</optgroup>` : "");
+  // phones: the rail becomes one swipeable row of chips
+  const chip = (k, id, ico, label) => `<button class="lc-chip ${isActive(k, id) ? "on" : ""}" data-sel-kind="${k}" ${id ? `data-sel-id="${escapeHtml(id)}"` : ""} ${isActive(k, id) ? 'aria-current="true"' : ""}><span aria-hidden="true">${ico}</span>${escapeHtml(label)}</button>`;
+  const chipRow = chip("all", null, "📚", "All") +
+    hubs.map((h) => chip("hub", h.id, h.icon, h.label)).join("") +
+    (cats.length ? `<span class="lc-sep" aria-hidden="true"></span>` : "") +
+    cats.map((c) => chip("category", c.name, CATEGORY_ICONS[c.name] || "📝", c.name)).join("");
   const crumb = sel.kind === "all" ? "" : `
     <div class="lib-crumb">
       <button class="lc-link" data-crumb-all>Library</button><span aria-hidden="true">›</span>
@@ -617,7 +696,7 @@ function renderLibraryShell(container) {
     </div>`;
 
   container.innerHTML = `
-  <div class="lib-shell">
+  <div class="lib-shell${railWidth() ? "" : " rail-closed"}" style="--rail-w:${railWidth()}px">
     <aside class="lib-rail" aria-label="Browse the library">
       <div class="rail-find">${icon("search", "rf-ico")}<input type="text" id="rail-filter" placeholder="Filter tasks & categories" aria-label="Filter tasks and categories" autocomplete="off"/></div>
       ${railItem("all", null, "📚", "All prompts", si.total)}
@@ -626,12 +705,15 @@ function renderLibraryShell(container) {
       ${cats.map((c) => railItem("category", c.name, CATEGORY_ICONS[c.name] || "📝", c.name, c.count)).join("")}
       <div class="rail-empty" hidden>No match. Try another word.</div>
     </aside>
+    <div class="rail-resizer" role="separator" tabindex="0" aria-orientation="vertical" aria-label="Resize the category bar"
+      aria-valuemin="0" aria-valuemax="${RAIL_W.max}" aria-valuenow="${railWidth()}"></div>
+    <button class="rail-open" aria-label="Show tasks and categories" title="Show tasks and categories">${icon("chevronRight")}<span>Browse</span></button>
     <section class="lib-main">
       <div class="lib-searchbar">
         <div class="lib-search" role="combobox" aria-expanded="false" aria-owns="lib-suggest" aria-haspopup="listbox">
           ${icon("search", "ls-ico")}
           <input type="text" id="lib-search" aria-label="Search all prompts" aria-autocomplete="list" aria-controls="lib-suggest" autocomplete="off" value="${escapeHtml(STATE.query)}"
-            placeholder="Search ${si.total.toLocaleString()} prompts: describe your task, e.g. “ICF coach” or “meeting minutes”"/>
+            placeholder="${window.matchMedia && window.matchMedia("(max-width: 880px)").matches ? `Search ${si.total.toLocaleString()} prompts` : `Search ${si.total.toLocaleString()} prompts: describe your task, e.g. “ICF coach” or “meeting minutes”`}"/>
           <button class="ls-clear" id="lib-clear" aria-label="Clear search" ${STATE.query ? "" : "hidden"}>${icon("x")}</button>
           <div class="suggest-panel" id="lib-suggest" role="listbox" hidden></div>
         </div>
@@ -640,7 +722,7 @@ function renderLibraryShell(container) {
           <button data-layout="list" class="${layout === "list" ? "on" : ""}" aria-label="List view" title="List view">${icon("listView")}</button>
         </div>
       </div>
-      <label class="lib-pick"><span>Browse</span><select id="lib-pick" aria-label="Browse by task or category">${pickOpts}</select></label>
+      <nav class="lib-chips" aria-label="Browse by task or category">${chipRow}</nav>
       ${crumb}
       <div class="lib-head">
         <div class="lh-title">
@@ -683,7 +765,8 @@ function renderLibraryShell(container) {
   }
   function paint() {
     const q = STATE.query.trim();
-    const recs = currentRecords();
+    const t0 = performance.now();
+    let recs = currentRecords();
     const f = Object.assign({}, STATE.filters, { category: null });
     // Searching is library-wide: matches inside the selected task / category
     // come first, the rest of the library follows so nothing is ever hidden.
@@ -696,11 +779,23 @@ function renderLibraryShell(container) {
       for (const r of global.slice(0, 6)) { if (own.has(r.id)) break; lead.push(r); }
       const leadIds = new Set(lead.map((r) => r.id));
       elsewhere = global.filter((r) => !own.has(r.id) && !leadIds.has(r.id));
+    } else if (q && tab === "all") {
+      // the whole library: the top hits get their own "Best matches" block
+      lead = recs.slice(0, 4); recs = recs.slice(4);
     }
+    // A prompt picked from the suggestions stays on screen: pinned first
+    // under Best matches, whatever its rank.
+    const pin = q && STATE.searchPin ? findPromptById(STATE.searchPin) : null;
+    if (pin) {
+      const not = (r) => r.id !== pin.id;
+      lead = [pin].concat(lead.filter(not)); recs = recs.filter(not); elsewhere = elsewhere.filter(not);
+    }
+    const ms = performance.now() - t0;
     const total = recs.length + elsewhere.length + lead.length;
-    countEl.textContent = q ? `${total.toLocaleString()} match${total === 1 ? "" : "es"} for “${q}”`
+    countEl.textContent = q ? `${total.toLocaleString()} result${total === 1 ? "" : "s"} for “${q}” (${(ms / 1000).toFixed(2)} s)`
       : `${recs.length.toLocaleString()} prompt${recs.length === 1 ? "" : "s"}${tab === "saved" ? " saved" : tab === "recent" ? " used recently" : ""}`;
-    const opts = { layout: libLayout(), hideCategory: sel.kind === "category" && !q };
+    const hl = q ? (SEARCH_META.words || []) : [];
+    const opts = { layout: libLayout(), hideCategory: sel.kind === "category" && !q, hl, pinnedId: pin && pin.id };
     let html = "";
     if (q) html += searchUnderstoodHtml(recs.concat(lead, elsewhere));
     const showModules = !q && tab === "all" && sel.kind === "all" && !si.gridEligible && si.programId && ORG_INDEX.programs[si.programId];
@@ -710,8 +805,9 @@ function renderLibraryShell(container) {
     const main = split ? recs.filter((r) => r.hub !== sel.id) : recs;
     if (split && ess.length) html += `<div class="section-title"><h2>Step-by-step prompts</h2><span class="st-note">Hand-built with the prompt framework</span></div><div id="lib-ess" class="lib-section"></div>`;
     if (split && main.length) html += `<div class="section-title"><h2>More from the library</h2></div>`;
-    if (lead.length) html += `<div class="section-title"><h2>Best matches <small>${lead.length}</small></h2><span class="st-note">From the whole library</span></div><div id="lib-lead" class="lib-section"></div>`;
+    if (lead.length) html += `<div class="section-title"><h2>Best matches <small>${lead.length}</small></h2><span class="st-note">${sel.kind === "all" ? "Top results for your search" : "From the whole library"}</span></div><div id="lib-lead" class="lib-section"></div>`;
     if (q && sel.kind !== "all") html += `<div class="section-title"><h2>In ${escapeHtml(title)} <small>${recs.length}</small></h2></div>`;
+    else if (q && lead.length && recs.length) html += `<div class="section-title"><h2>More results <small>${recs.length}</small></h2></div>`;
     html += `<div id="lib-list" class="lib-section"></div>`;
     if (elsewhere.length) html += `<div class="section-title"><h2>Across the library <small>${elsewhere.length}</small></h2><span class="st-note">Matches outside ${escapeHtml(title)}</span></div><div id="lib-else" class="lib-section"></div>`;
     // few or no matches → close alternatives + build-your-own
@@ -728,17 +824,21 @@ function renderLibraryShell(container) {
       : elsewhere.length ? "See the matches from the rest of the library below."
       : "Try a few plain words about the task, or look at the closest prompts below.";
     const listEl = body.querySelector("#lib-list");
-    if (!(split && !main.length && ess.length)) renderPaginatedList(listEl, main, Object.assign({ emptyHtml: `<div class="empty-inline"><b>${escapeHtml(emptyTitle)}</b><span>${escapeHtml(emptySub)}</span></div>` }, opts));
-    if (lead.length) renderPaginatedList(body.querySelector("#lib-lead"), lead, { layout: libLayout() });
-    if (elsewhere.length) renderPaginatedList(body.querySelector("#lib-else"), elsewhere, { layout: libLayout() });
+    if (!(split && !main.length && ess.length) && (main.length || !lead.length)) renderPaginatedList(listEl, main, Object.assign({ emptyHtml: `<div class="empty-inline"><b>${escapeHtml(emptyTitle)}</b><span>${escapeHtml(emptySub)}</span></div>` }, opts));
+    if (lead.length) renderPaginatedList(body.querySelector("#lib-lead"), lead, opts);
+    if (elsewhere.length) renderPaginatedList(body.querySelector("#lib-else"), elsewhere, opts);
     if (similar.length) renderPaginatedList(body.querySelector("#lib-similar"), similar, { layout: libLayout() });
+
     body.querySelectorAll(".intent-banner[data-hub]").forEach((b) => b.addEventListener("click", () => selectLibrary({ kind: "hub", id: b.dataset.hub })));
     const lit = body.querySelector("[data-search-literal]");
     if (lit) lit.addEventListener("click", () => { STATE.searchLiteral = STATE.query.trim(); paint(); });
     body.querySelectorAll("[data-build-own]").forEach((b) => b.addEventListener("click", () => startBuilderFrom(b.dataset.seed || STATE.query)));
   }
   paint();
+  // opening a result counts as a finished search (for recent searches)
+  body.addEventListener("click", (e) => { if (STATE.query.trim() && e.target.closest(".prompt-card") && !e.target.closest("[data-action]")) rememberSearch(STATE.query); });
 
+  wireRailResizer(container.querySelector(".lib-shell"));
   // rail — keep its own scroll position across selections; never scroll the page
   const rail = container.querySelector(".lib-rail");
   if (typeof STATE.railScroll === "number") rail.scrollTop = STATE.railScroll;
@@ -761,24 +861,43 @@ function renderLibraryShell(container) {
     rail.querySelectorAll(".rail-label").forEach((l) => { l.hidden = !!t; });
     rail.querySelector(".rail-empty").hidden = shown > 0;
   });
-  container.querySelector("#lib-pick").addEventListener("change", (e) => {
-    const [kind, id] = e.target.value.split("|");
-    selectLibrary({ kind, id: id || null });
-  });
+  const chipsEl = container.querySelector(".lib-chips");
+  if (typeof STATE.chipScroll === "number") chipsEl.scrollLeft = STATE.chipScroll;
+  const onChip = chipsEl.querySelector(".lc-chip.on");
+  if (onChip && (onChip.offsetLeft < chipsEl.scrollLeft || onChip.offsetLeft + onChip.offsetWidth > chipsEl.scrollLeft + chipsEl.clientWidth)) {
+    chipsEl.scrollLeft = Math.max(0, onChip.offsetLeft - 16); // scrolls the row only, never the page
+  }
+  chipsEl.querySelectorAll(".lc-chip").forEach((b) => b.addEventListener("click", () => {
+    STATE.chipScroll = chipsEl.scrollLeft;
+    selectLibrary({ kind: b.dataset.selKind, id: b.dataset.selId || null });
+  }));
   container.querySelectorAll("[data-crumb-all]").forEach((b) => b.addEventListener("click", () => selectLibrary({ kind: "all" })));
   // search (repaints the body only, so the input keeps focus) + suggestions
   const sInput = container.querySelector("#lib-search");
   const clr = container.querySelector("#lib-clear");
   sInput.addEventListener("input", debounce((e) => {
+    if (STATE.query.trim() !== e.target.value.trim()) STATE.searchPin = null;
     STATE.query = e.target.value; STATE.searchLiteral = null;
     clr.hidden = !STATE.query; paint();
   }, 180));
   attachSearchSuggest(sInput, container.querySelector("#lib-suggest"), {
     onPickHub: (id) => selectLibrary({ kind: "hub", id }),
     onPickCategory: (name) => selectLibrary({ kind: "category", id: name }),
+    // stay on this page: commit the query, pin the prompt, repaint, open it
+    onPickPrompt: (q, id) => {
+      q = q.trim(); rememberSearch(q);
+      STATE.query = q; STATE.searchLiteral = null; STATE.searchPin = id;
+      if (STATE.libTab !== "all") { STATE.libTab = "all"; renderLibraryShell(container); } else { clr.hidden = !q; paint(); }
+      openDetail(id);
+    },
+    onQuery: (q) => { STATE.query = q; STATE.searchPin = null; STATE.searchLiteral = null; clr.hidden = !q; paint(); },
+    // phones: Enter / "Search" closes the keyboard so the results show
+    onSubmit: () => { if (window.matchMedia && window.matchMedia("(max-width: 880px)").matches) sInput.blur(); },
   });
-  clr.addEventListener("click", () => { STATE.query = ""; sInput.value = ""; clr.hidden = true; paint(); sInput.focus(); });
-  if (STATE.query || sel.kind === "all") { sInput.focus({ preventScroll: true }); sInput.setSelectionRange(sInput.value.length, sInput.value.length); }
+  clr.addEventListener("click", () => { STATE.query = ""; STATE.searchPin = null; sInput.value = ""; clr.hidden = true; paint(); sInput.focus(); });
+  // phones: no auto-focus, or the keyboard covers the results
+  const touchLayout = window.matchMedia && window.matchMedia("(max-width: 880px)").matches;
+  if (!touchLayout && (STATE.query || sel.kind === "all")) { sInput.focus({ preventScroll: true }); sInput.setSelectionRange(sInput.value.length, sInput.value.length); }
   // layout, tabs, filters
   container.querySelectorAll("[data-layout]").forEach((b) => b.addEventListener("click", () => {
     setLibLayout(b.dataset.layout);
