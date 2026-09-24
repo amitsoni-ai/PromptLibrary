@@ -152,6 +152,15 @@ body.previewing .topbar{top:var(--pbh);}
   width:var(--sidebar-w); flex:none; background:var(--surface); border-right:1px solid var(--border);
   display:flex; flex-direction:column; position:sticky; top:0; height:100vh; overflow-y:auto;
 }
+.sb-resizer{display:none;}
+@media (min-width:881px){
+  .sb-resizer{display:block; position:fixed; top:0; bottom:0; left:calc(var(--sidebar-w) - 5px); width:10px; z-index:30; cursor:col-resize; touch-action:none; outline:none;}
+  body.previewing .sb-resizer{top:var(--pbh);}
+  .sb-resizer::before{content:""; position:absolute; top:0; bottom:0; left:4px; width:2px; background:transparent; transition:background .12s;}
+  .sb-resizer::after{content:""; position:absolute; top:45%; left:1px; width:8px; height:40px; border-radius:6px; background:var(--accent); opacity:0; transition:opacity .12s;}
+  .sb-resizer:hover::before, .sb-resizer.dragging::before, .sb-resizer:focus-visible::before{background:var(--accent);}
+  .sb-resizer:hover::after, .sb-resizer.dragging::after, .sb-resizer:focus-visible::after{opacity:1;}
+}
 .brand{display:flex; align-items:center; gap:6px; padding:14px 10px 10px 12px;}
 .brand-home{display:flex; align-items:center; gap:10px; flex:1; min-width:0; padding:6px; border:none; background:none; border-radius:var(--radius-sm); text-align:left; color:var(--text);}
 .brand-home:hover{background:var(--surface-2);}
@@ -1068,6 +1077,7 @@ button.fw-tile:hover{border-color:var(--accent);}
     <nav class="nav" id="nav"></nav>
     <div class="sidebar-footer" id="sidebar-footer"></div>
   </aside>
+  <div class="sb-resizer" id="sb-resizer" role="separator" tabindex="0" aria-orientation="vertical" aria-label="Resize the main menu" title="Drag to resize the menu · double-click to reset"></div>
 
   <div class="main">
     <header class="topbar" id="topbar">

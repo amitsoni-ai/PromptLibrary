@@ -443,7 +443,27 @@ function openDetail(id) {
   STATE.detailId = id;
   STATE.detailLayer = "original";
   Store.recordUsage(id, "opened");
+  markSelectedResult(id);
   renderDrawer(rec);
+}
+/* During a search the prompt you opened last carries the "Selected" badge.
+   Opening another result moves the badge to it, in place, so the list
+   doesn't jump under the drawer. */
+function markSelectedResult(id) {
+  if (!STATE.query || !STATE.query.trim()) return;
+  const body = document.getElementById("lib-body");
+  if (!body) return;
+  const card = body.querySelector(`.prompt-card[data-id="${CSS.escape(id)}"]`);
+  if (!card) return; // opened from elsewhere (e.g. similar prompts): keep the current pick
+  STATE.searchPin = id;
+  body.querySelectorAll(".prompt-card.is-pinned").forEach((c) => c.classList.remove("is-pinned"));
+  body.querySelectorAll(".pt-pin").forEach((b) => b.remove());
+  card.classList.add("is-pinned");
+  const badge = `<span class="pt-pin">Selected</span>`;
+  const tileTitle = card.querySelector(".pt-title");
+  const listTitle = card.querySelector(".prompt-card-title");
+  if (tileTitle) tileTitle.insertAdjacentHTML("beforebegin", badge);
+  else if (listTitle) listTitle.insertAdjacentHTML("afterbegin", badge + " ");
 }
 function closeDetail() {
   const overlay = document.getElementById("detail-overlay");
