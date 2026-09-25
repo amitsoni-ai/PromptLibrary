@@ -777,7 +777,20 @@ body.is-resizing, body.is-resizing *{cursor:col-resize !important; user-select:n
 
 /* ---------- Home (premium, low-load) ---------- */
 .content-home{max-width:1120px;}
-.h2-hero{position:relative; text-align:center; padding:52px 8px 8px; isolation:isolate;}
+/* No `isolation:isolate` here: it forces .h2-hero onto its own compositor
+   layer, and the search suggestion panel (.suggest-panel, z-index 40) is an
+   absolutely-positioned descendant that overflows past the hero's own height
+   once it has several rows. That combination renders the layer's overflow
+   incorrectly in Chromium — the "Start from what you're doing" grid below
+   visibly bleeds into the open dropdown, even though hit-testing and DOM
+   z-index both say the panel is on top. Plain z-index (no isolation) paints
+   correctly because .h2-hero, being `position:relative` with z-index:auto,
+   still paints after static siblings like .h2-section per normal stacking
+   order — no isolation needed for that. The decorative ::before blob below
+   keeps its own negative z-index; without isolation it stacks in the next
+   real ancestor context instead, which is still enough to stay behind this
+   section's own heading/search bar. */
+.h2-hero{position:relative; text-align:center; padding:52px 8px 8px;}
 .h2-hero::before{content:""; position:absolute; z-index:-1; left:50%; top:0; width:min(760px,100%); height:300px; transform:translateX(-50%);
   background:radial-gradient(closest-side, var(--accent-soft), transparent); opacity:.9; pointer-events:none;}
 .h2-hero-compact{padding-top:22px; text-align:left;}
