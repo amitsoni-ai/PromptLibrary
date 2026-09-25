@@ -753,7 +753,18 @@ function applySidebarWidth(w) {
   if (w && w !== SB_W.def) document.body.style.setProperty("--sidebar-w", w + "px");
   else document.body.style.removeProperty("--sidebar-w");
 }
-try { const w = +localStorage.getItem("prompt-lib:sbW"); if (w >= SB_W.min && w <= SB_W.max) applySidebarWidth(w); } catch (e) {}
+// Two saved values, restored independently on load: the fold state above and
+// this dragged width. Applying the width unconditionally re-widens a sidebar
+// that was JUST folded to the icon rail (its width cleared, above) back out
+// to the old dragged width, while sb-collapsed is still hiding every label —
+// a full-width rail with icons and no text. Skip the width restore when the
+// sidebar loaded collapsed; the icon rail doesn't use it anyway.
+try {
+  if (!document.body.classList.contains("sb-collapsed")) {
+    const w = +localStorage.getItem("prompt-lib:sbW");
+    if (w >= SB_W.min && w <= SB_W.max) applySidebarWidth(w);
+  }
+} catch (e) {}
 function wireSidebarResizer() {
   const grip = document.getElementById("sb-resizer");
   if (!grip || grip.dataset.wired) return;
