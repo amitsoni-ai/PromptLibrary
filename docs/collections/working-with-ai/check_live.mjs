@@ -1,5 +1,6 @@
 // Read-only check: is the Working with AI pack visible on a running site?
-// Reads only the public GET /api/prompts feed. Never writes anything.
+// Reads the page's built-in library (index.html #data-prompts) and the public
+// GET /api/prompts feed of admin-console changes. Never writes anything.
 //
 //   node docs/collections/working-with-ai/check_live.mjs https://prompting.synottic.com
 //   node docs/collections/working-with-ai/check_live.mjs http://localhost:8790
@@ -12,19 +13,24 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const pilot = JSON.parse(fs.readFileSync(join(HERE, "import", "02_working_with_ai.json"), "utf8"));
 const cleanup = JSON.parse(fs.readFileSync(join(HERE, "import", "01_cleanup.json"), "utf8"));
 
-let feed;
+// Admin-console changes (optional: a site without a database has none).
+let feed = { prompts: [], archivedIds: [], count: 0 };
 try {
   const r = await fetch(base + "/api/prompts", { headers: { accept: "application/json" } });
-  if (r.status === 503) { console.log(`✗ ${base} has no database connected (503), so there is nothing to check.`); process.exit(1); }
-  feed = await r.json();
-} catch (e) {
-  console.log(`✗ Could not read ${base}/api/prompts: ${e.message}`);
-  process.exit(1);
-}
-const byId = new Map((feed.prompts || []).map((p) => [p.id, p]));
+  if (r.ok) feed = await r.json();
+} catch { /* no feed: rely on the built-in library */ }
+// Prompts baked into the build ship inside the page itself.
+let baked = [];
+try {
+  const html = await (await fetch(base + "/", { headers: { accept: "text/html" } })).text();
+  const m = html.match(/<script type="application\/json" id="data-prompts">([\s\S]*?)<\/script>/);
+  if (m) baked = JSON.parse(m[1]);
+} catch { /* page not readable: fall back to the feed only */ }
+// Admin-console changes override the built-in copy, as in the app.
+const byId = new Map([...baked, ...(feed.prompts || [])].map((p) => [p.id, p]));
 const archived = new Set(feed.archivedIds || []);
 
-console.log(`Site: ${base}   (admin-managed prompts in feed: ${feed.count})\n`);
+console.log(`Site: ${base}   (built-in prompts: ${baked.length}, admin-managed changes: ${feed.count})\n`);
 
 console.log("New prompts (Working with AI):");
 let live = 0;
