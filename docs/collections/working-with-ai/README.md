@@ -60,7 +60,18 @@ Level is what Synottic's own detector reports. Every role is an existing value i
 
 Title, id and category stay the same, so nobody's library scope changes. `collection.md` suggests better categories for a later re-filing pass.
 
-## How to load (after you approve in `review.xlsx`)
+## Shipped in the build (current route)
+
+The pack is baked into the app build, so it deploys with `main` and needs no console import:
+
+- `bake_into_build.py` writes the 20 prompts to `src/prompts_authored.json` and the 3 fixes (including scrubbing the old jailbreak and detector-evasion text from the hidden legacy field) to `src/prompts_library_rewrites.json`.
+- `python3 src/build.py` rebuilds `index.html`, and `web/scripts/verify-prompts.mjs` regenerates `web/seed/prompts.json` (3,575 → 3,595).
+- The Neon database is not changed by a deploy. `index.html` is what the live library reads, so the prompts appear there. To keep the database mirror in step (for the Next.js app and admin analytics), run `node migrate/run.mjs` against Neon when convenient. It is idempotent.
+- The admin **Collection** still has to be created once in the console (see `collection.md`), because collections live in the database.
+
+The console import route below remains a valid alternative, and is still the way to update prompts without a deploy.
+
+## How to load through the admin console (alternative)
 
 1. Remove any rows you marked N from the two JSON files, or tell me and I'll rebuild them.
 2. **Admin console → Prompts → Import** → `import/01_cleanup.json`. The preview must show **3 update, 0 new**. Commit.

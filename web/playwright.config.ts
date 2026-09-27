@@ -17,15 +17,26 @@ export default defineConfig({
   },
   webServer: process.env.SMOKE_BASE_URL
     ? undefined
-    : {
-        command: "npx next start -p 3000",
-        url: "http://localhost:3000/api/health",
-        timeout: 120_000,
-        reuseExistingServer: !process.env.CI,
-        env: {
-          DATABASE_URL: "pglite://memory",
-          LEGACY_ORIGIN: "http://localhost:8790",
-          REVALIDATE_SECRET: "smoke",
+    : [
+        {
+          command: "npx next start -p 3000",
+          url: "http://localhost:3000/api/health",
+          timeout: 120_000,
+          reuseExistingServer: !process.env.CI,
+          env: {
+            DATABASE_URL: "pglite://memory",
+            LEGACY_ORIGIN: "http://localhost:8790",
+            REVALIDATE_SECRET: "smoke",
+          },
         },
-      },
+        // The legacy SPA that the rollback smoke tests proxy to via LEGACY_ORIGIN.
+        // Static index.html only; the tests never call its /api, so no DB is needed.
+        {
+          command: "node ../devserver.mjs",
+          url: "http://localhost:8790/",
+          timeout: 60_000,
+          reuseExistingServer: !process.env.CI,
+          env: { PORT: "8790" },
+        },
+      ],
 });
