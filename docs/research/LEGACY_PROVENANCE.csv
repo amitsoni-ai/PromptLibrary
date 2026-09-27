@@ -1,0 +1,34 @@
+synottic_id,synottic_title,source,source_id,source_title,source_locator,source_commit,licence,contributor,where_found,shown_in_product
+lib-124,Generate a prompt from a topic,prompts.chat,pc-0161,ChatGPT Prompt Generator,prompts.csv row 161,f78a1c5,CC0-1.0,@aitrainee,legacyPrompt (pre-rewrite text; not displayed),no
+lib-1305,Prompt optimiser (Lyra),prompts.chat,pc-0377,$500/Hour AI Consultant Prompt,prompts.csv row 377,f78a1c5,CC0-1.0,@erkan56@gmail.com,legacyPrompt (pre-rewrite text; not displayed),no
+lib-1359,Investment manager guidance,prompts.chat,pc-0048,Accountant,prompts.csv row 48,f78a1c5,CC0-1.0,@devisasari,legacyPrompt (pre-rewrite text; not displayed),no
+lib-1359,Investment manager guidance,prompts.chat,pc-0052,Financial Analyst,prompts.csv row 52,f78a1c5,CC0-1.0,@devisasari,legacyPrompt (pre-rewrite text; not displayed),no
+lib-1524,Act as a CEO for a decision,prompts.chat,pc-0057,Self-Help Book,prompts.csv row 57,f78a1c5,CC0-1.0,@devisasari,legacyPrompt (pre-rewrite text; not displayed),no
+lib-1524,Act as a CEO for a decision,prompts.chat,pc-0142,Chief Executive Officer,prompts.csv row 142,f78a1c5,CC0-1.0,@jjjjamess,legacyPrompt (pre-rewrite text; not displayed),no
+lib-1524,Act as a CEO for a decision,prompts.chat,pc-0152,Cover Letter,prompts.csv row 152,f78a1c5,CC0-1.0,@mbakin,legacyPrompt (pre-rewrite text; not displayed),no
+lib-1526,Motivational coach,prompts.chat,pc-0016,Motivational Coach,prompts.csv row 16,f78a1c5,CC0-1.0,@devisasari,legacyPrompt (pre-rewrite text; not displayed),no
+lib-1526,Motivational coach,prompts.chat,pc-0120,Talent Coach,prompts.csv row 120,f78a1c5,CC0-1.0,@guillaumefalourd,legacyPrompt (pre-rewrite text; not displayed),no
+lib-1526,Motivational coach,prompts.chat,pc-0157,Buddha,prompts.csv row 157,f78a1c5,CC0-1.0,@jgreen01,legacyPrompt (pre-rewrite text; not displayed),no
+lib-164,Create an advertising campaign,prompts.chat,pc-0012,Advertiser,prompts.csv row 12,f78a1c5,CC0-1.0,@devisasari,legacyPrompt (pre-rewrite text; not displayed),no
+lib-164,Create an advertising campaign,prompts.chat,pc-0013,Storyteller,prompts.csv row 13,f78a1c5,CC0-1.0,@devisasari,legacyPrompt (pre-rewrite text; not displayed),no
+lib-1824,Teach AI your writing style,prompts.chat,pc-0010,Plagiarism Checker,prompts.csv row 10,f78a1c5,CC0-1.0,@yetk1n,legacyPrompt (pre-rewrite text; not displayed),no
+lib-1824,Teach AI your writing style,prompts.chat,pc-0212,SEO Prompt,prompts.csv row 212,f78a1c5,CC0-1.0,@f,legacyPrompt (pre-rewrite text; not displayed),no
+lib-1844,Mathematical history teacher,prompts.chat,pc-0150,Mathematical History Teacher,prompts.csv row 150,f78a1c5,CC0-1.0,@pneb,legacyPrompt (pre-rewrite text; not displayed),no
+lib-2252,Advertising campaign creator,prompts.chat,pc-0012,Advertiser,prompts.csv row 12,f78a1c5,CC0-1.0,@devisasari,legacyPrompt (pre-rewrite text; not displayed),no
+lib-2598,Graphviz diagram generator,prompts.chat,pc-0143,Diagram Generator,prompts.csv row 143,f78a1c5,CC0-1.0,@philogicae,legacyPrompt (pre-rewrite text; not displayed),no
+lib-268,Generate startup ideas from a wish,prompts.chat,pc-0136,Startup Idea Generator,prompts.csv row 136,f78a1c5,CC0-1.0,@buddylabsai,legacyPrompt (pre-rewrite text; not displayed),no
+lib-268,Generate startup ideas from a wish,prompts.chat,pc-0145,Startup Tech Lawyer,prompts.csv row 145,f78a1c5,CC0-1.0,@jonathandn,legacyPrompt (pre-rewrite text; not displayed),no
+lib-3120,Prompt generator,prompts.chat,pc-0079,Social Media Influencer,prompts.csv row 79,f78a1c5,CC0-1.0,@devisasari,legacyPrompt (pre-rewrite text; not displayed),no
+lib-3120,Prompt generator,prompts.chat,pc-0161,ChatGPT Prompt Generator,prompts.csv row 161,f78a1c5,CC0-1.0,@aitrainee,legacyPrompt (pre-rewrite text; not displayed),no
+lib-336,Translate resume bullets across fields,prompts.chat,pc-0153,Technology Transferer,prompts.csv row 153,f78a1c5,CC0-1.0,@niyuzheno1,legacyPrompt (pre-rewrite text; not displayed),no
+lib-336,Translate resume bullets across fields,prompts.chat,pc-0154,Unconstrained AI model DAN,prompts.csv row 154,f78a1c5,CC0-1.0,@ruslansaleksejevs,legacyPrompt (pre-rewrite text; not displayed),no
+lib-430,Personal chef meal suggestions,prompts.chat,pc-0105,Virtual Doctor,prompts.csv row 105,f78a1c5,CC0-1.0,@giorgiop,legacyPrompt (pre-rewrite text; not displayed),no
+lib-430,Personal chef meal suggestions,prompts.chat,pc-0106,Personal Chef,prompts.csv row 106,f78a1c5,CC0-1.0,@giorgiop,legacyPrompt (pre-rewrite text; not displayed),no
+lib-430,Personal chef meal suggestions,prompts.chat,pc-0107,Legal Advisor,prompts.csv row 107,f78a1c5,CC0-1.0,@giorgiop,legacyPrompt (pre-rewrite text; not displayed),no
+lib-430,Personal chef meal suggestions,prompts.chat,pc-0108,Personal Stylist,prompts.csv row 108,f78a1c5,CC0-1.0,@giorgiop,legacyPrompt (pre-rewrite text; not displayed),no
+lib-432,Draw ASCII art,prompts.chat,pc-0100,Ascii Artist,prompts.csv row 100,f78a1c5,CC0-1.0,@sonmez-baris,legacyPrompt (pre-rewrite text; not displayed),no
+lib-432,Draw ASCII art,prompts.chat,pc-0102,Synonym Finder,prompts.csv row 102,f78a1c5,CC0-1.0,@rbadillap,legacyPrompt (pre-rewrite text; not displayed),no
+lib-432,Draw ASCII art,prompts.chat,pc-0130,New Language Creator,prompts.csv row 130,f78a1c5,CC0-1.0,@willfeldman,legacyPrompt (pre-rewrite text; not displayed),no
+lib-432,Draw ASCII art,prompts.chat,pc-0138,Language Detector,prompts.csv row 138,f78a1c5,CC0-1.0,@dogukandogru,legacyPrompt (pre-rewrite text; not displayed),no
+lib-444,Plan event logistics,prompts.chat,pc-0006,Excel Sheet,prompts.csv row 6,f78a1c5,CC0-1.0,@f,legacyPrompt (pre-rewrite text; not displayed),no
+lib-444,Plan event logistics,prompts.chat,pc-0043,Logistician,prompts.csv row 43,f78a1c5,CC0-1.0,@devisasari,legacyPrompt (pre-rewrite text; not displayed),no

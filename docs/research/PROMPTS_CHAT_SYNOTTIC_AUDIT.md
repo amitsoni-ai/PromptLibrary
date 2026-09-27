@@ -36,7 +36,7 @@ So prompts.chat is **complementary** to Synottic, not overlapping. Its value is 
 **What the audit found inside Synottic (Fact).** These matter more than the import question:
 
 1. **A live jailbreak.** Prompt `lib-336` ("Translate resume bullets across fields", Coding & Tech) contains the full "DAN / do anything now" jailbreak text inside its body. It is marked `healthStatus: Healthy`, `qualityScore: 80`. It came in through a legacy bundle.
-2. **prompts.chat content is already in Synottic without provenance.** 31 prompts.chat prompts appear verbatim inside the `legacyPrompt` of 15 Synottic records, some still carrying "Contributed by: @devisasari". prompts.chat is CC0, so this is legal, but Synottic cannot show where these came from.
+2. **prompts.chat content is already in Synottic without provenance.** 31 prompts.chat prompts appear verbatim inside the `legacyPrompt` of 16 Synottic records (first reported as 15; the exact-text check in `docs/research/LEGACY_PROVENANCE.csv` found one more), some still carrying "Contributed by: @devisasari". prompts.chat is CC0, so this is legal, but Synottic cannot show where these came from.
 3. **Categories are unreliable.** Only 27 of 152 "AI & Prompt Engineering" prompts are actually about AI or prompting. The rest include release notes, Vedic astrology and "Build trust with a wary dog". Across the library, 1,147 prompts use a persona that points to a different category than the one they are filed in.
 4. **Role and category are the same field.** 16 of 28 categories have one role on 90%+ of their prompts. Role never narrows anything. The 114 enterprise roles in the function catalogue cover only 521 prompts (15%).
 5. **There is no Task, Subcategory, Workflow or Agent entity.** "Tasks" exist only as 18 hard-coded Task Hubs in client JavaScript. `promptType: Workflow` is on 382 prompts, but only 27 of them have three or more steps.
@@ -772,7 +772,7 @@ Function ──< Role >──< RoleTask >── Task ──< TaskPrompt >── 
 }
 ```
 
-Apply the same block retroactively to the 15 Synottic records whose legacy text holds prompts.chat content.
+Apply the same block retroactively to the 16 Synottic records whose legacy text holds prompts.chat content.
 
 ---
 
@@ -805,7 +805,7 @@ The shift: from **"find a prompt"** to **"get this task done well with AI, in my
 | Area | Action |
 |---|---|
 | A. Dataset | Remove the DAN text from `lib-336` and review `lib-437`, `lib-2178` (AI-detection evasion). Scan all 3,575 prompts with the gates in 17.1. |
-| A. Dataset | Add provenance to the 15 records that hold prompts.chat text. |
+| A. Dataset | Add provenance to the 16 records that hold prompts.chat text. |
 | C. Quality | Replace the 920 "Follow these detailed instructions:" bodies (start with the 793 over 250 words). |
 | B. Taxonomy | Re-file the ~125 non-AI prompts out of "AI & Prompt Engineering"; empty "General". |
 | B. Taxonomy | Agree the Task definition and subcategory lists (sections 12, 13). Decision only, no build. |
@@ -842,7 +842,7 @@ The shift: from **"find a prompt"** to **"get this task done well with AI, in my
 
 **Phase 2: Foundation + pilot import. Scope for approval:**
 
-1. **Safety and provenance fixes** (data only, through the existing admin Prompts console so it is audited): `lib-336`, `lib-437`, `lib-2178`, provenance on 15 records.
+1. **Safety and provenance fixes** (data only, through the existing admin Prompts console so it is audited): `lib-336`, `lib-437`, `lib-2178`, provenance on 16 records.
 2. **Internal audit run.** Implement the section 18 pipeline (LLM extraction + embeddings + closed-vocabulary classification). Run it on Synottic's 3,575 prompts. Output: re-filing proposals, boilerplate list, true duplicates, computed quality scores. Human approves in batches.
 3. **Taxonomy decision.** Approve Task definition, subcategory lists, controlled vocabularies (sections 12, 13, 19.2). Additive migration only, reviewed on a Neon branch first, per `SHARED-DB.md`.
 4. **Pilot import.** Transform and review the ~40 first-tranche items in section 14.3. Measure: review time per item, rejection rate, and usage after 30 days vs comparable native prompts.
