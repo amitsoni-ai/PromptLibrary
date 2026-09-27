@@ -89,6 +89,32 @@ Imported prompts go live in the library as soon as step 3 is committed. Only "Ar
 - **Source label.** The admin import labels new prompts `source: "Synottic Programs"` (its default). Provenance is only in `provenance.csv`, as agreed.
 - **Framework detector ceiling.** Three prompts written as L2 (#4, #18, #19) are detected as L3, because their constraint wording satisfies the L3 detectors. The level tag follows the detector.
 
+## Test locally before loading production
+
+Uses a throwaway local database (PGlite), never Neon. Always set `DATABASE_URL` explicitly as shown. Plain `npm run dev` reads `.env.local`, which points at the **production** database (see `SHARED-DB.md`).
+
+```bash
+git checkout claude/synottic-prompt-audit-cxkja1
+npm install
+
+# 1. fresh local database with the full library (about 10 s)
+rm -rf /tmp/synottic-dev-pglite
+DATABASE_URL=pglite:///tmp/synottic-dev-pglite node migrate/run.mjs
+
+# 2. start the local server (leave this terminal running)
+DATABASE_URL=pglite:///tmp/synottic-dev-pglite EMAIL_TRANSPORT=console npm run dev:auth
+
+# 3. in a second terminal: clean-up + pilot import, Collection, code, test learner
+node docs/collections/working-with-ai/load_local.mjs
+```
+
+Then open http://localhost:8790:
+
+- **Learner** `learner.test@example.com` / `Learner!Pass123` sees only the 20 collection prompts.
+- **Admin** `admin@synottic.dev` / `adminDevPass123` at `/admin/login` sees the imported prompts in Prompts and the Collection in Collections.
+
+`load_local.mjs` refuses to run against anything but localhost, and running it twice is safe.
+
 ## Rebuild
 
 ```bash
